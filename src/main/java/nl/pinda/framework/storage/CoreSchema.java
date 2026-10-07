@@ -31,6 +31,15 @@ public final class CoreSchema {
                         value TEXT NOT NULL,
                         PRIMARY KEY (uuid, setting)
                     )"""
+            ),
+            // Versie 2: wie negeert wie (/ignore)
+            List.of(
+                    """
+                    CREATE TABLE IF NOT EXISTS pinda_player_ignores (
+                        uuid TEXT NOT NULL,
+                        ignored TEXT NOT NULL,
+                        PRIMARY KEY (uuid, ignored)
+                    )"""
             )
     );
 }

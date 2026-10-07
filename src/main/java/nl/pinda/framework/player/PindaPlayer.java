@@ -1,6 +1,7 @@
 package nl.pinda.framework.player;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,6 +12,7 @@ public final class PindaPlayer {
     private final long firstJoin;
     private final boolean loadFailed;
     private final Map<String, String> settings = new ConcurrentHashMap<>();
+    private final Set<UUID> ignored = ConcurrentHashMap.newKeySet();
     private volatile String name;
     private volatile String language;
     private volatile boolean setupCompleted;
@@ -71,6 +73,20 @@ public final class PindaPlayer {
     /** True als laden mislukte; deze gegevens worden dan nooit opgeslagen. */
     public boolean loadFailed() {
         return loadFailed;
+    }
+
+    /** Negeert deze speler de ander (geen privéberichten of TPA-verzoeken)? */
+    public boolean isIgnoring(UUID other) {
+        return ignored.contains(other);
+    }
+
+    /** Alle spelers die deze speler negeert. */
+    public Set<UUID> ignored() {
+        return Set.copyOf(ignored);
+    }
+
+    Set<UUID> rawIgnored() {
+        return ignored;
     }
 
     public boolean getBoolean(String setting, boolean defaultValue) {

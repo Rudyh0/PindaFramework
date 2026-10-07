@@ -81,3 +81,37 @@ permissions:
   pinda.back.death:
     description: /back naar de plek waar je doodging
     default: true
+
+  # Privéberichten
+  pinda.msg.use:
+    description: /msg en /r
+    default: true
+  pinda.msg.socialspy:
+    description: /socialspy, privéberichten van anderen meelezen
+    default: op
+  pinda.msg.bypass:
+    description: Berichten sturen naar spelers die privéberichten uit hebben staan
+    default: op
+  pinda.ignore.use:
+    description: /ignore
+    default: true
+  pinda.ignore.exempt:
+    description: Kan niet genegeerd worden (voor staff)
+    default: op
+
+  # Spelmodus
+  pinda.gamemode.survival:
+    description: /gms of /gm survival
+    default: op
+  pinda.gamemode.creative:
+    description: /gmc of /gm creative
+    default: op
+  pinda.gamemode.adventure:
+    description: /gma of /gm adventure
+    default: op
+  pinda.gamemode.spectator:
+    description: /gmsp of /gm spectator
+    default: op
+  pinda.gamemode.others:
+    description: De spelmodus van andere spelers veranderen
+    default: op

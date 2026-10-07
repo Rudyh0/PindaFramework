@@ -19,6 +19,7 @@ general:
   no-permission: "<prefix><error>Daar heb je geen toestemming voor."
   player-only: "<prefix><error>Dit commando kan alleen door een speler gebruikt worden."
   player-not-found: "<prefix><error>Speler <highlight><player></highlight> is niet online."
+  player-unknown: "<prefix><error>Speler <highlight><player></highlight> is nog nooit op <server> geweest."
   command-error: "<prefix><error>Er ging iets mis bij dit commando. Meld het aan een beheerder."
   data-load-failed: "<error>Je spelersgegevens konden niet geladen worden.<newline><text>Probeer het over een paar seconden opnieuw."
   enabled: "<success>Aan"
@@ -71,6 +72,11 @@ settings:
       description:
         - "<text>Andere spelers kunnen vragen"
         - "<text>of ze naar je toe mogen."
+    msg:
+      name: "<primary>Privéberichten"
+      description:
+        - "<text>Andere spelers kunnen je"
+        - "<text>berichten sturen met /msg."
 
   setup:
     done: "<prefix><success>Je voorkeuren zijn opgeslagen! <text>Veel plezier op <primary><server></primary>."
@@ -90,6 +96,7 @@ tips:
     - "Zet een home met <primary>/sethome [naam]</primary> en bekijk ze allemaal met <click:run_command:/homes><hover:show_text:'<text>Klik om te openen'><primary>/homes</primary></hover></click>."
     - "Wil je naar een vriend toe? Gebruik <primary>/tpa [speler]</primary>."
     - "Doodgegaan? Met <primary>/back</primary> ga je terug naar die plek."
+    - "Stuur iemand een privébericht met <primary>/msg [speler] [bericht]</primary> en antwoord snel met <primary>/r</primary>."
 
 menu:
   previous: "<primary>« Vorige pagina"
@@ -199,6 +206,40 @@ back:
   teleported: "<prefix><text>Je bent terug op je vorige plek."
   none: "<prefix><error>Er is geen vorige plek om naar terug te gaan."
   death-hint: "<prefix><text>Terug naar waar je doodging? <click:run_command:/back><hover:show_text:'<text>Klik om terug te gaan'><primary>[/back]</primary></hover></click>"
+
+msg:
+  usage: "<prefix><text>Gebruik: <primary>/msg <speler> <bericht>"
+  usage-reply: "<prefix><text>Gebruik: <primary>/r <bericht>"
+  format-sent: "<muted>[<primary>jij</primary> → <reply><primary><target></primary></reply>] <text><message>"
+  format-received: "<muted>[<reply><primary><sender></primary></reply> → <primary>jou</primary>] <text><message>"
+  format-spy: "<muted>[Spy] <sender> → <target>: <message>"
+  console-name: "Console"
+  hover-reply: "<text>Klik om te antwoorden"
+  self: "<prefix><error>Je kunt jezelf geen bericht sturen."
+  disabled-target: "<prefix><error><player> ontvangt op dit moment geen privéberichten."
+  no-reply: "<prefix><error>Je hebt niemand om op te antwoorden."
+  partner-offline: "<prefix><error>Degene met wie je praatte is niet meer online."
+  socialspy-on: "<prefix><text>Socialspy staat <success>aan</success>. Je leest privéberichten mee."
+  socialspy-off: "<prefix><text>Socialspy staat <error>uit</error>."
+  ignore-added: "<prefix><text>Je negeert <primary><player></primary> nu. <muted>Privéberichten en TPA-verzoeken worden geblokkeerd."
+  ignore-removed: "<prefix><text>Je negeert <primary><player></primary> niet meer."
+  ignore-self: "<prefix><error>Je kunt jezelf niet negeren."
+  ignore-exempt: "<prefix><error><player> kun je niet negeren."
+  ignore-list: "<prefix><text>Je negeert: <primary><players>"
+  ignore-list-empty: "<prefix><text>Je negeert niemand. <muted>Gebruik <primary>/ignore <speler></primary>."
+
+gamemode:
+  modes:
+    survival: "Overleven"
+    creative: "Creatief"
+    adventure: "Avontuur"
+    spectator: "Toeschouwer"
+  changed: "<prefix><text>Je spelmodus is nu <primary><mode></primary>."
+  changed-other: "<prefix><text>De spelmodus van <primary><player></primary> is nu <primary><mode></primary>."
+  changed-by: "<prefix><text><primary><player></primary> heeft je spelmodus veranderd naar <primary><mode></primary>."
+  unknown-mode: "<prefix><error>Onbekende spelmodus <highlight><mode></highlight>. <text>Kies uit: <primary>survival, creative, adventure, spectator</primary>"
+  usage: "<prefix><text>Gebruik: <primary>/gm <modus> [speler]</primary> <muted>of /gmc, /gms, /gma, /gmsp"
+  usage-console: "<prefix><text>Geef vanaf de console een speler op: <primary>/<command> ... <speler>"
 
 admin:
   help:

@@ -19,6 +19,8 @@ modules:
   tpa: true
   spawn: true
   back: true
+  msg: true
+  gamemode: true
 
 # Opmaak van alle berichten, in MiniMessage-formaat.
 # Uitleg: https://docs.advntr.dev/minimessage/format
@@ -73,6 +75,10 @@ theme:
       sound: "block.note_block.pling"
       volume: 0.7
       pitch: 1.2
+    message:
+      sound: "block.note_block.bell"
+      volume: 0.6
+      pitch: 1.8
 
 # Commando's aan/uit en eigen aliassen. Na het aanpassen is een herstart nodig.
 commands:

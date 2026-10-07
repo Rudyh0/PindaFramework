@@ -20,7 +20,9 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 | Setup bij eerste join + `/instellingen` + `/taal` | ✅ |
 | Tips | ✅ |
 | Teleports: homes, TPA, spawn, back (wachttijd, cooldown, kosten) | ✅ |
-| Core: msg, AFK, kick/ban, broadcast, scoreboard, antilag | ⏳ |
+| Privéberichten: msg, reply, socialspy, ignore | ✅ |
+| Spelmodus: /gm, /gmc, /gms, /gma, /gmsp | ✅ |
+| Core: AFK, kick/ban, broadcast, scoreboard, antilag | ⏳ |
 | Economy | ⏳ |
 | Shops | ⏳ |
 | World control | ⏳ |
@@ -47,6 +49,12 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 | `/spawn` | | `pinda.spawn.use` | iedereen |
 | `/setspawn` | | `pinda.spawn.set` | op |
 | `/back` | | `pinda.back.use` | iedereen |
+| `/msg <speler> <bericht>` | `/tell`, `/w`, `/whisper`, `/m`, `/pm` | `pinda.msg.use` | iedereen |
+| `/r <bericht>` | `/reply` | `pinda.msg.use` | iedereen |
+| `/ignore [speler]` | `/unignore` | `pinda.ignore.use` | iedereen |
+| `/socialspy` | `/spy` | `pinda.msg.socialspy` | op |
+| `/gm <modus> [speler]` | | per modus | op |
+| `/gmc`, `/gms`, `/gma`, `/gmsp` `[speler]` | | `pinda.gamemode.<modus>` | op |
 
 Extra permissies:
 
@@ -58,6 +66,10 @@ Extra permissies:
 | `pinda.teleport.bypass.warmup` | Geen wachttijd | niemand |
 | `pinda.teleport.bypass.cooldown` | Geen cooldown | niemand |
 | `pinda.teleport.free` | Teleports altijd gratis | niemand |
+| `pinda.msg.bypass` | Berichten sturen naar wie privéberichten uit heeft | op |
+| `pinda.ignore.exempt` | Kan niet genegeerd worden | op |
+| `pinda.gamemode.survival` / `creative` / `adventure` / `spectator` | Die spelmodus gebruiken | op |
+| `pinda.gamemode.others` | Spelmodus van anderen veranderen | op |
 
 `pinda.admin` geeft alle beheerrechten. Aliassen pas je aan in `config.yml` onder `commands`, bijvoorbeeld:
 
@@ -83,7 +95,8 @@ plugins/PindaFramework/
     ├── homes.yml       aantal homes, geblokkeerde werelden
     ├── tpa.yml         verlooptijd, testoptie TPA naar jezelf
     ├── spawn.yml       spawnlocatie en wanneer spelers erheen gaan
-    └── back.yml        /back na doodgaan
+    ├── back.yml        /back na doodgaan
+    └── msg.yml         privéberichten, testoptie berichten naar jezelf
 ```
 
 - **Teksten** gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format). Gebruik de thema-kleuren als tag: `<primary>`, `<secondary>`, `<text>`, `<muted>`, `<highlight>`, `<success>`, `<error>`, `<warning>`, `<prefix>` voor de prefix en `<server>` voor de servernaam (`server-name` in `config.yml`).

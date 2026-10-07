@@ -12,7 +12,9 @@ import nl.pinda.framework.menu.Menu;
 import nl.pinda.framework.menu.MenuListener;
 import nl.pinda.framework.module.ModuleManager;
 import nl.pinda.framework.modules.back.BackModule;
+import nl.pinda.framework.modules.gamemode.GamemodeModule;
 import nl.pinda.framework.modules.homes.HomesModule;
+import nl.pinda.framework.modules.msg.MsgModule;
 import nl.pinda.framework.modules.settings.SettingsModule;
 import nl.pinda.framework.modules.spawn.SpawnModule;
 import nl.pinda.framework.modules.tips.TipsModule;
@@ -76,6 +78,8 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new TpaModule(this));
             modules.register(new SpawnModule(this));
             modules.register(new BackModule(this));
+            modules.register(new MsgModule(this));
+            modules.register(new GamemodeModule(this));
             modules.enableAll();
 
             commands.register(new AdminCommand(this));

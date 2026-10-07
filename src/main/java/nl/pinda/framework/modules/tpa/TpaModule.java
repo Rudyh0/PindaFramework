@@ -14,6 +14,7 @@ import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.lang.LanguageManager;
 import nl.pinda.framework.lang.Text;
 import nl.pinda.framework.module.PindaModule;
+import nl.pinda.framework.player.PlayerManager;
 import nl.pinda.framework.player.PlayerSetting;
 import nl.pinda.framework.teleport.TeleportRequest;
 import nl.pinda.framework.teleport.TeleportService;
@@ -89,7 +90,9 @@ public final class TpaModule extends PindaModule implements Listener {
             fail(requester, "tpa.self");
             return;
         }
-        if (!plugin.settings().isEnabled(target, SETTING)) {
+        boolean ignored = plugin.players().get(target).isIgnoring(requester.getUniqueId())
+                && !requester.hasPermission(PlayerManager.IGNORE_EXEMPT);
+        if (!plugin.settings().isEnabled(target, SETTING) || ignored) {
             fail(requester, "tpa.disabled-target", Text.p("player", target.getName()));
             return;
         }

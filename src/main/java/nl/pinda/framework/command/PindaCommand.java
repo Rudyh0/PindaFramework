@@ -23,6 +23,7 @@ public abstract class PindaCommand implements BasicCommand {
     private final String description;
     private final String permission;
     private final List<String> defaultAliases;
+    private boolean overrideAliases;
 
     /**
      * @param name        de naam van het commando, zonder slash
@@ -48,6 +49,18 @@ public abstract class PindaCommand implements BasicCommand {
 
     public final List<String> defaultAliases() {
         return defaultAliases;
+    }
+
+    /**
+     * Normaal winnen bestaande commando's (zoals vanilla /tell) van onze aliassen.
+     * Roep dit aan in de constructor om onze aliassen juist voorrang te geven.
+     */
+    protected final void overrideAliases() {
+        this.overrideAliases = true;
+    }
+
+    public final boolean overridesAliases() {
+        return overrideAliases;
     }
 
     @Override

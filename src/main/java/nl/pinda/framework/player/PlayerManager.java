@@ -28,6 +28,9 @@ public final class PlayerManager implements Listener {
 
     private static final long PRELOAD_TIMEOUT_MS = 60_000L;
 
+    /** Spelers met deze permissie (staff) kunnen niet genegeerd worden. */
+    public static final String IGNORE_EXEMPT = "pinda.ignore.exempt";
+
     private final PindaFramework plugin;
     private final Map<UUID, PindaPlayer> cache = new ConcurrentHashMap<>();
     private final Map<UUID, Long> preloaded = new ConcurrentHashMap<>();
@@ -125,7 +128,43 @@ public final class PlayerManager implements Listener {
                     }
                 }
             }
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT ignored FROM pinda_player_ignores WHERE uuid = ?")) {
+                statement.setString(1, uuid.toString());
+                try (ResultSet result = statement.executeQuery()) {
+                    while (result.next()) {
+                        data.rawIgnored().add(UUID.fromString(result.getString("ignored")));
+                    }
+                }
+            }
             return data;
+        });
+    }
+
+    /** Zet het negeren van een andere speler aan of uit, en slaat dat direct op. */
+    public void setIgnoring(PindaPlayer data, UUID other, boolean ignore) {
+        if (ignore) {
+            data.rawIgnored().add(other);
+        } else {
+            data.rawIgnored().remove(other);
+        }
+        if (data.loadFailed()) {
+            return;
+        }
+        final String uuid = data.uuid().toString();
+        final String ignored = other.toString();
+        plugin.database().execute(connection -> {
+            String sql = ignore
+                    ? "INSERT OR IGNORE INTO pinda_player_ignores (uuid, ignored) VALUES (?, ?)"
+                    : "DELETE FROM pinda_player_ignores WHERE uuid = ? AND ignored = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, uuid);
+                statement.setString(2, ignored);
+                statement.executeUpdate();
+            }
+        }).exceptionally(error -> {
+            plugin.getLogger().log(Level.SEVERE, "Kon negeerlijst van " + data.name() + " niet opslaan", error);
+            return null;
         });
     }
 

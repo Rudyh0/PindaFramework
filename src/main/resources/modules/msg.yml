@@ -1,0 +1,18 @@
+# ┌──────────────────────────────────────────────┐
+# │       PindaFramework - privéberichten        │
+# └──────────────────────────────────────────────┘
+# /msg (ook /tell, /w, /whisper, /m, /pm), /r, /socialspy en /ignore.
+# De opmaak van berichten staat in de taalbestanden onder 'msg'.
+
+# Staan privéberichten standaard aan voor nieuwe spelers? (aan/uit te zetten in /instellingen)
+default-enabled: true
+
+# De schakelaar voor privéberichten tonen in het setupmenu
+show-in-setup: true
+
+# Alle privéberichten ook in de console (en het serverlog) zetten
+log-to-console: false
+
+# ALLEEN OM TE TESTEN: berichten naar jezelf toestaan (bijv. /msg <jouw naam> hallo).
+# Zet dit weer op false zodra de server open gaat.
+allow-self-messages: false

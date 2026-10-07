@@ -16,6 +16,7 @@ general:
   no-permission: "<prefix><error>You don't have permission to do that."
   player-only: "<prefix><error>Only players can use this command."
   player-not-found: "<prefix><error>Player <highlight><player></highlight> is not online."
+  player-unknown: "<prefix><error>Player <highlight><player></highlight> has never been on <server>."
   command-error: "<prefix><error>Something went wrong with this command. Please tell a staff member."
   data-load-failed: "<error>Your player data could not be loaded.<newline><text>Please try again in a few seconds."
   enabled: "<success>On"
@@ -67,6 +68,11 @@ settings:
       description:
         - "<text>Other players can ask"
         - "<text>to teleport to you."
+    msg:
+      name: "<primary>Private messages"
+      description:
+        - "<text>Other players can send"
+        - "<text>you messages with /msg."
 
   setup:
     done: "<prefix><success>Your preferences have been saved! <text>Have fun on <primary><server></primary>."
@@ -86,6 +92,7 @@ tips:
     - "Set a home with <primary>/sethome [name]</primary> and see them all with <click:run_command:/homes><hover:show_text:'<text>Click to open'><primary>/homes</primary></hover></click>."
     - "Want to visit a friend? Use <primary>/tpa [player]</primary>."
     - "Died? Use <primary>/back</primary> to return to that spot."
+    - "Send someone a private message with <primary>/msg [player] [message]</primary> and reply quickly with <primary>/r</primary>."
 
 menu:
   previous: "<primary>« Previous page"
@@ -195,6 +202,40 @@ back:
   teleported: "<prefix><text>You're back at your previous spot."
   none: "<prefix><error>There's no previous spot to go back to."
   death-hint: "<prefix><text>Go back to where you died? <click:run_command:/back><hover:show_text:'<text>Click to go back'><primary>[/back]</primary></hover></click>"
+
+msg:
+  usage: "<prefix><text>Usage: <primary>/msg <player> <message>"
+  usage-reply: "<prefix><text>Usage: <primary>/r <message>"
+  format-sent: "<muted>[<primary>you</primary> → <reply><primary><target></primary></reply>] <text><message>"
+  format-received: "<muted>[<reply><primary><sender></primary></reply> → <primary>you</primary>] <text><message>"
+  format-spy: "<muted>[Spy] <sender> → <target>: <message>"
+  console-name: "Console"
+  hover-reply: "<text>Click to reply"
+  self: "<prefix><error>You can't send a message to yourself."
+  disabled-target: "<prefix><error><player> isn't receiving private messages right now."
+  no-reply: "<prefix><error>You have nobody to reply to."
+  partner-offline: "<prefix><error>The person you were talking to is no longer online."
+  socialspy-on: "<prefix><text>Socialspy is <success>on</success>. You can read private messages."
+  socialspy-off: "<prefix><text>Socialspy is <error>off</error>."
+  ignore-added: "<prefix><text>You are now ignoring <primary><player></primary>. <muted>Private messages and TPA requests are blocked."
+  ignore-removed: "<prefix><text>You are no longer ignoring <primary><player></primary>."
+  ignore-self: "<prefix><error>You can't ignore yourself."
+  ignore-exempt: "<prefix><error>You can't ignore <player>."
+  ignore-list: "<prefix><text>You are ignoring: <primary><players>"
+  ignore-list-empty: "<prefix><text>You aren't ignoring anyone. <muted>Use <primary>/ignore <player></primary>."
+
+gamemode:
+  modes:
+    survival: "Survival"
+    creative: "Creative"
+    adventure: "Adventure"
+    spectator: "Spectator"
+  changed: "<prefix><text>Your game mode is now <primary><mode></primary>."
+  changed-other: "<prefix><text><primary><player></primary>'s game mode is now <primary><mode></primary>."
+  changed-by: "<prefix><text><primary><player></primary> changed your game mode to <primary><mode></primary>."
+  unknown-mode: "<prefix><error>Unknown game mode <highlight><mode></highlight>. <text>Choose from: <primary>survival, creative, adventure, spectator</primary>"
+  usage: "<prefix><text>Usage: <primary>/gm <mode> [player]</primary> <muted>or /gmc, /gms, /gma, /gmsp"
+  usage-console: "<prefix><text>From the console, add a player: <primary>/<command> ... <player>"
 
 admin:
   help:

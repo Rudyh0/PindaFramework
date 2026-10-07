@@ -48,7 +48,15 @@ public final class CommandManager {
                 List<String> aliases = section != null && section.isList(name + ".aliases")
                         ? section.getStringList(name + ".aliases")
                         : command.defaultAliases();
-                registrar.register(name, command.description(), aliases, command);
+                if (command.overridesAliases()) {
+                    // Als eigen label registreren, zodat ze bestaande (vanilla) commando's vervangen.
+                    registrar.register(name, command.description(), List.of(), command);
+                    for (String alias : aliases) {
+                        registrar.register(alias, command.description(), List.of(), command);
+                    }
+                } else {
+                    registrar.register(name, command.description(), aliases, command);
+                }
             }
         });
     }
