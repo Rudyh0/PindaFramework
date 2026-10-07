@@ -213,7 +213,18 @@ final class AuthApi extends PanelApi {
                 "maxTempBan", moderation == null ? 0 : moderation.maxTempBan(),
                 "idleMinutes", module.idleMillis() / 60_000L,
                 "twoFactor", map("required", module.twoFactorRequired(), "enabled", twoFactor != null,
-                        "since", twoFactor == null ? null : twoFactor.created()));
+                        "since", twoFactor == null ? null : twoFactor.created()),
+                "theme", theme());
+    }
+
+    /** Thema-kleuren, prefix en servernaam, zodat de website teksten zelf kan voorvertonen. */
+    private Map<String, Object> theme() {
+        Map<String, Object> colors = new java.util.LinkedHashMap<>();
+        for (String color : List.of("primary", "secondary", "text", "muted", "highlight", "success", "error", "warning")) {
+            colors.put(color, plugin.mainConfig().getString("theme.colors." + color, "#FFFFFF"));
+        }
+        return map("colors", colors, "prefix", plugin.mainConfig().getString("theme.prefix", ""),
+                "serverName", plugin.mainConfig().getString("server-name", "PindaCraft"));
     }
 
     // ============================================================ 2FA van een ander resetten

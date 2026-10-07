@@ -14,7 +14,7 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 
 ## Wat zit erin
 
-Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage en een webpaneel.
+Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, een eigen MOTD, Discord-webhooks en een webpaneel waarin je alles kunt instellen.
 
 ## To-do
 
@@ -65,15 +65,34 @@ Acht skills zoals in RuneScape: **Mijnbouw, Houthakken, Vissen, Vechten, Koken, 
 
 ## Slapen
 
-Als genoeg spelers in een wereld slapen (standaard **50%**), wordt de nacht of het onweer overgeslagen: de tijd spoelt in een paar seconden door en het weer klaart op. Iedereen in de wereld ziet wie er slaapt en hoeveel er nog nodig zijn. AFK-spelers, staff in vanish en spelers in creative/spectator tellen niet mee. Instellen in `modules/sleep.yml` (en straks in het webpaneel).
+Als genoeg spelers in een wereld slapen (standaard **50%**), wordt de nacht of het onweer overgeslagen: de tijd spoelt in een paar seconden door en het weer klaart op. Iedereen in de wereld ziet wie er slaapt en hoeveel er nog nodig zijn. AFK-spelers, staff in vanish en spelers in creative/spectator tellen niet mee. Instellen in het paneel onder **Instellingen › Slapen**, of in `modules/sleep.yml`.
+
+## Discord
+
+Koppeling via **webhooks** (geen bot nodig), in te stellen in het paneel onder **Discord**:
+
+- **Serverstatus:** één bericht in een kanaal dat zichzelf elke minuut bijwerkt met online/offline, aantal spelers, TPS, versie, sinds wanneer de server aan staat en wie er online is.
+- **Staffmeldingen:** bans, mutes, kicks, waarschuwingen, unbans, rangwijzigingen, inloggen op het paneel en (optioneel) alle paneelacties, plus server gestart/gestopt.
+
+Webhook maken: in Discord bij het kanaal **Kanaal bewerken › Integraties › Webhooks › Nieuwe webhook › Webhook-URL kopiëren**, en in het paneel plakken. Met de knop **Testbericht sturen** zie je meteen of het werkt.
+
+## Alles via het paneel
+
+Het idee: PindaFramework installeren en daarna alles in de browser inrichten.
+
+- **Instellingen:** elk configbestand als formulier met schakelaars, getallen en lijsten, met de uitleg uit het bestand erbij. Opslaan herlaadt de module meteen.
+- **Teksten:** elke melding, elk menu en elke tip, in elke taal. Met knoppen voor themakleuren, Minecraft-kleuren, eigen kleur, verloop, vet/cursief/onderstreept en placeholders, en een voorbeeld van hoe het er in Minecraft uitziet. Onder **Uiterlijk** pas je de servernaam, de prefix en de themakleuren aan.
+- **Server:** tijd, weer, mededelingen, whitelist, MOTD (met voorbeeld zoals in de serverlijst), `server.properties` (wat kan, werkt meteen) en spelregels per wereld.
+- **Rangen:** rangen maken en bewerken, met een lijst van alle bekende permissies om uit te kiezen.
 
 ## Webpaneel
 
 Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 
-1. Typ in-game **`/panel`** (vanaf PindaMod). Je krijgt een link in de chat.
-2. Klik erop: je bent ingelogd. De link werkt **één keer** en is 5 minuten geldig.
+1. Typ in-game **`/panel`** (vanaf PindaMod). Je krijgt een link in de chat. De link werkt **één keer** en is 5 minuten geldig.
+2. **Tweestapsverificatie (verplicht):** de eerste keer scan je een QR-code met een authenticator-app naar keuze (Google Authenticator, Microsoft Authenticator, Authy, Bitwarden, …). Daarna vul je bij elke login de code van 6 cijfers uit de app in. Na 5 foute codes vervalt de link.
 3. Na 60 minuten zonder activiteit (of maximaal 12 uur) log je vanzelf uit. `/panel logout` logt je overal uit.
+4. **Telefoon kwijt?** Een admin reset de 2FA met `/panel 2fa reset <speler>` (ook vanuit de console) of via het spelersprofiel in het paneel.
 
 **Wat kan er in?**
 
@@ -88,6 +107,11 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | Shops | alle shops en hun aanbod bekijken | `pinda.panel.shops` | Mod |
 | Skills | ranglijsten en levels per speler | `pinda.panel.skills` | Mod |
 | Skills aanpassen | levels zetten, XP geven, resetten, XP-boost starten | `pinda.panel.skills.edit` | Admin |
+| Instellingen | alle configbestanden als formulier, MOTD, server.properties, spelregels per wereld, Discord | `pinda.panel.config` | Admin |
+| Teksten | alle meldingen, menu's en tips bewerken met kleuren, verloop en opmaak (met voorbeeld), servernaam, prefix en themakleuren | `pinda.panel.texts` | Admin |
+| Rangen bewerken | rangen maken, kleuren, prefix, gewicht, erven en permissies, chatopmaak, standaardrang | `pinda.panel.ranks.edit` | Admin |
+| Speleracties | spelmodus, healen, eten, vliegen, naar spawn, teleporteren, items geven, bericht sturen, inventory en enderkist bekijken en items weghalen, homes verwijderen | `pinda.panel.players.manage` | Admin |
+| 2FA resetten | de authenticator van iemand anders ontkoppelen | `pinda.panel.security` | Admin |
 | Shop sluiten | een shop dichtzetten | `pinda.panel.shops.manage` | Admin |
 | Server | tijd, weer, mededeling, whitelist, opslaan, `/pinda reload` | `pinda.panel.server` | Admin |
 | Server stoppen | | `pinda.panel.stop` | Admin |
@@ -153,6 +177,7 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | `/warn <speler> <reden>` | `/waarschuw` | `pinda.mod.warn` | Mod |
 | `/history <speler>`, `/banlist` | `/straffen`, `/bans` | `pinda.mod.history` | Mod |
 | `/panel [logout]` | `/paneel`, `/webpanel` | `pinda.panel.use` | Mod |
+| `/panel 2fa reset <speler>` | | `pinda.panel.security` | op |
 | `/skills [speler]`, `/skills top [skill]` | `/skill`, `/vaardigheden`, `/levels` | `pinda.skills.use` (+ `.others`) | iedereen |
 | `/skills set\|addxp\|reset <speler> ...`, `/skills boost <x> <duur>\|stop` | | `pinda.skills.admin` | op |
 
@@ -214,6 +239,8 @@ plugins/PindaFramework/
     ├── moderation.yml  max tempban voor mods, straffen openbaar of alleen staff
     ├── skills.yml      XP per blok/mob/item, levelcurve, geld per level-up, meldingen
     ├── sleep.yml       percentage slapers, doorspoelen, meldingen
+    ├── motd.yml        de MOTD in de serverlijst (meerdere varianten)
+    ├── discord.yml     webhooks voor het statusbericht en staffmeldingen
     └── panel.yml       webpaneel: poort, adres (public-url), hoe lang inloggen geldig is
 ```
 

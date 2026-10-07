@@ -71,7 +71,10 @@
     box: '<path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
     trending: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>',
     award: '<circle cx="12" cy="8" r="6"/><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5"/>',
-    zap: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'
+    zap: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+    cog: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    type: '<path d="M4 7V4h16v3M9 20h6M12 4v16"/>',
+    chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
   };
   const icon = (name, cls = '') => raw(`<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`);
 
@@ -175,11 +178,13 @@
     ecoView: 'pinda.panel.economy.view', ecoEdit: 'pinda.panel.economy.edit', ranks: 'pinda.panel.ranks',
     shops: 'pinda.panel.shops', shopsManage: 'pinda.panel.shops.manage', server: 'pinda.panel.server',
     stop: 'pinda.panel.stop', console: 'pinda.panel.console', log: 'pinda.panel.log', banPermanent: 'pinda.mod.ban.permanent',
-    skills: 'pinda.panel.skills', skillsEdit: 'pinda.panel.skills.edit'
+    skills: 'pinda.panel.skills', skillsEdit: 'pinda.panel.skills.edit', config: 'pinda.panel.config',
+    texts: 'pinda.panel.texts', ranksEdit: 'pinda.panel.ranks.edit', playersManage: 'pinda.panel.players.manage',
+    security: 'pinda.panel.security'
   };
 
   const state = { me: null, info: null, timers: [], renderId: 0, history: null, playerQuery: '' };
-  const can = permission => !!state.me && state.me.permissions.includes(permission);
+  const can = permission => Array.isArray(permission) ? permission.some(p => can(p)) : !!state.me && state.me.permissions.includes(permission);
   const feature = name => !!state.me && !!state.me.features[name];
   const serverName = () => (state.me && state.me.server) || (state.info && state.info.server) || 'PindaCraft';
 
@@ -240,8 +245,9 @@
   }
 
   const modal = $('#modal');
-  function openModal(view) {
+  function openModal(view, cls = '') {
     modal.returnValue = '';
+    modal.className = cls;
     render(modal, view);
     if (!modal.open) modal.showModal();
     const focus = $('[autofocus]', modal) || $('input:not([type=hidden]), select, textarea', modal);
@@ -296,6 +302,39 @@
     </div></div>`);
   }
 
+  /** Stap 2 van het inloggen: de code uit de authenticator-app (de eerste keer met QR-code). */
+  function renderTwoFactor(challenge, message) {
+    document.body.classList.remove('nav-open');
+    state.challenge = challenge;
+    const name = serverName();
+    const setup = challenge.step === 'setup';
+    render($('#app'), html`<div class="login"><div class="login-card">
+      <img class="login-logo" src="/favicon.svg" alt="">
+      <h1>${setup ? 'Beveilig je account' : 'Tweestapsverificatie'}</h1>
+      ${setup ? html`<p class="lead">Koppel eenmalig een authenticator-app, zoals Google Authenticator, Microsoft Authenticator, Authy of Bitwarden.</p>
+        <div class="qr-wrap"><img class="qr" src="${challenge.qr}" alt="QR-code voor je authenticator-app" width="208" height="208"></div>
+        <ol class="login-steps">
+          <li><b>1</b><span>Open je authenticator-app en kies <em>account toevoegen</em> of <em>QR-code scannen</em>.</span></li>
+          <li><b>2</b><span>Scan de QR-code. Je ziet daarna <span class="kbd">${challenge.issuer}</span> met een code van 6 cijfers.</span></li>
+          <li><b>3</b><span>Vul die code hieronder in.</span></li>
+        </ol>
+        <details class="manual"><summary>Scannen lukt niet?</summary><p class="muted">Vul in je app deze sleutel handmatig in (type: op tijd gebaseerd):</p><p class="secret mono">${challenge.secret}</p></details>`
+        : html`<p class="lead">Open je authenticator-app en vul de code van 6 cijfers voor <span class="kbd">${name}</span> in.</p>`}
+      <form data-form="two-factor" class="code-form">
+        <input class="input code-input" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000000" aria-label="Code van 6 cijfers" required>
+        <button class="btn primary">${setup ? 'Koppelen en inloggen' : 'Inloggen'}</button>
+      </form>
+      ${message ? html`<div class="alert error">${message}</div>` : ''}
+      <p class="login-foot">Telefoon kwijt? Vraag een admin om je 2FA te resetten (/panel 2fa reset).</p>
+    </div></div>`);
+    const input = $('.code-input');
+    input.focus();
+    input.addEventListener('input', () => {
+      const digits = input.value.replace(/\D/g, '');
+      if (digits.length === 6 && !state.verifying) input.form.requestSubmit();
+    });
+  }
+
   // =============================================================== opbouw en navigatie
 
   const ROUTES = [
@@ -305,7 +344,11 @@
     { path: 'shops', title: 'Shops', icon: 'shop', perm: P.shops, feature: 'shop', page: pageShops },
     { path: 'skills', title: 'Skills', icon: 'award', perm: P.skills, feature: 'skills', page: pageSkills },
     { path: 'straffen', title: 'Straffen', icon: 'shield', perm: P.players, feature: 'moderation', page: pagePunishments },
-    { path: 'server', title: 'Server', icon: 'server', perm: P.server, page: pageServer, group: 'Beheer' },
+    { path: 'server', title: 'Server', icon: 'server', perm: [P.server, P.config], page: pageServer, group: 'Beheer' },
+    { path: 'instellingen', title: 'Instellingen', icon: 'cog', perm: P.config, page: pageSettings, group: 'Beheer' },
+    { path: 'teksten', title: 'Teksten', icon: 'type', perm: P.texts, page: pageTexts, group: 'Beheer' },
+    { path: 'rangen', title: 'Rangen', icon: 'crown', perm: P.ranksEdit, feature: 'ranks', page: pageRanks, group: 'Beheer' },
+    { path: 'discord', title: 'Discord', icon: 'chat', perm: P.config, feature: 'discord', page: pageDiscord, group: 'Beheer' },
     { path: 'console', title: 'Console', icon: 'terminal', perm: P.console, page: pageConsole, group: 'Beheer' },
     { path: 'logboek', title: 'Logboek', icon: 'log', perm: P.log, page: pageLog, group: 'Beheer' }
   ];
@@ -345,7 +388,9 @@
     clearTimers();
     closeModal();
     document.body.classList.remove('nav-open');
-    const [path = '', param] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+    const [path = '', ...rest] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+    const param = rest.length ? rest.join('/') : undefined;
+    if (state.themeBackup) { state.me.theme.colors = state.themeBackup; state.themeBackup = null; }
     const routes = visibleRoutes();
     const route = routes.find(r => r.path === path) || routes[0];
     if (!route) return;
@@ -356,6 +401,7 @@
     $$('.nav a').forEach(link => link.classList.toggle('active', link.dataset.route === route.path));
     $('#topbar-title').textContent = route.title;
     const main = $('#main');
+    main.onclick = null;
     const id = ++state.renderId;
     const alive = () => id === state.renderId && !!state.me;
     render(main, html`<div class="page-loading"><div class="spinner"></div></div>`);
@@ -377,6 +423,892 @@
   const card = (title, iconName, body, extra = '') => html`<section class="card">
     <div class="card-head"><h2>${iconName ? icon(iconName) : ''}${title}</h2>${extra}</div>${body}</section>`;
   const emptyRow = (columns, text) => html`<tr><td colspan="${columns}"><div class="empty">${text}</div></td></tr>`;
+
+  // =============================================================== Minecraft-tekst: snel voorbeeld en editor
+
+  const MC_COLORS = {
+    black: '#000000', dark_blue: '#0000AA', dark_green: '#00AA00', dark_aqua: '#00AAAA', dark_red: '#AA0000',
+    dark_purple: '#AA00AA', gold: '#FFAA00', gray: '#AAAAAA', dark_gray: '#555555', blue: '#5555FF',
+    green: '#55FF55', aqua: '#55FFFF', red: '#FF5555', light_purple: '#FF55FF', yellow: '#FFFF55', white: '#FFFFFF'
+  };
+  const MC_ALIASES = { grey: 'gray', dark_grey: 'dark_gray' };
+  const DECORATIONS = { bold: 'b', b: 'b', italic: 'i', i: 'i', em: 'i', underlined: 'u', u: 'u', strikethrough: 's', st: 's', obfuscated: 'o', obf: 'o' };
+  const THEME_TAGS = ['primary', 'secondary', 'text', 'muted', 'highlight', 'success', 'error', 'warning'];
+  const THEME_LABELS = { primary: 'Hoofdkleur', secondary: 'Tweede kleur', text: 'Tekst', muted: 'Gedempt', highlight: 'Opvallend', success: 'Gelukt', error: 'Fout', warning: 'Waarschuwing' };
+  const STYLE_TAGS = ['click', 'hover', 'insertion', 'key', 'lang', 'font', 'shadow', 'transition', 'selector', 'score', 'nbt'];
+
+  function resolveColor(name, depth = 0) {
+    if (!name) return null;
+    const value = name.trim();
+    if (/^#[0-9a-f]{6}$/i.test(value)) return value;
+    const key = MC_ALIASES[value.toLowerCase()] || value.toLowerCase();
+    const theme = state.me && state.me.theme ? state.me.theme.colors : {};
+    if (theme[key] && depth < 3) return resolveColor(theme[key], depth + 1);
+    return MC_COLORS[key] || null;
+  }
+
+  function mix(colors, t) {
+    if (colors.length === 1) return colors[0];
+    const scaled = Math.min(0.9999, Math.max(0, t)) * (colors.length - 1);
+    const index = Math.floor(scaled);
+    const local = scaled - index;
+    const a = parseInt(colors[index].slice(1), 16);
+    const b = parseInt(colors[index + 1].slice(1), 16);
+    const channel = shift => Math.round(((a >> shift) & 255) + (((b >> shift) & 255) - ((a >> shift) & 255)) * local);
+    return '#' + [16, 8, 0].map(shift => channel(shift).toString(16).padStart(2, '0')).join('');
+  }
+
+  /** MiniMessage naar HTML, voor een snel voorbeeld in lijsten. Onbekende tags zijn placeholders. */
+  function miniToHtml(input) {
+    let source = String(input || '');
+    if (source.startsWith('[actionbar]')) source = source.slice(11).trimStart();
+    const theme = state.me && state.me.theme ? state.me.theme : { prefix: '', serverName: '' };
+    source = source.replace(/<prefix>/g, theme.prefix || '').replace(/<server>/g, theme.serverName || '');
+    const tokens = [];
+    const stack = [];
+    let text = '';
+    const flush = () => {
+      if (!text) return;
+      let color = null;
+      let gradient = null;
+      const decorations = new Set();
+      for (const entry of stack) {
+        if (entry.color) { color = entry.color; gradient = null; }
+        if (entry.gradient) { gradient = entry.gradient; color = null; }
+        if (entry.decoration) decorations.add(entry.decoration);
+      }
+      const chars = Array.from(text);
+      if (gradient) gradient.count += chars.length;
+      tokens.push({ chars, color, gradient, decorations });
+      text = '';
+    };
+    const handle = raw => {
+      const closing = raw.startsWith('/');
+      const body = closing ? raw.slice(1) : raw;
+      const parts = body.split(':');
+      const name = parts[0].toLowerCase();
+      if (closing) {
+        for (let i = stack.length - 1; i >= 0; i--) {
+          if (!name || stack[i].tag === name) { stack.splice(i); break; }
+        }
+        return true;
+      }
+      if (name === 'newline' || name === 'br') { tokens.push({ br: true }); return true; }
+      if (name === 'reset') { stack.length = 0; return true; }
+      if (name === 'gradient' || name === 'rainbow') {
+        const colors = name === 'rainbow' ? ['#FF5555', '#FFAA00', '#FFFF55', '#55FF55', '#55FFFF', '#5555FF', '#FF55FF']
+          : parts.slice(1).map(c => resolveColor(c)).filter(Boolean);
+        stack.push({ tag: name, gradient: { colors: colors.length ? colors : ['#FFFFFF', '#000000'], count: 0, index: 0 } });
+        return true;
+      }
+      if (name === 'color' || name === 'colour' || name === 'c') { stack.push({ tag: name, color: resolveColor(parts[1]) }); return true; }
+      const color = resolveColor(name);
+      if (color) { stack.push({ tag: name, color }); return true; }
+      if (DECORATIONS[name]) { stack.push({ tag: name, decoration: DECORATIONS[name] }); return true; }
+      if (name.startsWith('!') && DECORATIONS[name.slice(1)]) return true;
+      if (STYLE_TAGS.includes(name)) { stack.push({ tag: name }); return true; }
+      return false;
+    };
+    let pos = 0;
+    while (pos < source.length) {
+      const char = source[pos];
+      if (char === '\\' && source[pos + 1] === '<') { text += '<'; pos += 2; continue; }
+      if (char === '<') {
+        let end = pos + 1;
+        let quote = null;
+        let ok = true;
+        while (end < source.length) {
+          const c = source[end];
+          if (quote) { if (c === quote) quote = null; } else if (c === "'" || c === '"') quote = c; else if (c === '>') break; else if (c === '<') { ok = false; break; }
+          end++;
+        }
+        if (ok && end < source.length) {
+          const raw = source.slice(pos + 1, end);
+          flush();
+          if (!handle(raw)) tokens.push({ placeholder: raw.split(':')[0] });
+          pos = end + 1;
+          continue;
+        }
+      }
+      if (char === '\n') { flush(); tokens.push({ br: true }); pos++; continue; }
+      text += char;
+      pos++;
+    }
+    flush();
+    return tokens.map(token => {
+      if (token.br) return '<br>';
+      if (token.placeholder) return `<span class="mc-ph">${esc(token.placeholder)}</span>`;
+      const cls = Array.from(token.decorations).map(d => `mc-${d}`).join(' ');
+      if (token.gradient) {
+        return token.chars.map(c => {
+          const g = token.gradient;
+          const color = mix(g.colors, g.count > 1 ? g.index++ / (g.count - 1) : 0);
+          return `<span class="${cls}" style="color:${color}">${esc(c)}</span>`;
+        }).join('');
+      }
+      return `<span class="${cls}"${token.color ? ` style="color:${token.color}"` : ''}>${esc(token.chars.join(''))}</span>`;
+    }).join('');
+  }
+  const mc = (value, cls = '') => raw(`<span class="mc ${cls}">${miniToHtml(Array.isArray(value) ? value.join('\n') : value)}</span>`);
+
+  function wrapSelection(area, open, close) {
+    const start = area.selectionStart;
+    const end = area.selectionEnd;
+    const value = area.value;
+    area.value = value.slice(0, start) + open + value.slice(start, end) + close + value.slice(end);
+    area.focus();
+    area.selectionStart = start + open.length;
+    area.selectionEnd = end + open.length;
+    area.dispatchEvent(new Event('input'));
+  }
+
+  function insertAt(area, value) {
+    const start = area.selectionStart;
+    area.value = area.value.slice(0, start) + value + area.value.slice(area.selectionEnd);
+    area.focus();
+    area.selectionStart = area.selectionEnd = start + value.length;
+    area.dispatchEvent(new Event('input'));
+  }
+
+  /**
+   * De visuele teksteditor: knoppen voor kleuren, verloop, opmaak en placeholders, met een
+   * voorbeeld van hoe het er in Minecraft uitziet (exact, door de server gemaakt).
+   */
+  function openTextEditor({ title, subtitle, value, placeholders = [], onSave, onReset, list = Array.isArray(value) }) {
+    const text = Array.isArray(value) ? value.join('\n') : (value || '');
+    const extras = ['prefix', 'server', ...placeholders.filter(p => p !== 'prefix' && p !== 'server')];
+    state.textEditor = { onSave, onReset, list };
+    openModal(html`<form data-form="text-editor" class="text-editor">
+      <div class="modal-head"><h3>${title}</h3>${subtitle ? html`<p class="mono">${subtitle}</p>` : ''}</div>
+      <div class="modal-body">
+        <div class="te-toolbar">
+          <div class="te-group" aria-label="Themakleuren">${THEME_TAGS.map(t => html`<button type="button" class="te-swatch" data-wrap="${t}" title="${THEME_LABELS[t]} (&lt;${t}&gt;)" style="--c:${resolveColor(t) || '#fff'}"></button>`)}</div>
+          <div class="te-group" aria-label="Minecraft-kleuren">${Object.entries(MC_COLORS).map(([n, c]) => html`<button type="button" class="te-swatch sm" data-wrap="${n}" title="${n}" style="--c:${c}"></button>`)}</div>
+          <div class="te-group">
+            <button type="button" class="btn sm te-btn" data-wrap="bold" title="Vet"><b>B</b></button>
+            <button type="button" class="btn sm te-btn" data-wrap="italic" title="Cursief"><i>I</i></button>
+            <button type="button" class="btn sm te-btn" data-wrap="underlined" title="Onderstreept"><u>U</u></button>
+            <button type="button" class="btn sm te-btn" data-wrap="strikethrough" title="Doorgestreept"><s>S</s></button>
+            <span class="te-sep"></span>
+            <input type="color" id="te-color" value="#ffc857" title="Eigen kleur kiezen"><button type="button" class="btn sm" data-te="color">Kleur</button>
+            <span class="te-sep"></span>
+            <input type="color" id="te-grad-a" value="#ffc857" title="Verloop: begin"><input type="color" id="te-grad-b" value="#e9724c" title="Verloop: eind"><button type="button" class="btn sm" data-te="gradient">Verloop</button>
+            <span class="te-sep"></span>
+            <button type="button" class="btn sm" data-insert="&lt;newline&gt;" title="Nieuwe regel">↵</button>
+          </div>
+          <div class="te-group te-placeholders"><span class="muted">Invoegen:</span>${extras.map(p => html`<button type="button" class="te-chip" data-insert="&lt;${p}&gt;">${p}</button>`)}</div>
+        </div>
+        <textarea class="input mono te-source" name="text" rows="${list ? 7 : 4}" spellcheck="false">${text}</textarea>
+        <p class="te-hint muted">${list ? 'Elke regel in het vak is een losse regel. ' : ''}Selecteer tekst en klik op een kleur of opmaak, of typ zelf tags zoals &lt;primary&gt;…&lt;/primary&gt;.</p>
+        <div class="te-preview-label"><span>Zo ziet het eruit in Minecraft</span><span class="badge info hidden" id="te-actionbar">boven de hotbar</span></div>
+        <div class="mc-preview" id="te-preview"><span class="spinner sm"></span></div>
+      </div>
+      <div class="modal-foot">
+        ${onReset ? html`<button type="button" class="btn ghost te-reset" data-te="reset">Standaardtekst terugzetten</button>` : ''}
+        <button type="button" class="btn ghost" data-action="close">Annuleren</button>
+        <button class="btn primary">Opslaan</button>
+      </div></form>`, 'wide');
+
+    const area = $('.te-source', modal);
+    let timer;
+    let sequence = 0;
+    const refresh = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        const id = ++sequence;
+        const value = list ? area.value.split('\n') : area.value;
+        try {
+          const result = await post('/texts/preview', { text: value });
+          if (id !== sequence) return;
+          $('#te-preview', modal).innerHTML = result.html || '<span class="muted">(leeg)</span>';
+          $('#te-actionbar', modal).classList.toggle('hidden', !result.actionbar);
+        } catch (error) {
+          if (id === sequence) $('#te-preview', modal).innerHTML = miniToHtml(area.value);
+        }
+      }, 200);
+    };
+    area.addEventListener('input', refresh);
+    $('.te-toolbar', modal).addEventListener('click', event => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      if (button.dataset.wrap) wrapSelection(area, `<${button.dataset.wrap}>`, `</${button.dataset.wrap}>`);
+      else if (button.dataset.insert) insertAt(area, button.dataset.insert);
+      else if (button.dataset.te === 'color') { const c = $('#te-color', modal).value; wrapSelection(area, `<${c}>`, `</${c}>`); }
+      else if (button.dataset.te === 'gradient') wrapSelection(area, `<gradient:${$('#te-grad-a', modal).value}:${$('#te-grad-b', modal).value}>`, '</gradient>');
+    });
+    const reset = $('[data-te=reset]', modal);
+    if (reset) {
+      reset.addEventListener('click', async () => {
+        const ok = await confirmDialog({ title: 'Standaardtekst terugzetten?', text: 'Je eigen versie van deze tekst gaat verloren.', confirm: 'Terugzetten', danger: true });
+        if (ok && onReset) await busy(null, onReset);
+      });
+    }
+    refresh();
+    area.focus();
+  }
+
+  // =============================================================== instellingen (alle configbestanden)
+
+  const FILE_NAMES = {
+    'config.yml': 'Algemeen', 'teleport.yml': 'Teleports', 'modules/settings.yml': 'Eerste keer joinen',
+    'modules/tips.yml': 'Tips', 'modules/homes.yml': 'Homes', 'modules/tpa.yml': 'TPA', 'modules/spawn.yml': 'Spawn',
+    'modules/back.yml': 'Terug (/back)', 'modules/msg.yml': 'Privéberichten', 'modules/gamemode.yml': 'Spelmodus',
+    'modules/afk.yml': 'AFK', 'modules/utility.yml': 'Handige commando’s', 'modules/staff.yml': 'Vanish en invsee',
+    'modules/economy.yml': 'Economie', 'modules/shop.yml': 'Shops', 'modules/locks.yml': 'Sloten',
+    'modules/moderation.yml': 'Moderatie', 'modules/skills.yml': 'Skills', 'modules/sleep.yml': 'Slapen',
+    'modules/motd.yml': 'MOTD', 'modules/discord.yml': 'Discord', 'modules/panel.yml': 'Webpaneel'
+  };
+  const fileName = path => FILE_NAMES[path] || path.replace(/^modules\//, '').replace(/\.yml$/, '');
+  const prettyKey = key => {
+    if (/^[A-Z0-9_]+$/.test(key)) return key;
+    const text = key.replace(/[-_.]/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
+  async function pageSettings(main, file, alive) {
+    const list = await api('/settings');
+    if (!alive()) return;
+    const files = list.files;
+    const current = file && files.some(f => f.path === file) ? file : files[0].path;
+    render(main, html`${pageHead('Instellingen', 'Alle instellingen van PindaFramework. Na opslaan worden ze meteen herladen.')}
+      <div class="settings-layout">
+        <nav class="card settings-files">
+          <select class="input settings-select" aria-label="Kies een onderdeel">${files.map(f => html`<option value="${f.path}" ${f.path === current ? 'selected' : ''}>${fileName(f.path)}</option>`)}</select>
+          ${files.map(f => html`<a href="#/instellingen/${f.path}" class="${f.path === current ? 'active' : ''}"><span>${fileName(f.path)}</span>${f.enabled ? '' : html`<span class="badge plain">uit</span>`}</a>`)}
+        </nav>
+        <section class="card settings-form" id="settings-form"><div class="page-loading"><div class="spinner"></div></div></section>
+      </div>`);
+    $('.settings-select', main).addEventListener('change', event => { location.hash = `#/instellingen/${event.target.value}`; });
+    const data = await api(`/settings/file?path=${encodeURIComponent(current)}`);
+    if (!alive()) return;
+    renderSettingsForm($('#settings-form', main), data, files.find(f => f.path === current));
+  }
+
+  function renderSettingsForm(container, data, file) {
+    const original = {};
+    const collect = fields => fields.forEach(f => { if (f.type === 'section') collect(f.fields); else original[f.path] = f.value; });
+    collect(data.fields);
+    state.settings = { path: data.path, original };
+    const field = f => {
+      const label = html`<span class="cfg-label">${prettyKey(f.key)}</span>`;
+      const help = f.help && f.help.length ? html`<span class="cfg-help">${f.help.filter(Boolean).join(' ')}</span>` : '';
+      const note = f.note && f.note.length ? html`<span class="cfg-help">${f.note.join(' ')}</span>` : '';
+      switch (f.type) {
+        case 'section':
+          return html`<fieldset class="cfg-section"><legend>${prettyKey(f.key)}</legend>${help}${f.fields.map(field)}</fieldset>`;
+        case 'boolean':
+          return html`<div class="cfg-row"><div class="cfg-text">${label}${help}${note}</div>
+            <label class="switch"><input type="checkbox" data-path="${f.path}" data-type="boolean" ${f.value ? 'checked' : ''}><span></span></label></div>`;
+        case 'integer':
+        case 'number':
+          return html`<div class="cfg-row"><div class="cfg-text">${label}${help}${note}</div>
+            <input class="input cfg-number" type="number" step="${f.type === 'integer' ? '1' : 'any'}" data-path="${f.path}" data-type="${f.type}" value="${f.value}"></div>`;
+        case 'numbers':
+          return html`<div class="cfg-row"><div class="cfg-text">${label}${help}${note}<span class="cfg-help">Getallen gescheiden door komma's.</span></div>
+            <input class="input cfg-wide" data-path="${f.path}" data-type="numbers" value="${f.value.join(', ')}"></div>`;
+        case 'list':
+          return html`<div class="cfg-row cfg-stack"><div class="cfg-text">${label}${help}${note}<span class="cfg-help">Eén per regel.</span></div>
+            <textarea class="input mono" rows="${Math.min(10, Math.max(3, f.value.length + 1))}" data-path="${f.path}" data-type="list">${f.value.join('\n')}</textarea></div>`;
+        case 'map':
+          return html`<div class="cfg-row cfg-stack"><div class="cfg-text">${label}${help}${note}</div>
+            <div class="cfg-map" data-path="${f.path}" data-type="map">
+              ${Object.entries(f.value).map(([k, v]) => mapRow(k, v))}
+              <button type="button" class="btn sm" data-map-add>${icon('plus')} Regel toevoegen</button>
+            </div></div>`;
+        default: {
+          const color = /^#[0-9a-f]{6}$/i.test(f.value || '');
+          const formatted = !color && /<[a-z#!/]/i.test(f.value || '');
+          return html`<div class="cfg-row ${formatted ? 'cfg-stack' : ''}"><div class="cfg-text">${label}${help}${note}</div>
+            <div class="cfg-string">
+              ${color ? html`<input type="color" value="${f.value}" data-color-for="${f.path}">` : ''}
+              <input class="input ${formatted ? 'mono' : ''}" data-path="${f.path}" data-type="string" value="${f.value}">
+              ${formatted ? html`<button type="button" class="btn sm" data-edit-text="${f.path}">Visueel bewerken</button>` : ''}
+            </div>
+            ${formatted ? html`<div class="mc-preview sm" data-preview-for="${f.path}">${mc(f.value)}</div>` : ''}</div>`;
+        }
+      }
+    };
+    render(container, html`<div class="card-head"><h2>${icon('server')}${fileName(data.path)}</h2>
+        <span class="count mono">${data.path}${file && !file.enabled ? ' · module staat uit' : ''}</span></div>
+      <form class="card-body cfg-form" data-form="settings">
+        ${data.description && data.description.length ? html`<div class="alert info cfg-intro">${data.description.filter(Boolean).map(line => html`${line}<br>`)}</div>` : ''}
+        ${data.fields.map(field)}
+        <div class="save-bar"><span class="muted" id="settings-dirty">Geen wijzigingen</span><button class="btn primary">${icon('save')} Opslaan en herladen</button></div>
+      </form>`);
+    const form = $('.cfg-form', container);
+    const markDirty = () => { const count = Object.keys(settingsChanges(form)).length; $('#settings-dirty', container).textContent = count ? `${count} ${count === 1 ? 'wijziging' : 'wijzigingen'}` : 'Geen wijzigingen'; };
+    form.addEventListener('input', event => {
+      const target = event.target;
+      if (target.dataset.colorFor) { const input = $(`[data-path="${CSS.escape(target.dataset.colorFor)}"]`, form); input.value = target.value.toUpperCase(); }
+      const preview = target.dataset.path && $(`[data-preview-for="${CSS.escape(target.dataset.path)}"]`, form);
+      if (preview) preview.innerHTML = miniToHtml(target.value);
+      markDirty();
+    });
+    form.addEventListener('change', markDirty);
+    form.addEventListener('click', event => {
+      const add = event.target.closest('[data-map-add]');
+      if (add) { add.insertAdjacentHTML('beforebegin', part(mapRow('', 0))); markDirty(); return; }
+      const remove = event.target.closest('[data-map-remove]');
+      if (remove) { remove.closest('.map-row').remove(); markDirty(); return; }
+      const edit = event.target.closest('[data-edit-text]');
+      if (edit) {
+        const input = $(`[data-path="${CSS.escape(edit.dataset.editText)}"]`, form);
+        openTextEditor({ title: prettyKey(edit.dataset.editText.split('.').pop()), subtitle: edit.dataset.editText, value: input.value, onSave: async value => {
+          input.value = value;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          return true;
+        } });
+      }
+    });
+  }
+
+  const mapRow = (key, value) => html`<div class="map-row"><input class="input mono map-key" placeholder="NAAM" value="${key}"><input class="input map-value" type="number" step="any" value="${value}"><button type="button" class="btn ghost sm icon-only" data-map-remove aria-label="Verwijderen">${icon('x')}</button></div>`;
+
+  function settingsChanges(form) {
+    const changes = {};
+    const original = state.settings ? state.settings.original : {};
+    $$('[data-path]', form).forEach(element => {
+      const path = element.dataset.path;
+      let value;
+      switch (element.dataset.type) {
+        case 'boolean': value = element.checked; break;
+        case 'integer': case 'number': value = element.value === '' ? null : Number(element.value); break;
+        case 'numbers': value = element.value.split(',').map(s => s.trim()).filter(Boolean).map(Number); break;
+        case 'list': value = element.value.split('\n').map(s => s.replace(/\s+$/, '')).filter(s => s.length); break;
+        case 'map': {
+          value = {};
+          $$('.map-row', element).forEach(row => {
+            const key = $('.map-key', row).value.trim().toUpperCase();
+            if (key) value[key] = Number($('.map-value', row).value || 0);
+          });
+          break;
+        }
+        default: value = element.value;
+      }
+      if (element.dataset.type === 'list' || element.dataset.type === 'numbers') {
+        const before = (original[path] || []).map(String);
+        if (JSON.stringify(before) !== JSON.stringify(value.map(String))) changes[path] = value;
+      } else if (element.dataset.type === 'map') {
+        if (JSON.stringify(original[path]) !== JSON.stringify(value)) changes[path] = value;
+      } else if (value !== null && String(value) !== String(original[path])) {
+        changes[path] = value;
+      }
+    });
+    return changes;
+  }
+
+  // =============================================================== teksten en uiterlijk
+
+  const SECTION_NAMES = {
+    general: 'Algemeen', settings: 'Instellingen-menu', tips: 'Tips', menu: 'Menu’s', teleport: 'Teleports', homes: 'Homes',
+    tpa: 'TPA', spawn: 'Spawn', back: 'Terug', msg: 'Privéberichten', gamemode: 'Spelmodus', afk: 'AFK', utility: 'Handige commando’s',
+    vanish: 'Vanish', invsee: 'Invsee', economy: 'Economie', shop: 'Shops', lock: 'Sloten', partner: 'Partners', rank: 'Rangen',
+    moderation: 'Moderatie', skills: 'Skills', sleep: 'Slapen', discord: 'Discord', panel: 'Webpaneel', admin: 'Beheer'
+  };
+
+  async function pageTexts(main, tab, alive) {
+    const tabs = html`<div class="tabs"><a href="#/teksten" class="${tab ? '' : 'active'}">Teksten</a><a href="#/teksten/uiterlijk" class="${tab === 'uiterlijk' ? 'active' : ''}">Uiterlijk</a></div>`;
+    if (tab === 'uiterlijk') return pageAppearance(main, tabs, alive);
+    const lang = state.textLang || (state.me && state.me.lang) || '';
+    const data = await api(`/texts${lang ? `?lang=${encodeURIComponent(lang)}` : ''}`);
+    if (!alive()) return;
+    state.textLang = data.lang;
+    const sections = [...new Set(data.entries.map(e => e.key.split('.')[0]))];
+    const filter = state.textFilter || { section: '', query: '', changed: false };
+    render(main, html`${pageHead('Teksten', 'Alle meldingen, menu’s en tips. Klik op een tekst om hem aan te passen met kleuren en opmaak.')}
+      ${tabs}
+      <section class="card">
+        <div class="card-head text-filters">
+          <select class="input" id="text-lang" aria-label="Taal">${data.languages.map(l => html`<option value="${l.code}" ${l.code === data.lang ? 'selected' : ''}>${l.name}</option>`)}</select>
+          <select class="input" id="text-section" aria-label="Onderdeel"><option value="">Alle onderdelen</option>${sections.map(s => html`<option value="${s}" ${s === filter.section ? 'selected' : ''}>${SECTION_NAMES[s] || s}</option>`)}</select>
+          <label class="search">${icon('search')}<input class="input" id="text-search" type="search" placeholder="Zoek in teksten…" value="${filter.query}"></label>
+          <label class="check"><input type="checkbox" id="text-changed" ${filter.changed ? 'checked' : ''}> Alleen aangepast</label>
+        </div>
+        <div id="text-list"></div>
+      </section>`);
+    const show = () => {
+      const query = filter.query.toLowerCase();
+      const entries = data.entries.filter(e => (!filter.section || e.key.split('.')[0] === filter.section)
+        && (!filter.changed || e.changed)
+        && (!query || e.key.toLowerCase().includes(query) || JSON.stringify(e.value).toLowerCase().includes(query)));
+      render($('#text-list', main), entries.length ? html`<div class="text-list">${entries.slice(0, 400).map(e => html`<button type="button" class="text-row" data-key="${e.key}">
+          <span class="text-key mono">${e.key}${e.changed ? html` <span class="badge warning">aangepast</span>` : ''}</span>
+          <span class="mc-preview sm">${mc(e.value)}</span></button>`)}</div>
+          ${entries.length > 400 ? html`<div class="pager"><span>${num(entries.length - 400)} meer; zoek gerichter om ze te zien.</span></div>` : ''}`
+        : html`<div class="empty">Geen teksten gevonden.</div>`);
+    };
+    const save = () => { state.textFilter = filter; show(); };
+    $('#text-lang', main).addEventListener('change', event => { state.textLang = event.target.value; navigate(); });
+    $('#text-section', main).addEventListener('change', event => { filter.section = event.target.value; save(); });
+    $('#text-changed', main).addEventListener('change', event => { filter.changed = event.target.checked; save(); });
+    let timer;
+    $('#text-search', main).addEventListener('input', event => { clearTimeout(timer); timer = setTimeout(() => { filter.query = event.target.value.trim(); save(); }, 150); });
+    $('#text-list', main).addEventListener('click', event => {
+      const row = event.target.closest('.text-row');
+      if (!row) return;
+      const entry = data.entries.find(e => e.key === row.dataset.key);
+      openTextEditor({
+        title: SECTION_NAMES[entry.key.split('.')[0]] || 'Tekst', subtitle: entry.key, value: entry.value, placeholders: entry.placeholders,
+        onSave: async value => {
+          const result = await post('/texts', { lang: data.lang, key: entry.key, value });
+          entry.value = result.value;
+          entry.changed = entry.default !== null && JSON.stringify(entry.default) !== JSON.stringify(entry.value);
+          toast('Tekst opgeslagen. Hij is meteen actief in-game.');
+          show();
+          return result;
+        },
+        onReset: entry.default === null ? null : async () => {
+          const result = await post('/texts/reset', { lang: data.lang, key: entry.key });
+          entry.value = result.value;
+          entry.changed = false;
+          toast('Standaardtekst teruggezet.');
+          show();
+          return result;
+        }
+      });
+    });
+    show();
+  }
+
+  async function pageAppearance(main, tabs, alive) {
+    const data = await api('/appearance');
+    if (!alive()) return;
+    const original = { ...state.me.theme.colors };
+    state.themeBackup = original;
+    const sample = () => html`<div class="mc-preview">${mc(['<prefix><success>Je home <highlight>thuis</highlight> is opgeslagen.',
+      '<prefix><error>Daar heb je geen toestemming voor.', '<prefix><text>Saldo: <primary>1.250 PindaCredits</primary> <muted>(bank)',
+      '<secondary>✦ <bold>Tip</bold> <muted>» <text>Zet je geld op tijd op de <primary>/bank</primary>.'])}</div>`;
+    render(main, html`${pageHead('Teksten', 'De servernaam, de prefix voor alle meldingen en de kleuren.')}
+      ${tabs}
+      <form data-form="appearance" class="grid two">
+        ${card('Naam en prefix', 'crown', html`<div class="card-body">
+          <div class="appearance-row"><div><b>Servernaam</b><div class="cfg-help">Overal waar &lt;server&gt; staat.</div></div>
+            <div class="mc-preview sm" id="app-name">${mc(data.serverName)}</div><button type="button" class="btn sm" data-app-edit="serverName">Bewerken</button></div>
+          <div class="appearance-row"><div><b>Prefix</b><div class="cfg-help">Voor bijna elke melding (&lt;prefix&gt;).</div></div>
+            <div class="mc-preview sm" id="app-prefix">${mc(data.prefix)}</div><button type="button" class="btn sm" data-app-edit="prefix">Bewerken</button></div>
+          <input type="hidden" name="serverName" value="${data.serverName}"><input type="hidden" name="prefix" value="${data.prefix}">
+        </div>`)}
+        ${card('Kleuren', 'sun', html`<div class="card-body"><div class="color-grid">${THEME_TAGS.map(t => html`<label class="color-field">
+            <input type="color" name="color-${t}" value="${/^#/.test(data.colors[t]) ? data.colors[t] : (resolveColor(data.colors[t]) || '#ffffff')}">
+            <span><b>${THEME_LABELS[t]}</b><span class="cfg-help mono">&lt;${t}&gt;</span></span></label>`)}</div></div>`)}
+        <section class="card"><div class="card-head"><h2>${icon('megaphone')}Voorbeeld</h2></div><div class="card-body" id="app-sample">${sample()}</div></section>
+        <div class="save-bar"><span class="muted">Opslaan herlaadt alle teksten met de nieuwe kleuren.</span><button class="btn primary">${icon('save')} Opslaan</button></div>
+      </form>`);
+    const form = $('form', main);
+    form.addEventListener('input', event => {
+      if (event.target.type === 'color') {
+        state.me.theme.colors[event.target.name.slice(6)] = event.target.value.toUpperCase();
+        render($('#app-sample', main), sample());
+        $('#app-name', main).innerHTML = miniToHtml(form.serverName.value);
+        $('#app-prefix', main).innerHTML = miniToHtml(form.prefix.value);
+      }
+    });
+    form.addEventListener('click', event => {
+      const button = event.target.closest('[data-app-edit]');
+      if (!button) return;
+      const key = button.dataset.appEdit;
+      openTextEditor({ title: key === 'prefix' ? 'Prefix' : 'Servernaam', value: form[key].value, onSave: async value => {
+        form[key].value = value;
+        state.me.theme[key === 'prefix' ? 'prefix' : 'serverName'] = value;
+        $(key === 'prefix' ? '#app-prefix' : '#app-name', main).innerHTML = miniToHtml(value);
+        render($('#app-sample', main), sample());
+        return true;
+      } });
+    });
+  }
+
+  // =============================================================== server: MOTD, server.properties en spelregels
+
+  const PROPERTY_LABELS = {
+    'max-players': 'Maximaal aantal spelers', difficulty: 'Moeilijkheid', gamemode: 'Standaard spelmodus',
+    'force-gamemode': 'Spelmodus afdwingen bij joinen', pvp: 'PvP (spelers kunnen elkaar aanvallen)',
+    'view-distance': 'View distance (chunks)', 'simulation-distance': 'Simulation distance (chunks)',
+    'spawn-protection': 'Spawnbescherming (blokken rond de spawn)', 'player-idle-timeout': 'Kicken na inactief (minuten, 0 = nooit)',
+    'allow-flight': 'Vliegen toestaan (anders kick bij vliegen)', 'allow-nether': 'Nether aan', 'enable-command-block': 'Command blocks aan',
+    'hide-online-players': 'Spelersnamen verbergen in de serverlijst', 'entity-broadcast-range-percentage': 'Zichtafstand van mobs en items (%)',
+    'white-list': 'Whitelist aan', 'enforce-whitelist': 'Whitelist afdwingen (kickt wie er niet op staat)',
+    motd: 'MOTD uit server.properties (de MOTD-module gaat hier overheen)', 'resource-pack': 'Resourcepack (link)', 'require-resource-pack': 'Resourcepack verplicht'
+  };
+  const OPTION_LABELS = { peaceful: 'Vredig', easy: 'Makkelijk', normal: 'Normaal', hard: 'Moeilijk', survival: 'Survival', creative: 'Creative', adventure: 'Adventure', spectator: 'Toeschouwer' };
+  const GAMERULE_LABELS = {
+    keepinventory: 'Inventory houden bij doodgaan', dodaylightcycle: 'Dag en nacht wisselen', advancetime: 'Dag en nacht wisselen',
+    doweathercycle: 'Het weer verandert', advanceweather: 'Het weer verandert', mobgriefing: 'Mobs veranderen blokken (creepers, endermen)',
+    dofiretick: 'Vuur verspreidt zich', domobspawning: 'Mobs spawnen', spawnmobs: 'Mobs spawnen', announceadvancements: 'Advancements in de chat',
+    showdeathmessages: 'Doodsberichten in de chat', naturalregeneration: 'Levens herstellen vanzelf', doinsomnia: 'Phantoms spawnen',
+    spawnphantoms: 'Phantoms spawnen', doimmediaterespawn: 'Direct respawnen', randomtickspeed: 'Groeisnelheid (random tick speed)',
+    spawnradius: 'Spawngebied (blokken)', playerssleepingpercentage: 'Slaappercentage (vanilla; de slaapmodule regelt dit)',
+    dotraderspawning: 'Rondreizende handelaar spawnt', dopatrolspawning: 'Patrouilles spawnen', disableraids: 'Raids uitzetten',
+    falldamage: 'Valschade', firedamage: 'Vuurschade', drowningdamage: 'Verdrinkingsschade', freezedamage: 'Bevriezingsschade',
+    doentitydrops: 'Entities laten items vallen', dotiledrops: 'Blokken laten items vallen', maxentitycramming: 'Max mobs op één plek',
+    commandblockoutput: 'Command blocks melden in de chat', sendcommandfeedback: 'Feedback na commando’s', logadmincommands: 'Admin-commando’s loggen',
+    universalanger: 'Boze mobs vallen iedereen aan', forgivedeadplayers: 'Mobs vergeven dode spelers', dolimitedcrafting: 'Alleen ontgrendelde recepten',
+    reduceddebuginfo: 'Minder info op F3', spectatorsgeneratechunks: 'Toeschouwers laden nieuwe chunks', pvp: 'PvP'
+  };
+  const ruleLabel = name => GAMERULE_LABELS[name.toLowerCase().replace(/_/g, '')] || prettyKey(name);
+
+  function serverTabs(active) {
+    const tabs = [];
+    if (can(P.server)) tabs.push(['', 'Beheer']);
+    if (can(P.config)) tabs.push(['motd', 'MOTD'], ['instellingen', 'server.properties'], ['spelregels', 'Spelregels']);
+    return html`<div class="tabs">${tabs.map(([id, label]) => html`<a href="#/server${id ? `/${id}` : ''}" class="${active === id ? 'active' : ''}">${label}</a>`)}</div>`;
+  }
+
+  async function pageMotd(main, alive) {
+    const data = await api('/motd');
+    if (!alive()) return;
+    const name = state.me.theme.serverName;
+    const save = async body => {
+      const result = await post('/motd', body);
+      toast('MOTD opgeslagen.');
+      navigate();
+      return result;
+    };
+    render(main, html`${pageHead('Server', 'Het bericht in de serverlijst van Minecraft.')}
+      ${serverTabs('motd')}
+      ${data.moduleEnabled ? '' : html`<div class="alert warning">De MOTD-module staat uit in config.yml (modules.motd). Zet hem aan en herstart de server.</div>`}
+      <section class="card"><div class="card-head"><h2>${icon('list')}MOTD’s</h2><span class="count">${data.motds.length > 1 ? 'elke keer een willekeurige' : ''}</span></div>
+        <div class="card-body motd-list">${data.motds.map((motd, index) => html`<div class="motd-item">
+          <div class="serverlist"><img class="server-icon" src="/api/server/icon" data-fallback="/favicon.svg" alt="" width="64" height="64">
+            <div class="serverlist-text"><div class="serverlist-top"><span class="serverlist-name">${raw(miniToHtml(name))}</span><span class="serverlist-count">${num(data.online)}/${num(data.max)} ▮▮▮▮</span></div>
+            <div class="serverlist-motd">${raw(data.previews[index] || '')}</div></div></div>
+          <div class="btn-row"><button class="btn sm" data-motd-edit="${index}">Bewerken</button>${data.motds.length > 1 ? html`<button class="btn sm danger" data-motd-remove="${index}">Verwijderen</button>` : ''}</div>
+        </div>`)}
+        <button class="btn" data-motd-add>${icon('plus')} MOTD toevoegen</button></div></section>
+      <form class="card" data-form="motd-settings"><div class="card-head"><h2>${icon('server')}Opties</h2></div><div class="card-body">
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Deze MOTD gebruiken</span><span class="cfg-help">Uit = de MOTD uit server.properties.</span></div><label class="switch"><input type="checkbox" name="enabled" ${data.enabled ? 'checked' : ''}><span></span></label></div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Spelersnamen verbergen</span><span class="cfg-help">Niemand ziet wie er online is als hij met de muis over het aantal gaat.</span></div><label class="switch"><input type="checkbox" name="hidePlayers" ${data.hidePlayers ? 'checked' : ''}><span></span></label></div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Getoond maximum</span><span class="cfg-help">-1 = het echte maximum.</span></div><input class="input cfg-number" type="number" name="shownMax" value="${data.shownMax}"></div>
+        <div class="save-bar"><span></span><button class="btn primary">${icon('save')} Opslaan</button></div></div></form>`);
+    main.onclick = event => {
+      const edit = event.target.closest('[data-motd-edit]');
+      const remove = event.target.closest('[data-motd-remove]');
+      const add = event.target.closest('[data-motd-add]');
+      if (edit) {
+        const index = Number(edit.dataset.motdEdit);
+        openTextEditor({ title: 'MOTD bewerken', value: data.motds[index], placeholders: ['online', 'max'], onSave: value => {
+          const list = [...data.motds];
+          list[index] = value;
+          return save({ motds: list });
+        } });
+      } else if (remove) {
+        confirmDialog({ title: 'MOTD verwijderen?', text: 'Deze variant verdwijnt uit de lijst.', confirm: 'Verwijderen', danger: true }).then(ok => {
+          if (ok) busy(remove, () => save({ motds: data.motds.filter((_, i) => i !== Number(remove.dataset.motdRemove)) }));
+        });
+      } else if (add) {
+        openTextEditor({ title: 'Nieuwe MOTD', value: '<primary><server></primary><newline><text>', placeholders: ['online', 'max'], onSave: value => save({ motds: [...data.motds, value] }) });
+      }
+    };
+  }
+
+  async function pageServerProperties(main, alive) {
+    const data = await api('/server/settings');
+    if (!alive()) return;
+    state.properties = Object.fromEntries(data.properties.map(p => [p.key, p.value]));
+    render(main, html`${pageHead('Server', 'Instellingen uit server.properties. Waar "direct" staat, werkt het meteen; de rest na een herstart.')}
+      ${serverTabs('instellingen')}
+      <form class="card" data-form="properties"><div class="card-body">
+        ${data.properties.map(p => html`<div class="cfg-row"><div class="cfg-text"><span class="cfg-label">${PROPERTY_LABELS[p.key] || p.key}</span>
+            <span class="cfg-help mono">${p.key} · ${p.live ? html`<span class="success-text">direct</span>` : 'na herstart'}</span></div>
+          ${p.type === 'boolean' ? html`<label class="switch"><input type="checkbox" data-prop="${p.key}" data-type="boolean" ${p.value === 'true' ? 'checked' : ''}><span></span></label>`
+            : p.type === 'select' ? html`<select class="input cfg-number" data-prop="${p.key}">${p.options.map(o => html`<option value="${o}" ${o === p.value ? 'selected' : ''}>${OPTION_LABELS[o] || o}</option>`)}</select>`
+            : p.type === 'integer' ? html`<input class="input cfg-number" type="number" data-prop="${p.key}" value="${p.value}">`
+            : html`<input class="input cfg-wide" data-prop="${p.key}" value="${p.value}">`}</div>`)}
+        <div class="save-bar"><span class="muted">Alleen gewijzigde instellingen worden opgeslagen.</span><button class="btn primary">${icon('save')} Opslaan</button></div>
+      </div></form>`);
+  }
+
+  async function pageGamerules(main, alive) {
+    const data = await api('/server/settings');
+    if (!alive()) return;
+    const rules = data.gamerules.rules;
+    const worlds = data.gamerules.worlds;
+    let world = state.ruleWorld && worlds.includes(state.ruleWorld) ? state.ruleWorld : worlds[0];
+    render(main, html`${pageHead('Server', 'Spelregels (gamerules) per wereld. Wijzigingen werken meteen.')}
+      ${serverTabs('spelregels')}
+      <section class="card"><div class="card-head"><h2>${icon('list')}Spelregels</h2>
+        <select class="input rule-world" aria-label="Wereld">${worlds.map(w => html`<option value="${w}" ${w === world ? 'selected' : ''}>${w}</option>`)}</select></div>
+        <div id="rule-list"></div></section>`);
+    const show = () => render($('#rule-list', main), html`<div class="card-body">${rules.map(r => {
+      const value = r.values[world];
+      const changed = value !== r.default;
+      return html`<div class="cfg-row"><div class="cfg-text"><span class="cfg-label">${ruleLabel(r.name)}${changed ? html` <span class="badge warning">aangepast</span>` : ''}</span>
+          <span class="cfg-help mono">${r.name} · standaard ${String(r.default)}</span></div>
+        ${r.type === 'boolean' ? html`<label class="switch"><input type="checkbox" data-rule="${r.name}" ${value ? 'checked' : ''}><span></span></label>`
+          : html`<input class="input cfg-number" type="number" data-rule="${r.name}" value="${value}">`}</div>`;
+    })}</div>`);
+    $('.rule-world', main).addEventListener('change', event => { world = state.ruleWorld = event.target.value; show(); });
+    $('#rule-list', main).addEventListener('change', async event => {
+      const input = event.target.closest('[data-rule]');
+      if (!input) return;
+      const value = input.type === 'checkbox' ? input.checked : input.value;
+      try {
+        const result = await post('/server/gamerule', { rule: input.dataset.rule, world, value });
+        const rule = rules.find(r => r.name === input.dataset.rule);
+        rule.values[world] = result.value;
+        toast(`${ruleLabel(rule.name)}: ${String(result.value)} in ${result.worlds}.`);
+        show();
+      } catch (error) {
+        if (error.status !== 401) toast(error.message, 'error');
+        show();
+      }
+    });
+    show();
+  }
+
+  // =============================================================== rangen
+
+  async function pageRanks(main, _, alive) {
+    const data = await api('/ranks');
+    if (!alive()) return;
+    state.ranksData = data;
+    const s = data.settings;
+    const rankOptions = selected => data.ranks.map(r => html`<option value="${r.id}" ${r.id === selected ? 'selected' : ''}>${r.displayName}</option>`);
+    render(main, html`${pageHead('Rangen', 'Maak rangen, kies hun kleuren, prefix en permissies. Wijzigingen werken meteen.',
+        html`<button class="btn primary" data-action="rank-new">${icon('plus')} Nieuwe rang</button>`)}
+      <div class="rank-cards">${data.ranks.map(r => html`<article class="card rank-card">
+        <div class="rank-card-top"><div><div class="mc-preview sm">${mc(r.prefix || r.displayName)}</div>
+          <h3 style="color:${resolveColor(r.color) || '#fff'}">${r.displayName}</h3></div>
+          <div class="btn-row"><button class="btn sm" data-rank-edit="${r.id}">Bewerken</button>${r.isDefault ? '' : html`<button class="btn sm danger" data-rank-delete="${r.id}">Verwijderen</button>`}</div></div>
+        <div class="shop-stats"><div>Spelers<b>${num(r.players)}</b></div><div>Gewicht<b>${num(r.weight)}</b></div><div>Permissies<b>${r.operator ? 'alles' : num(r.permissions.length)}</b></div></div>
+        <div class="btn-row">${r.isDefault ? html`<span class="badge success">standaard</span>` : ''}${r.operator ? html`<span class="badge warning">operator</span>` : ''}${r.inherits ? html`<span class="badge plain">erft van ${r.inherits}</span>` : ''}</div>
+      </article>`)}</div>
+      <form class="card" data-form="rank-settings" style="margin-top:16px"><div class="card-head"><h2>${icon('server')}Algemeen</h2></div><div class="card-body">
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Standaardrang</span><span class="cfg-help">Wat nieuwe spelers krijgen.</span></div><select class="input cfg-number" name="defaultRank">${rankOptions(s.defaultRank)}</select></div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Rang voor operators</span><span class="cfg-help">Operators zonder rang krijgen deze bij hun eerste join.</span></div><select class="input cfg-number" name="operatorsGetRank">${rankOptions(s.operatorsGetRank)}</select></div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Operator gelijk houden aan de rang</span><span class="cfg-help">Wie geen operator-rang heeft, verliest zijn operator-status.</span></div><label class="switch"><input type="checkbox" name="syncOperator" ${s.syncOperator ? 'checked' : ''}><span></span></label></div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Chatopmaak aan</span></div><label class="switch"><input type="checkbox" name="chatEnabled" ${s.chatEnabled ? 'checked' : ''}><span></span></label></div>
+        <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Chatopmaak</span><span class="cfg-help">&lt;rank_prefix&gt; = prefix, &lt;name&gt; = naam in de rangkleur, &lt;message&gt; = het bericht.</span></div>
+          <div class="cfg-string"><input class="input mono" name="chatFormat" value="${s.chatFormat}"><button type="button" class="btn sm" data-chat-edit>Visueel bewerken</button></div>
+          <div class="mc-preview sm" id="chat-preview">${mc(chatSample(s.chatFormat))}</div></div>
+        <div class="save-bar"><span></span><button class="btn primary">${icon('save')} Opslaan</button></div>
+      </div></form>`);
+    const form = $('[data-form=rank-settings]', main);
+    form.chatFormat.addEventListener('input', () => { $('#chat-preview', main).innerHTML = miniToHtml(chatSample(form.chatFormat.value)); });
+    main.onclick = event => {
+      const edit = event.target.closest('[data-rank-edit]');
+      const remove = event.target.closest('[data-rank-delete]');
+      if (event.target.closest('[data-chat-edit]')) {
+        openTextEditor({ title: 'Chatopmaak', value: form.chatFormat.value, placeholders: ['rank_prefix', 'name', 'message'], onSave: async value => {
+          form.chatFormat.value = value;
+          form.chatFormat.dispatchEvent(new Event('input'));
+          return true;
+        } });
+      } else if (edit) {
+        openRankEditor(data.ranks.find(r => r.id === edit.dataset.rankEdit));
+      } else if (remove) {
+        const rank = data.ranks.find(r => r.id === remove.dataset.rankDelete);
+        confirmDialog({ title: `${rank.displayName} verwijderen?`, text: `${num(rank.players)} spelers met deze rang krijgen de standaardrang.`, confirm: 'Verwijderen', danger: true }).then(ok => {
+          if (ok) busy(remove, async () => { await post('/ranks/delete', { id: rank.id }); toast('Rang verwijderd.'); navigate(); });
+        });
+      }
+    };
+  }
+
+  const chatSample = format => (format || '').replace(/<rank_prefix>/g, '<#B17CFF>[Pinda]</#B17CFF> ').replace(/<name>/g, '<#B17CFF>Henk_Bouwt</#B17CFF>').replace(/<message>/g, '<#E0E0E0>Hallo allemaal!</#E0E0E0>');
+
+  function openRankEditor(rank) {
+    const data = state.ranksData;
+    const isNew = !rank;
+    const r = rank || { id: '', displayName: '', weight: 10, inherits: data.settings.defaultRank, operator: false, color: '#FFFFFF', chatColor: '#E0E0E0', prefix: '', permissions: [] };
+    const inherited = [];
+    let parent = r.inherits;
+    const seen = new Set([r.id]);
+    while (parent && !seen.has(parent)) {
+      seen.add(parent);
+      const p = data.ranks.find(x => x.id === parent);
+      if (!p) break;
+      p.permissions.forEach(node => inherited.push([node, p.displayName]));
+      parent = p.inherits;
+    }
+    const hex = value => /^#[0-9a-f]{6}$/i.test(value) ? value : (resolveColor(value) || '#ffffff');
+    state.rankEdit = { permissions: [...r.permissions], isNew };
+    openModal(html`<form data-form="rank" class="rank-editor">
+      <div class="modal-head"><h3>${isNew ? 'Nieuwe rang' : `${r.displayName} bewerken`}</h3></div>
+      <div class="modal-body">
+        <div class="row">
+          <label class="field">${label('Id', '(kleine letters)')}<input class="input mono" name="id" value="${r.id}" ${isNew ? '' : 'readonly'} required pattern="[a-z0-9_-]{1,32}" placeholder="bijv. vip"></label>
+          <label class="field">${label('Naam')}<input class="input" name="displayName" value="${r.displayName}" required placeholder="bijv. VIP"></label>
+          <label class="field">${label('Gewicht', '(hoger = belangrijker)')}<input class="input" type="number" name="weight" value="${r.weight}" required></label>
+        </div>
+        <div class="row">
+          <label class="field">${label('Erft van')}<select name="inherits"><option value="">Niets</option>${data.ranks.filter(x => x.id !== r.id).map(x => html`<option value="${x.id}" ${x.id === r.inherits ? 'selected' : ''}>${x.displayName}</option>`)}</select></label>
+          <label class="field">${label('Kleur naam')}<input type="color" name="color" value="${hex(r.color)}"></label>
+          <label class="field">${label('Kleur chat')}<input type="color" name="chatColor" value="${hex(r.chatColor)}"></label>
+          <label class="check" style="align-self:center"><input type="checkbox" name="operator" ${r.operator ? 'checked' : ''}> Operator (mag alles)</label>
+        </div>
+        <div class="field" style="margin-top:14px">${label('Prefix')}
+          <div class="cfg-string"><input class="input mono" name="prefix" value="${r.prefix}" placeholder="<gold>[VIP]</gold> "><button type="button" class="btn sm" data-prefix-edit>Visueel bewerken</button></div>
+          <div class="mc-preview sm" id="rank-preview">${mc(chatSample('<rank_prefix><name> <dark_gray>»</dark_gray> <message>').replace('<#B17CFF>[Pinda]</#B17CFF> ', r.prefix))}</div></div>
+        <div class="field" style="margin-top:14px">${label('Permissies', '(begin met - om iets juist uit te zetten, plugin.* voor alles van een plugin)')}
+          <div class="perm-add"><input class="input mono" id="perm-input" list="perm-list" placeholder="Zoek of typ een permissie…"><button type="button" class="btn sm" data-perm-add>${icon('plus')} Toevoegen</button></div>
+          <datalist id="perm-list">${data.permissions.map(p => html`<option value="${p.name}">${p.description || ''}</option>`)}</datalist>
+          <div class="chips perm-chips" id="perm-chips"></div>
+          ${inherited.length ? html`<details class="manual"><summary>${num(inherited.length)} geërfde permissies</summary><div class="chips">${inherited.map(([node, from]) => html`<span class="badge plain" title="van ${from}">${node}</span>`)}</div></details>` : ''}
+        </div>
+      </div>
+      <div class="modal-foot"><button type="button" class="btn ghost" data-action="close">Annuleren</button><button class="btn primary">${isNew ? 'Rang maken' : 'Opslaan'}</button></div>
+    </form>`, 'wide');
+    const chips = () => render($('#perm-chips', modal), state.rankEdit.permissions.length ? state.rankEdit.permissions.map(node => html`<span class="badge ${node.startsWith('-') ? 'error' : 'info'}">${node}
+        <button type="button" class="btn ghost sm icon-only chip-x" data-perm-remove="${node}" aria-label="${node} weghalen">${icon('x')}</button></span>`) : html`<span class="muted">Nog geen eigen permissies.</span>`);
+    const addPermission = () => {
+      const input = $('#perm-input', modal);
+      const node = input.value.trim().toLowerCase();
+      if (node && !state.rankEdit.permissions.includes(node)) state.rankEdit.permissions.push(node);
+      input.value = '';
+      chips();
+    };
+    const preview = () => { $('#rank-preview', modal).innerHTML = miniToHtml(chatSample('<rank_prefix><name> <dark_gray>»</dark_gray> <message>').replace('<#B17CFF>[Pinda]</#B17CFF> ', $('[name=prefix]', modal).value)); };
+    $('[name=prefix]', modal).addEventListener('input', preview);
+    $('#perm-input', modal).addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); addPermission(); } });
+    $('.rank-editor', modal).addEventListener('click', event => {
+      if (event.target.closest('[data-perm-add]')) addPermission();
+      const remove = event.target.closest('[data-perm-remove]');
+      if (remove) { state.rankEdit.permissions = state.rankEdit.permissions.filter(n => n !== remove.dataset.permRemove); chips(); }
+      if (event.target.closest('[data-prefix-edit]')) {
+        const form = $('.rank-editor', modal);
+        const values = Object.fromEntries(new FormData(form));
+        values.operator = form.operator.checked;
+        state.rankDraft = values;
+        openTextEditor({ title: 'Prefix', value: values.prefix, onSave: async value => {
+          openRankEditor({ ...r, ...state.rankDraft, prefix: value, permissions: state.rankEdit.permissions });
+          return undefined;
+        } });
+      }
+    });
+    chips();
+  }
+
+  // =============================================================== discord
+
+  async function pageDiscord(main, _, alive) {
+    const data = await api('/discord');
+    if (!alive()) return;
+    const events = { punishments: 'Bans, mutes, kicks en waarschuwingen', revokes: 'Unbans en unmutes', 'rank-changes': 'Iemand krijgt een andere rang',
+      'panel-logins': 'Iemand logt in op het paneel', 'panel-actions': 'Alle andere acties in het paneel', 'server-start-stop': 'De server start of stopt' };
+    render(main, html`${pageHead('Discord', 'Koppel Discord-kanalen via webhooks: een live statusbericht en meldingen voor staff.')}
+      ${data.moduleEnabled ? '' : html`<div class="alert warning">De Discord-module staat uit in config.yml (modules.discord). Zet hem aan en herstart de server.</div>`}
+      <div class="alert info">Webhook maken: in Discord bij het kanaal op <b>Kanaal bewerken › Integraties › Webhooks › Nieuwe webhook</b>, daarna <b>Webhook-URL kopiëren</b> en hieronder plakken.</div>
+      <form data-form="discord" class="grid two" style="margin-top:16px">
+        ${card('Serverstatus', 'server', html`<div class="card-body">
+          <p class="muted">Eén bericht dat zichzelf steeds bijwerkt: online of offline, aantal spelers, TPS en wie er online is.</p>
+          <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Aan</span></div><label class="switch"><input type="checkbox" name="status-enabled" ${data.status.enabled ? 'checked' : ''}><span></span></label></div>
+          <label class="field">${label('Webhook-URL')}<input class="input mono" name="status-webhook" value="${data.status.webhook}" placeholder="https://discord.com/api/webhooks/…"></label>
+          <div class="row" style="margin-top:14px">
+            <label class="field">${label('Bijwerken elke', '(seconden)')}<input class="input" type="number" min="30" name="status-interval" value="${data.status.interval}"></label>
+            <label class="field">${label('Adres', '(optioneel)')}<input class="input" name="status-address" value="${data.status.address}" placeholder="play.pindacraft.nl"></label>
+          </div>
+          <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Namen van online spelers tonen</span></div><label class="switch"><input type="checkbox" name="status-players" ${data.status.showPlayers ? 'checked' : ''}><span></span></label></div>
+          <button type="button" class="btn sm" data-discord-test="status">${icon('send')} Testbericht sturen</button></div>`)}
+        ${card('Staffmeldingen', 'shield', html`<div class="card-body">
+          <p class="muted">Meldingen in een besloten staffkanaal.</p>
+          <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Aan</span></div><label class="switch"><input type="checkbox" name="staff-enabled" ${data.staff.enabled ? 'checked' : ''}><span></span></label></div>
+          <label class="field">${label('Webhook-URL')}<input class="input mono" name="staff-webhook" value="${data.staff.webhook}" placeholder="https://discord.com/api/webhooks/…"></label>
+          ${Object.entries(events).map(([key, text]) => html`<div class="cfg-row"><div class="cfg-text"><span class="cfg-label">${text}</span></div><label class="switch"><input type="checkbox" name="event-${key}" ${data.staff.events[key] ? 'checked' : ''}><span></span></label></div>`)}
+          <button type="button" class="btn sm" data-discord-test="staff">${icon('send')} Testbericht sturen</button></div>`)}
+        <div class="save-bar"><label class="field" style="flex:1;max-width:320px">${label('Naam in Discord', '(leeg = naam van de webhook)')}<input class="input" name="username" value="${data.username}"></label>
+          <button class="btn primary">${icon('save')} Opslaan</button></div>
+      </form>`);
+    main.onclick = event => {
+      const test = event.target.closest('[data-discord-test]');
+      if (!test) return;
+      const webhook = $(`[name=${test.dataset.discordTest}-webhook]`, main).value.trim();
+      busy(test, async () => { await post('/discord/test', { webhook }); toast('Testbericht verstuurd. Kijk in Discord!'); });
+    };
+  }
+
+  // =============================================================== speleracties (profiel)
+
+  function playerActionCards(p) {
+    const cards = [];
+    if (can(P.playersManage)) {
+      const online = !!p.live;
+      cards.push(card('Acties', 'zap', online ? html`<div class="card-body">
+        <div class="field">${label('Spelmodus')}<div class="btn-row">${['survival', 'creative', 'adventure', 'spectator'].map(m => html`<button class="btn sm ${p.live.gamemode === m ? 'primary' : ''}" data-action="player-action" data-kind="gamemode" data-value="${m}">${GAMEMODES[m]}</button>`)}</div></div>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn sm" data-action="player-action" data-kind="heal">Healen</button>
+          <button class="btn sm" data-action="player-action" data-kind="feed">Eten geven</button>
+          <button class="btn sm" data-action="player-action" data-kind="fly">Vliegen ${p.live.flying ? 'uit' : 'aan/uit'}</button>
+          <button class="btn sm" data-action="player-action" data-kind="spawn">Naar spawn</button>
+          <button class="btn sm" data-action="inventory">Inventory bekijken</button>
+          <button class="btn sm danger" data-action="player-action" data-kind="clear-inventory">Inventory leegmaken</button>
+        </div>
+        <form class="row" data-form="player-message" style="margin-top:14px"><label class="field">${label('Bericht sturen')}<input class="input" name="value" maxlength="256" required placeholder="Verschijnt als [Paneel] in de chat"></label><button class="btn">${icon('send')}</button></form>
+        <form class="row" data-form="player-teleport"><label class="field">${label('Teleporteren naar speler')}<input class="input" name="value" required placeholder="Naam van een online speler"></label><button class="btn">Teleporteren</button></form>
+        <form class="row" data-form="player-give"><label class="field">${label('Item geven')}<input class="input mono" name="value" list="material-list" required placeholder="bijv. diamond"></label>
+          <label class="field" style="flex:0 1 90px">${label('Aantal')}<input class="input" type="number" name="amount" min="1" max="2304" value="1"></label><button class="btn">Geven</button></form>
+        <datalist id="material-list"></datalist>
+      </div>` : html`<div class="card-body"><p class="muted">${p.name} is offline. Acties zoals healen, teleporteren en items geven kunnen alleen als de speler online is.</p></div>`));
+    }
+    if (can(P.playersManage) && feature('homes')) {
+      cards.push(card('Homes', 'list', html`<div id="homes-list"><div class="page-loading" style="min-height:80px"><div class="spinner"></div></div></div>`));
+    }
+    if (p.twoFactor) {
+      cards.push(card('Tweestapsverificatie', 'lock', html`<div class="card-body">
+        <p>${p.twoFactor.enabled ? html`<span class="badge success">gekoppeld</span> <span class="muted">sinds ${date(p.twoFactor.since)}</span>` : html`<span class="badge plain">niet gekoppeld</span>`}</p>
+        ${p.twoFactor.enabled ? html`<p class="muted">Telefoon kwijt? Na een reset koppelt ${p.name} bij de volgende login opnieuw.</p><button class="btn sm danger" data-action="reset-2fa">2FA resetten</button>` : ''}
+      </div>`));
+    }
+    return cards;
+  }
+
+  async function loadPlayerExtras(main, p, alive) {
+    if (can(P.playersManage) && p.live) {
+      if (!state.materials) {
+        api('/materials').then(result => { state.materials = result.materials; fillMaterials(); }).catch(() => {});
+      } else {
+        fillMaterials();
+      }
+    }
+    if (can(P.playersManage) && feature('homes') && $('#homes-list', main)) {
+      try {
+        const result = await api(`/players/${p.uuid}/homes`);
+        if (!alive()) return;
+        renderHomes(main, p, result.homes);
+      } catch (error) {
+        if (alive()) render($('#homes-list', main), html`<div class="empty">${error.message}</div>`);
+      }
+    }
+  }
+
+  function fillMaterials() {
+    const list = $('#material-list');
+    if (list && state.materials && !list.childElementCount) list.innerHTML = state.materials.map(m => `<option value="${esc(m)}">`).join('');
+  }
+
+  function renderHomes(main, p, homes) {
+    render($('#homes-list', main), homes.length ? html`<div class="table-wrap"><table><thead><tr><th>Naam</th><th>Wereld</th><th>Positie</th><th></th></tr></thead><tbody>
+      ${homes.map(h => html`<tr><td><b>${h.name}</b></td><td>${h.world}</td><td class="mono">${h.x}, ${h.y}, ${h.z}</td>
+        <td class="actions"><button class="btn sm danger" data-action="home-delete" data-name="${h.name}">Verwijderen</button></td></tr>`)}</tbody></table></div>`
+      : html`<div class="empty">${p.name} heeft nog geen homes.</div>`);
+  }
+
+  function openInventory(uuid, name, data) {
+    const grid = (items, size, ender) => {
+      const bySlot = Object.fromEntries(items.map(item => [item.slot, item]));
+      return html`<div class="inv-grid">${Array.from({ length: size }, (_, slot) => {
+        const item = bySlot[slot];
+        return item ? html`<button type="button" class="inv-slot filled ${item.enchanted ? 'ench' : ''}" title="${item.name} (${item.material}) · klik om te verwijderen" data-inv-remove="${slot}" data-ender="${ender ? 1 : 0}">
+            <span class="inv-name">${item.name}</span>${item.amount > 1 ? html`<span class="inv-amount">${item.amount}</span>` : ''}</button>`
+          : html`<span class="inv-slot"></span>`;
+      })}</div>`;
+    };
+    openModal(html`<div class="inventory-view">
+      <div class="modal-head"><h3>Inventory van ${name}</h3><p>Klik op een item om het weg te halen.</p></div>
+      <div class="modal-body">
+        <h4 class="inv-title">Rugzak en hotbar</h4>${grid(data.inventory.filter(i => i.slot < 36), 36, false)}
+        <h4 class="inv-title">Harnas en tweede hand</h4>${grid(data.inventory.filter(i => i.slot >= 36).map(i => ({ ...i, slot: i.slot - 36 })), 5, false)}
+        <h4 class="inv-title">Enderkist</h4>${grid(data.enderchest, 27, true)}
+      </div>
+      <div class="modal-foot"><button type="button" class="btn" data-action="close">Sluiten</button></div></div>`, 'wide');
+    $('.inventory-view', modal).addEventListener('click', async event => {
+      const slot = event.target.closest('[data-inv-remove]');
+      if (!slot) return;
+      const ender = slot.dataset.ender === '1';
+      const real = Number(slot.dataset.invRemove) + (!ender && slot.closest('.inv-grid') !== $$('.inv-grid', modal)[0] ? 36 : 0);
+      const result = await busy(slot, () => post(`/players/${uuid}/inventory/remove`, { slot: String(real), enderchest: ender }));
+      if (result) { toast('Item verwijderd.'); openInventory(uuid, name, result); }
+    });
+  }
 
   // =============================================================== dashboard
 
@@ -646,7 +1578,7 @@
           <div class="meter"><i style="width:${Math.round(x.progress * 100)}%"></i></div>
           <div class="skill-sub muted">${x.max ? `${num(x.xp)} XP · maximaal level` : `${num(x.xp)} / ${num(x.next)} XP`}</div></div>`)}</div>
         ${sk.canEdit ? html`<form data-form="skills" class="row" style="margin-top:16px">
-          <label class="field">${label('Skill')}<select name="skill"><option value="">Alle skills (alleen resetten)</option>${sk.skills.map(x => html`<option value="${x.id}">${x.name}</option>`)}</select></label>
+          <label class="field">${label('Skill')}<select name="skill">${sk.skills.map(x => html`<option value="${x.id}">${x.name}</option>`)}<option value="">Alle skills (alleen resetten)</option></select></label>
           <label class="field">${label('Actie')}<select name="action"><option value="level">Level instellen</option><option value="xp">XP geven</option><option value="reset">Resetten</option></select></label>
           <label class="field">${label('Waarde')}<input class="input" name="value" inputmode="numeric" placeholder="bijv. 50"></label>
           <button class="btn primary">Uitvoeren</button></form>` : ''}
@@ -661,6 +1593,8 @@
         <dt>Verdiend</dt><dd>${p.shop.earned.text}</dd></dl>
         <p style="margin-top:14px"><a class="btn sm" href="#/shops/${p.uuid}">Shop bekijken</a></p></div>`));
     }
+
+    sections.push(...playerActionCards(p));
 
     let punishments = '';
     if (mod) {
@@ -697,6 +1631,7 @@
       ${transactions}`);
     main.dataset.uuid = p.uuid;
     main.dataset.name = p.name;
+    loadPlayerExtras(main, p, alive);
   }
 
   // =============================================================== straffen geven
@@ -873,7 +1808,11 @@
 
   // =============================================================== server
 
-  async function pageServer(main, _, alive) {
+  async function pageServer(main, tab, alive) {
+    if (tab === 'motd') return pageMotd(main, alive);
+    if (tab === 'instellingen') return pageServerProperties(main, alive);
+    if (tab === 'spelregels') return pageGamerules(main, alive);
+    if (!can(P.server)) { location.replace('#/server/motd'); return; }
     const data = await api('/server');
     if (!alive()) return;
     const worldOptions = html`<option value="">Alle normale werelden</option>${data.worlds.map(w => html`<option value="${w.name}">${w.name} (${ENVIRONMENTS[w.environment] || w.environment})</option>`)}`;
@@ -881,6 +1820,7 @@
     const weathers = [['clear', 'Helder', 'clear'], ['rain', 'Regen', 'rain'], ['thunder', 'Onweer', 'bolt']];
     const wl = data.whitelist;
     render(main, html`${pageHead('Server', 'Tijd, weer, mededelingen, whitelist en onderhoud.')}
+      ${serverTabs('')}
       <div class="grid two">
         ${card('Tijd', 'clock', html`<div class="card-body">
           <label class="field">Wereld<select id="time-world">${worldOptions}</select></label>
@@ -998,7 +1938,52 @@
 
   // =============================================================== acties (knoppen)
 
+  async function playerAction(button, kind, value, extra = {}) {
+    const uuid = $('#main').dataset.uuid;
+    const result = await busy(button, () => post(`/players/${uuid}/action`, { action: kind, value: value === undefined ? null : value, ...extra }));
+    if (result) {
+      toast(`Gelukt: ${result.result}`);
+      if (kind === 'gamemode' || kind === 'fly') navigate();
+    }
+    return !!result;
+  }
+
   const actions = {
+    async 'player-action'(button) {
+      const kind = button.dataset.kind;
+      if (kind === 'clear-inventory') {
+        const ok = await confirmDialog({ title: 'Inventory leegmaken?', text: `Alles in de inventory van ${$('#main').dataset.name} verdwijnt. Dit kan niet ongedaan worden.`, confirm: 'Leegmaken', danger: true });
+        if (!ok) return;
+      }
+      playerAction(button, kind, button.dataset.value);
+    },
+
+    async inventory(button) {
+      const main = $('#main');
+      const result = await busy(button, () => api(`/players/${main.dataset.uuid}/inventory`));
+      if (result) openInventory(main.dataset.uuid, main.dataset.name, result);
+    },
+
+    async 'home-delete'(button) {
+      const ok = await confirmDialog({ title: `Home ${button.dataset.name} verwijderen?`, text: 'De speler kan er daarna niet meer naartoe.', confirm: 'Verwijderen', danger: true });
+      if (!ok) return;
+      const main = $('#main');
+      const result = await busy(button, () => post(`/players/${main.dataset.uuid}/homes/delete`, { name: button.dataset.name }));
+      if (result) { toast('Home verwijderd.'); renderHomes(main, { name: main.dataset.name }, result.homes); }
+    },
+
+    async 'reset-2fa'(button) {
+      const main = $('#main');
+      const ok = await confirmDialog({ title: '2FA resetten?', text: `${main.dataset.name} wordt overal uitgelogd en koppelt bij de volgende login opnieuw een authenticator-app.`, confirm: 'Resetten', danger: true });
+      if (!ok) return;
+      const result = await busy(button, () => post(`/players/${main.dataset.uuid}/2fa/reset`));
+      if (result) { toast('2FA gereset.'); navigate(); }
+    },
+
+    'rank-new'() {
+      openRankEditor(null);
+    },
+
     async 'boost-stop'(button) {
       const result = await busy(button, () => post('/skills/boost', { stop: true }));
       if (result) { toast('De XP-boost is gestopt.'); navigate(); }
@@ -1094,6 +2079,109 @@
   // =============================================================== formulieren
 
   const forms = {
+    async 'two-factor'(form, data, button) {
+      if (state.verifying) return;
+      state.verifying = true;
+      button.disabled = true;
+      button.classList.add('busy');
+      try {
+        const result = await post('/login/verify', { code: (data.get('code') || '').trim() });
+        if (result.step) { renderTwoFactor(result); return; }
+        state.me = result;
+        renderShell();
+        navigate();
+      } catch (error) {
+        if (error.status === 401 || error.status === 429) renderLogin(error.message);
+        else renderTwoFactor(state.challenge, error.message);
+      } finally {
+        state.verifying = false;
+      }
+    },
+
+    async 'text-editor'(form, data, button) {
+      const editor = state.textEditor;
+      if (!editor) return;
+      const text = data.get('text') || '';
+      const value = editor.list ? text.split('\n') : text;
+      const result = await busy(button, () => editor.onSave(value));
+      if (result !== undefined) closeModal();
+    },
+
+    async settings(form, data, button) {
+      const changes = settingsChanges(form);
+      if (!Object.keys(changes).length) { toast('Er is niets veranderd.', 'error'); return; }
+      const result = await busy(button, () => post('/settings/file', { path: state.settings.path, values: changes }));
+      if (result) { toast('Opgeslagen en herladen.'); renderSettingsForm(form.closest('.settings-form'), result, null); }
+    },
+
+    async appearance(form, data, button) {
+      const colors = {};
+      THEME_TAGS.forEach(t => { colors[t] = String(data.get(`color-${t}`)).toUpperCase(); });
+      const result = await busy(button, () => post('/appearance', { serverName: data.get('serverName'), prefix: data.get('prefix'), colors }));
+      if (result) {
+        state.me.theme = { colors: { ...result.colors }, prefix: result.prefix, serverName: result.serverName };
+        state.themeBackup = null;
+        toast('Uiterlijk opgeslagen.');
+      }
+    },
+
+    async 'motd-settings'(form, data, button) {
+      const result = await busy(button, () => post('/motd', { enabled: form.enabled.checked, hidePlayers: form.hidePlayers.checked, shownMax: Number(data.get('shownMax')) }));
+      if (result) { toast('Opgeslagen.'); navigate(); }
+    },
+
+    async properties(form, data, button) {
+      const values = {};
+      $$('[data-prop]', form).forEach(element => {
+        const value = element.type === 'checkbox' ? String(element.checked) : element.value.trim();
+        if (value !== String(state.properties[element.dataset.prop])) values[element.dataset.prop] = value;
+      });
+      if (!Object.keys(values).length) { toast('Er is niets veranderd.', 'error'); return; }
+      const result = await busy(button, () => post('/server/properties', { values }));
+      if (result) { toast('Opgeslagen.'); navigate(); }
+    },
+
+    async 'rank-settings'(form, data, button) {
+      const result = await busy(button, () => post('/ranks/settings', {
+        defaultRank: data.get('defaultRank'), operatorsGetRank: data.get('operatorsGetRank'), syncOperator: form.syncOperator.checked,
+        chatEnabled: form.chatEnabled.checked, chatFormat: data.get('chatFormat')
+      }));
+      if (result) { toast('Opgeslagen.'); navigate(); }
+    },
+
+    async rank(form, data, button) {
+      const result = await busy(button, () => post('/ranks/save', {
+        create: state.rankEdit.isNew, id: data.get('id'), displayName: data.get('displayName'), weight: data.get('weight'),
+        inherits: data.get('inherits') || null, operator: form.operator.checked, color: String(data.get('color')).toUpperCase(),
+        chatColor: String(data.get('chatColor')).toUpperCase(), prefix: data.get('prefix'), permissions: state.rankEdit.permissions
+      }));
+      if (result) { toast(state.rankEdit.isNew ? 'Rang gemaakt.' : 'Rang opgeslagen.'); closeModal(); navigate(); }
+    },
+
+    async discord(form, data, button) {
+      const events = {};
+      Array.from(form.elements).filter(element => element.name && element.name.startsWith('event-')).forEach(element => { events[element.name.slice(6)] = element.checked; });
+      const result = await busy(button, () => post('/discord', {
+        username: data.get('username'),
+        status: { enabled: form['status-enabled'].checked, webhook: data.get('status-webhook'), interval: Number(data.get('status-interval')),
+          showPlayers: form['status-players'].checked, address: data.get('status-address') },
+        staff: { enabled: form['staff-enabled'].checked, webhook: data.get('staff-webhook'), events }
+      }));
+      if (result) toast('Discord-instellingen opgeslagen.');
+    },
+
+    async 'player-message'(form, data, button) {
+      if (await playerAction(button, 'message', data.get('value'))) form.reset();
+    },
+
+    async 'player-teleport'(form, data, button) {
+      if (await playerAction(button, 'teleport', data.get('value'))) form.reset();
+    },
+
+    async 'player-give'(form, data, button) {
+      await playerAction(button, 'give', data.get('value'), { amount: Number(data.get('amount') || 1) });
+    },
+
     async skills(form, data, button) {
       const uuid = $('#main').dataset.uuid;
       const action = data.get('action');
@@ -1200,6 +2288,7 @@
   // Plaatje van een speler niet te laden (geen internet)? Dan een grijs vlakje.
   document.addEventListener('error', event => {
     const image = event.target;
+    if (image && image.tagName === 'IMG' && image.dataset.fallback && !image.src.endsWith(image.dataset.fallback)) { image.src = image.dataset.fallback; return; }
     if (image && image.tagName === 'IMG' && image.classList.contains('avatar') && image.src !== PLACEHOLDER) image.src = PLACEHOLDER;
   }, true);
 
@@ -1216,7 +2305,12 @@
     state.me = null;
     renderLogin(null, true);
     try {
-      state.me = await post('/login', { token: match[1] });
+      const result = await post('/login', { token: match[1] });
+      if (result.step) {
+        renderTwoFactor(result);
+        return true;
+      }
+      state.me = result;
     } catch (error) {
       renderLogin(error.message);
       return true;
@@ -1241,6 +2335,15 @@
     try {
       state.me = await api('/me');
     } catch (error) {
+      if (error.status === 401) {
+        try {
+          const pending = await api('/login/state');
+          if (pending.step && pending.step !== 'none') {
+            renderTwoFactor(pending);
+            return;
+          }
+        } catch { /* gewoon het inlogscherm */ }
+      }
       renderLogin(error.status === 401 ? null : error.message);
       return;
     }
