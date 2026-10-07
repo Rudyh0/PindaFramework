@@ -1,0 +1,50 @@
+# ┌──────────────────────────────────────────────┐
+# │           PindaFramework - economy           │
+# └──────────────────────────────────────────────┘
+# Spelers hebben contant geld en geld op de bank.
+#  - Contant geld verlies je als je doodgaat (het valt op de grond en anderen kunnen het oppakken).
+#  - De bank is veilig, maar storten kost een klein percentage.
+#  - Uitgeven (shops, teleports, /pay) gaat eerst van contant, daarna van de bank.
+# Bedragen mogen decimalen hebben, bijvoorbeeld 2.5
+
+currency:
+  singular: "PindaCredit"
+  plural: "PindaCredits"
+
+# Wat een nieuwe speler krijgt
+starting-balance:
+  cash: 0
+  bank: 100
+
+# Als contant geld op is, mag er dan van de bank betaald worden?
+spend-from-bank: true
+
+bank:
+  # Kosten per storting, in procenten van het gestorte bedrag
+  deposit-fee-percent: 2.0
+  # Minimale kosten per storting (0 = geen minimum)
+  minimum-fee: 0
+
+death:
+  # Hoeveel procent van het contante geld je verliest als je doodgaat (0 = niets)
+  # Staff kan dit voorkomen met pinda.eco.keep-cash
+  lose-cash-percent: 100
+  # Het verloren geld valt als item op de grond, zodat anderen het kunnen oppakken.
+  # Uit = het geld is gewoon weg.
+  drop-as-item: true
+  # Hoe het geld-item eruitziet
+  item: GOLD_NUGGET
+
+# Bonus voor actief spelen (AFK-tijd telt niet mee)
+playtime-bonus:
+  enabled: true
+  # Na hoeveel minuten spelen je de bonus krijgt
+  minutes: 60
+  amount: 25
+  # Waar de bonus heen gaat: cash (contant) of bank
+  to: cash
+  skip-afk: true
+
+pay:
+  # Minimaal bedrag voor /pay
+  minimum: 1

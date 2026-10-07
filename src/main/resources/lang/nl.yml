@@ -98,6 +98,7 @@ tips:
     - "Doodgegaan? Met <primary>/back</primary> ga je terug naar die plek."
     - "Stuur iemand een privébericht met <primary>/msg [speler] [bericht]</primary> en antwoord snel met <primary>/r</primary>."
     - "Even weg? Typ <primary>/afk</primary>, dan weten anderen dat je niet meteen reageert."
+    - "Zet je geld op tijd op de <primary>/bank</primary>: contant geld verlies je als je doodgaat."
 
 menu:
   previous: "<primary>« Vorige pagina"
@@ -285,6 +286,68 @@ invsee:
   self: "<prefix><error>Je eigen inventory open je gewoon met E."
   opened: "<prefix><text>Je bekijkt de inventory van <primary><player></primary>."
   opened-read-only: "<prefix><text>Je bekijkt de inventory van <primary><player></primary>. <muted>(alleen bekijken)"
+
+economy:
+  money-item: "<gold><bold><amount>"
+  death-dropped: "<prefix><error>Je bent <highlight><amount></highlight> contant geld verloren. <muted>Het ligt waar je doodging; wie het eerst is, pakt het."
+  death-lost: "<prefix><error>Je bent <highlight><amount></highlight> contant geld verloren."
+  money-picked-up: "[actionbar]<success>+ <amount> opgepakt"
+  playtime-bonus: "<prefix><success>+ <amount> <text>bonus voor <primary><minutes> minuten</primary> spelen op <server>!"
+  balance-own:
+    - "<prefix><text>Jouw saldo"
+    - " <muted>Contant: <primary><cash>"
+    - " <muted>Bank: <primary><bank>"
+    - " <muted>Totaal: <text><total>"
+  balance:
+    - "<prefix><text>Saldo van <primary><player>"
+    - " <muted>Contant: <primary><cash>"
+    - " <muted>Bank: <primary><bank>"
+    - " <muted>Totaal: <text><total>"
+  usage-pay: "<prefix><text>Gebruik: <primary>/pay <speler> <bedrag>"
+  invalid-amount: "<prefix><error><highlight><input></highlight> is geen geldig bedrag."
+  pay-self: "<prefix><error>Je kunt jezelf niet betalen."
+  pay-minimum: "<prefix><error>Je moet minimaal <highlight><amount></highlight> betalen."
+  pay-failed: "<prefix><error>De betaling is mislukt. Je geld is teruggezet."
+  not-enough: "<prefix><error>Je hebt niet genoeg geld. <muted>(beschikbaar: <amount>)"
+  paid: "<prefix><text>Je hebt <primary><amount></primary> betaald aan <primary><player></primary>."
+  received: "<prefix><success>Je hebt <amount> ontvangen van <player>."
+  bank-usage: "<prefix><text>Gebruik: <primary>/bank</primary> <muted>of</muted> <primary>/bank storten|opnemen <bedrag|alles>"
+  deposited: "<prefix><text>Je hebt <primary><amount></primary> gestort. <muted>Kosten: <fee> · op je bank: <credited>"
+  withdrew: "<prefix><text>Je hebt <primary><amount></primary> opgenomen."
+  not-enough-cash: "<prefix><error>Je hebt niet genoeg contant geld. <muted>(contant: <amount>)"
+  not-enough-bank: "<prefix><error>Er staat niet genoeg op je bank. <muted>(saldo: <amount>)"
+  baltop-header: "<prefix><primary><bold>Rijkste spelers van <server>"
+  baltop-entry: " <muted>#<rank> <primary><player></primary> <muted>» <text><amount>"
+  baltop-empty: "<prefix><text>Er is nog niemand met geld."
+  admin-usage: "<prefix><text>Gebruik: <primary>/eco give|take|set <speler> <bedrag> [bank|contant]"
+  admin-given: "<prefix><success><amount> gegeven aan <player>. <muted>(<where>)"
+  admin-taken: "<prefix><success><amount> afgenomen van <player>. <muted>(<where>)"
+  admin-set: "<prefix><success>Saldo van <player> staat nu op <amount>. <muted>(<where>)"
+  where-cash: "contant"
+  where-bank: "bank"
+  bank-menu:
+    title: "<dark_gray>Bank van <server>"
+    info:
+      name: "<primary><bold>Jouw geld"
+      lore:
+        - "<muted>Contant: <text><cash>"
+        - "<muted>Bank: <text><bank>"
+        - ""
+        - "<muted>Stortkosten: <text><fee-percent>%"
+        - "<muted>Contant geld verlies je als je doodgaat."
+    deposit:
+      name: "<success><bold>Stort <amount>"
+      lore:
+        - "<muted>Kosten: <text><fee>"
+        - "<muted>Op je bank: <text><credited>"
+      unavailable: "<error>Niet genoeg contant geld"
+    deposit-all: "<success><bold>Alles storten <muted>(<amount>)"
+    withdraw:
+      name: "<warning><bold>Neem <amount> op"
+      lore:
+        - "<muted>Gaat naar je contante geld."
+      unavailable: "<error>Niet genoeg op je bank"
+    withdraw-all: "<warning><bold>Alles opnemen <muted>(<amount>)"
 
 admin:
   help:

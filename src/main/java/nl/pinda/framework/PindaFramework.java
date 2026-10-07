@@ -13,6 +13,7 @@ import nl.pinda.framework.menu.MenuListener;
 import nl.pinda.framework.module.ModuleManager;
 import nl.pinda.framework.modules.afk.AfkModule;
 import nl.pinda.framework.modules.back.BackModule;
+import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.gamemode.GamemodeModule;
 import nl.pinda.framework.modules.homes.HomesModule;
 import nl.pinda.framework.modules.msg.MsgModule;
@@ -86,6 +87,7 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new AfkModule(this));
             modules.register(new UtilityModule(this));
             modules.register(new StaffModule(this));
+            modules.register(new EconomyModule(this));
             modules.enableAll();
 
             commands.register(new AdminCommand(this));

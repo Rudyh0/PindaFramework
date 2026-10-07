@@ -172,3 +172,26 @@ permissions:
   pinda.invsee.modify:
     description: Items aanpassen in de inventory van anderen
     default: op
+
+  # Economy
+  pinda.eco.balance:
+    description: /balance
+    default: true
+  pinda.eco.balance.others:
+    description: /balance <speler>
+    default: op
+  pinda.eco.pay:
+    description: /pay
+    default: true
+  pinda.eco.bank:
+    description: /bank
+    default: true
+  pinda.eco.baltop:
+    description: /baltop
+    default: true
+  pinda.eco.admin:
+    description: /eco give|take|set
+    default: op
+  pinda.eco.keep-cash:
+    description: Geen contant geld verliezen bij doodgaan
+    default: false

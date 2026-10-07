@@ -15,7 +15,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 LANG = ROOT / "src/main/resources/lang"
 JAVA = ROOT / "src/main/java"
 SECTIONS = ("general", "settings", "tips", "admin", "menu", "teleport", "homes", "tpa", "spawn",
-            "back", "msg", "gamemode", "afk", "utility", "vanish", "invsee")
+            "back", "msg", "gamemode", "afk", "utility", "vanish", "invsee", "economy", "shop")
 
 
 def flatten(data, prefix=""):
@@ -63,7 +63,7 @@ for file in JAVA.rglob("*.java"):
             continue  # instellingen uit een configbestand, geen berichten
         for match in pattern.finditer(line):
             key = match.group(1)
-            if key.endswith(".") or key.endswith(".yml"):
+            if key.endswith(".") or key.endswith("-") or key.endswith(".yml"):
                 continue
             if key not in known:
                 errors.append(f"{file.relative_to(ROOT)}: bericht '{key}' bestaat niet in nl.yml")

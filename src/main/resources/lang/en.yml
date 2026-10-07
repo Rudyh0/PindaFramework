@@ -94,6 +94,7 @@ tips:
     - "Died? Use <primary>/back</primary> to return to that spot."
     - "Send someone a private message with <primary>/msg [player] [message]</primary> and reply quickly with <primary>/r</primary>."
     - "Stepping away? Type <primary>/afk</primary> so others know you might not respond."
+    - "Put your money in the <primary>/bank</primary> in time: you lose your cash when you die."
 
 menu:
   previous: "<primary>« Previous page"
@@ -281,6 +282,68 @@ invsee:
   self: "<prefix><error>Just press E to open your own inventory."
   opened: "<prefix><text>You're viewing <primary><player></primary>'s inventory."
   opened-read-only: "<prefix><text>You're viewing <primary><player></primary>'s inventory. <muted>(view only)"
+
+economy:
+  money-item: "<gold><bold><amount>"
+  death-dropped: "<prefix><error>You lost <highlight><amount></highlight> in cash. <muted>It's lying where you died; first come, first served."
+  death-lost: "<prefix><error>You lost <highlight><amount></highlight> in cash."
+  money-picked-up: "[actionbar]<success>+ <amount> picked up"
+  playtime-bonus: "<prefix><success>+ <amount> <text>bonus for playing <primary><minutes> minutes</primary> on <server>!"
+  balance-own:
+    - "<prefix><text>Your balance"
+    - " <muted>Cash: <primary><cash>"
+    - " <muted>Bank: <primary><bank>"
+    - " <muted>Total: <text><total>"
+  balance:
+    - "<prefix><text>Balance of <primary><player>"
+    - " <muted>Cash: <primary><cash>"
+    - " <muted>Bank: <primary><bank>"
+    - " <muted>Total: <text><total>"
+  usage-pay: "<prefix><text>Usage: <primary>/pay <player> <amount>"
+  invalid-amount: "<prefix><error><highlight><input></highlight> is not a valid amount."
+  pay-self: "<prefix><error>You can't pay yourself."
+  pay-minimum: "<prefix><error>You have to pay at least <highlight><amount></highlight>."
+  pay-failed: "<prefix><error>The payment failed. Your money has been returned."
+  not-enough: "<prefix><error>You don't have enough money. <muted>(available: <amount>)"
+  paid: "<prefix><text>You paid <primary><amount></primary> to <primary><player></primary>."
+  received: "<prefix><success>You received <amount> from <player>."
+  bank-usage: "<prefix><text>Usage: <primary>/bank</primary> <muted>or</muted> <primary>/bank deposit|withdraw <amount|all>"
+  deposited: "<prefix><text>You deposited <primary><amount></primary>. <muted>Fee: <fee> · added to bank: <credited>"
+  withdrew: "<prefix><text>You withdrew <primary><amount></primary>."
+  not-enough-cash: "<prefix><error>You don't have enough cash. <muted>(cash: <amount>)"
+  not-enough-bank: "<prefix><error>You don't have enough in the bank. <muted>(balance: <amount>)"
+  baltop-header: "<prefix><primary><bold>Richest players on <server>"
+  baltop-entry: " <muted>#<rank> <primary><player></primary> <muted>» <text><amount>"
+  baltop-empty: "<prefix><text>Nobody has any money yet."
+  admin-usage: "<prefix><text>Usage: <primary>/eco give|take|set <player> <amount> [bank|cash]"
+  admin-given: "<prefix><success>Gave <amount> to <player>. <muted>(<where>)"
+  admin-taken: "<prefix><success>Took <amount> from <player>. <muted>(<where>)"
+  admin-set: "<prefix><success><player>'s balance is now <amount>. <muted>(<where>)"
+  where-cash: "cash"
+  where-bank: "bank"
+  bank-menu:
+    title: "<dark_gray><server> Bank"
+    info:
+      name: "<primary><bold>Your money"
+      lore:
+        - "<muted>Cash: <text><cash>"
+        - "<muted>Bank: <text><bank>"
+        - ""
+        - "<muted>Deposit fee: <text><fee-percent>%"
+        - "<muted>You lose your cash when you die."
+    deposit:
+      name: "<success><bold>Deposit <amount>"
+      lore:
+        - "<muted>Fee: <text><fee>"
+        - "<muted>Added to bank: <text><credited>"
+      unavailable: "<error>Not enough cash"
+    deposit-all: "<success><bold>Deposit all <muted>(<amount>)"
+    withdraw:
+      name: "<warning><bold>Withdraw <amount>"
+      lore:
+        - "<muted>Goes to your cash."
+      unavailable: "<error>Not enough in the bank"
+    withdraw-all: "<warning><bold>Withdraw all <muted>(<amount>)"
 
 admin:
   help:
