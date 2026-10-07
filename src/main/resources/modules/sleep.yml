@@ -1,0 +1,45 @@
+# ┌──────────────────────────────────────────────┐
+# │             PindaFramework - slapen          │
+# └──────────────────────────────────────────────┘
+# Slapen zoals BetterSleeping, zonder buffs: als genoeg spelers in een wereld slapen,
+# wordt de nacht (of het onweer) overgeslagen. De vanilla-regel playersSleepingPercentage
+# wordt zolang uitgezet, zodat alleen deze instellingen gelden.
+
+# Hoeveel procent van de spelers in een wereld moet slapen (0-100). 0 = één speler is genoeg.
+percentage: 50
+
+# Wie telt NIET mee bij het aantal spelers (tenzij ze zelf slapen)
+ignore:
+  # Spelers die AFK zijn
+  afk: true
+  # Staff in vanish
+  vanished: true
+  # Spelers in creative of spectator
+  creative: true
+# Spelers met de permissie pinda.sleep.exempt tellen ook niet mee.
+
+# De nacht doorspoelen in plaats van meteen dag maken
+animation:
+  enabled: true
+  # Hoeveel ticks de tijd per tick vooruit gaat (hoger = sneller). 100 = ongeveer 6 seconden voor een nacht.
+  speed: 100
+
+# Het weer opklaren als de nacht is overgeslagen
+clear-weather: true
+
+# De phantom-teller van iedereen in de wereld resetten (niet alleen van wie sliep)
+reset-phantoms-for-everyone: false
+
+# Werelden waar dit niet geldt (nether en end doen sowieso niet mee)
+disabled-worlds: []
+
+# Welke meldingen er komen
+messages:
+  # "Henk ligt in bed (1/2 nodig)"
+  enter-bed: true
+  # "Henk is uit bed gestapt"
+  leave-bed: true
+  # Boven de hotbar zolang er iemand slaapt
+  progress: true
+  # "De nacht wordt overgeslagen..." en "Goedemorgen!"
+  skip: true

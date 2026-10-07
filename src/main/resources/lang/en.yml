@@ -85,6 +85,11 @@ settings:
       description:
         - "<text>Other players can send"
         - "<text>you messages with /msg."
+    skill-xp:
+      name: "<primary>Skill messages"
+      description:
+        - "<text>Shows above your hotbar"
+        - "<text>how much XP you earn."
 
   setup:
     done: "<prefix><success>Your preferences have been saved! <text>Have fun on <primary><server></primary>."
@@ -720,6 +725,114 @@ moderation:
   banlist-empty: "<prefix><text>There are no active bans."
   banlist-header: "<prefix><text>Active bans <muted>(<count>)</muted>:"
   banlist-entry: " <error><player> <muted>· <text><reason> <muted>· by <actor> · until <expires>"
+
+skills:
+  names:
+    mining: "Mining"
+    woodcutting: "Woodcutting"
+    fishing: "Fishing"
+    fighting: "Fighting"
+    cooking: "Cooking"
+    farming: "Farming"
+    archery: "Archery"
+    alchemy: "Alchemy"
+  info:
+    mining:
+      - "<text>Mine stone and ores with a pickaxe."
+      - "<muted>The rarer the ore, the more XP."
+    woodcutting:
+      - "<text>Chop down trees with an axe."
+    fishing:
+      - "<text>Catch fish with a fishing rod."
+      - "<muted>Treasure gives extra XP."
+    fighting:
+      - "<text>Defeat mobs with a sword,"
+      - "<text>an axe or your fists."
+    cooking:
+      - "<text>Take cooked food out of a furnace or"
+      - "<text>smoker, or craft food like bread."
+    farming:
+      - "<text>Harvest fully grown crops,"
+      - "<text>pick berries and breed animals."
+    archery:
+      - "<text>Defeat mobs with a bow and arrow."
+      - "<muted>Long-distance shots give extra XP."
+    alchemy:
+      - "<text>Brew potions in a brewing stand."
+  units: "d,h,m,s"
+  xp-gain: "[actionbar]<primary>+<amount> <skill> XP</primary> <muted>· <text>level <highlight><level></highlight> <muted>(<percent>%)"
+  xp-gain-max: "[actionbar]<primary>+<amount> <skill> XP</primary> <muted>· <success>level <level>"
+  level-up: "<prefix><success><bold>Level up!</bold> <primary><skill></primary> <text>is now level <highlight><level></highlight>."
+  level-up-reward: "<prefix><success><bold>Level up!</bold> <primary><skill></primary> <text>is now level <highlight><level></highlight>. <muted>(+<reward> cash)"
+  level-up-actionbar: "[actionbar]<gradient:#FFC857:#E9724C><bold>✦ <skill> level <level> ✦"
+  announce: "<prefix><primary><player></primary> <text>reached level <highlight><level></highlight> <primary><skill></primary><text>! <secondary>✦"
+  boost-started: "<prefix><gradient:#FFC857:#E9724C><bold>XP boost!</bold></gradient> <text>Everyone now gets <highlight><multiplier>x</highlight> XP in all skills for <highlight><time></highlight>."
+  boost-ended: "<prefix><text>The XP boost has ended."
+  boost-none: "<prefix><text>There is no XP boost right now."
+  boost-status: "<prefix><text>XP boost: <highlight><multiplier>x</highlight>, <highlight><time></highlight> left <muted>(started by <by>)"
+  boost-stopped: "<prefix><success>The XP boost has been stopped."
+  boost-usage: "<prefix><text>Usage: <primary>/skills boost <x> <duration></primary> <muted>(e.g. 2 1h, max 10x)</muted> <text>or <primary>/skills boost stop"
+  usage-admin:
+    - "<prefix><text>Manage skills:"
+    - " <primary>/skills set <player> <skill> <level>"
+    - " <primary>/skills addxp <player> <skill> <xp>"
+    - " <primary>/skills reset <player> [skill]"
+    - " <primary>/skills boost <x> <duration></primary> <muted>or</muted> <primary>/skills boost stop"
+  invalid-number: "<prefix><error><highlight><input></highlight> is not a valid number."
+  unknown-skill: "<prefix><error>Skill <highlight><input></highlight> doesn't exist. <text>Choose from: <primary><skills>"
+  set-done: "<prefix><success><player> is now level <level> in <skill>."
+  addxp-done: "<prefix><success><player> received <amount> XP in <skill>."
+  reset-done: "<prefix><success><player>'s XP in <skill> is back to 0."
+  reset-all-done: "<prefix><success>All of <player>'s skills are back to 0."
+  menu:
+    title: "<dark_gray>Your skills"
+    title-others: "<dark_gray><player>'s skills"
+    head:
+      name: "<primary><bold><player>"
+      lore:
+        - "<text>Total level: <highlight><total></highlight> <muted>/ <max>"
+        - "<text>Total XP: <highlight><xp>"
+      boost: "<gradient:#FFC857:#E9724C><bold>XP boost <multiplier>x</bold></gradient> <muted>(<time> left)"
+    skill:
+      name: "<primary><bold><skill></bold> <muted>· <text>level <highlight><level>"
+      disabled: "<muted>This skill is disabled."
+      xp: "<text>XP: <highlight><xp></highlight> <muted>/ <next>"
+      xp-max: "<text>XP: <highlight><xp>"
+      max: "<success>✦ Maximum level reached!"
+      bar: "<bar> <muted><percent>%"
+      left: "<muted><left> XP left to level <next_level>"
+      reward: "<muted>Next level-up: <primary>+<reward>"
+      position: "<muted>Leaderboard position: <primary>#<position>"
+      click: "<muted>» <text>Click for the leaderboard"
+    top:
+      name: "<primary><bold>Leaderboard"
+      lore:
+        - "<text>Who has the highest levels?"
+        - ""
+        - "<muted>» <text>Click to view"
+    close: "<error>Close"
+  top:
+    title: "<dark_gray>Leaderboard: <skill>"
+    title-total: "<dark_gray>Leaderboard: total level"
+    tab-total: "<primary><bold>Total level"
+    tab: "<primary><bold><skill>"
+    empty: "<muted>Nobody on the leaderboard yet."
+    entry: "<primary>#<position> <highlight><player>"
+    entry-lore:
+      - "<text>Level <highlight><level>"
+      - "<muted><xp> XP"
+    entry-lore-total:
+      - "<text>Total level <highlight><level>"
+      - "<muted><xp> XP"
+    back: "<primary>« Back to your skills"
+
+sleep:
+  enter: "<prefix><primary><player></primary> <text>is now sleeping. <muted>(<sleeping>/<needed> needed)"
+  leave: "<prefix><muted><player> got out of bed. (<sleeping>/<needed> needed)"
+  progress: "[actionbar]<text>Sleeping: <highlight><sleeping></highlight><muted>/<needed></muted> <text>needed to skip the night"
+  skipping: "<prefix><success>Enough players are sleeping. <text>Skipping the night..."
+  skipping-storm: "<prefix><success>Enough players are sleeping. <text>Skipping the thunderstorm..."
+  morning: "<prefix><primary>Good morning!</primary> <text>It's day <highlight><day></highlight> on <server>."
 
 panel:
   usage: "<prefix><text>Usage: <primary>/panel</primary> <muted>(login link)</muted> <text>or <primary>/panel logout</primary> <muted>(log out everywhere)"

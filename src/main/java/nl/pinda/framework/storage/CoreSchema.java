@@ -40,6 +40,14 @@ public final class CoreSchema {
                         ignored TEXT NOT NULL,
                         PRIMARY KEY (uuid, ignored)
                     )"""
+            ),
+            // Versie 3: losse servergegevens (XP-boost, Discord-berichten, ...)
+            List.of(
+                    """
+                    CREATE TABLE IF NOT EXISTS pinda_server_data (
+                        key TEXT PRIMARY KEY,
+                        value TEXT NOT NULL
+                    )"""
             )
     );
 }

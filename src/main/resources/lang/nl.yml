@@ -89,6 +89,11 @@ settings:
       description:
         - "<text>Andere spelers kunnen je"
         - "<text>berichten sturen met /msg."
+    skill-xp:
+      name: "<primary>Skill-meldingen"
+      description:
+        - "<text>Laat boven je hotbar zien"
+        - "<text>hoeveel XP je verdient."
 
   setup:
     done: "<prefix><success>Je voorkeuren zijn opgeslagen! <text>Veel plezier op <primary><server></primary>."
@@ -724,6 +729,114 @@ moderation:
   banlist-empty: "<prefix><text>Er zijn geen actieve bans."
   banlist-header: "<prefix><text>Actieve bans <muted>(<count>)</muted>:"
   banlist-entry: " <error><player> <muted>· <text><reason> <muted>· door <actor> · tot <expires>"
+
+skills:
+  names:
+    mining: "Mijnbouw"
+    woodcutting: "Houthakken"
+    fishing: "Vissen"
+    fighting: "Vechten"
+    cooking: "Koken"
+    farming: "Landbouw"
+    archery: "Boogschieten"
+    alchemy: "Alchemie"
+  info:
+    mining:
+      - "<text>Hak steen en ertsen met een houweel."
+      - "<muted>Hoe zeldzamer het erts, hoe meer XP."
+    woodcutting:
+      - "<text>Hak bomen om met een bijl."
+    fishing:
+      - "<text>Vang vis met een hengel."
+      - "<muted>Schatten geven extra XP."
+    fighting:
+      - "<text>Versla mobs met een zwaard,"
+      - "<text>een bijl of je vuisten."
+    cooking:
+      - "<text>Haal gebakken eten uit een oven of"
+      - "<text>smoker, of craft eten zoals brood."
+    farming:
+      - "<text>Oogst volgroeide gewassen,"
+      - "<text>pluk bessen en fok dieren."
+    archery:
+      - "<text>Versla mobs met pijl en boog."
+      - "<muted>Van ver schieten geeft extra XP."
+    alchemy:
+      - "<text>Brouw drankjes in een brouwstandaard."
+  units: "d,u,m,s"
+  xp-gain: "[actionbar]<primary>+<amount> <skill> XP</primary> <muted>· <text>level <highlight><level></highlight> <muted>(<percent>%)"
+  xp-gain-max: "[actionbar]<primary>+<amount> <skill> XP</primary> <muted>· <success>level <level>"
+  level-up: "<prefix><success><bold>Level up!</bold> <primary><skill></primary> <text>is nu level <highlight><level></highlight>."
+  level-up-reward: "<prefix><success><bold>Level up!</bold> <primary><skill></primary> <text>is nu level <highlight><level></highlight>. <muted>(+<reward> contant)"
+  level-up-actionbar: "[actionbar]<gradient:#FFC857:#E9724C><bold>✦ <skill> level <level> ✦"
+  announce: "<prefix><primary><player></primary> <text>heeft level <highlight><level></highlight> <primary><skill></primary> <text>gehaald! <secondary>✦"
+  boost-started: "<prefix><gradient:#FFC857:#E9724C><bold>XP-boost!</bold></gradient> <text>Iedereen krijgt nu <highlight><multiplier>x</highlight> XP in alle skills, nog <highlight><time></highlight>."
+  boost-ended: "<prefix><text>De XP-boost is afgelopen."
+  boost-none: "<prefix><text>Er loopt nu geen XP-boost."
+  boost-status: "<prefix><text>XP-boost: <highlight><multiplier>x</highlight>, nog <highlight><time></highlight> <muted>(gestart door <by>)"
+  boost-stopped: "<prefix><success>De XP-boost is gestopt."
+  boost-usage: "<prefix><text>Gebruik: <primary>/skills boost <x> <duur></primary> <muted>(bijv. 2 1u, max 10x)</muted> <text>of <primary>/skills boost stop"
+  usage-admin:
+    - "<prefix><text>Skills beheren:"
+    - " <primary>/skills set <speler> <skill> <level>"
+    - " <primary>/skills addxp <speler> <skill> <xp>"
+    - " <primary>/skills reset <speler> [skill]"
+    - " <primary>/skills boost <x> <duur></primary> <muted>of</muted> <primary>/skills boost stop"
+  invalid-number: "<prefix><error><highlight><input></highlight> is geen geldig getal."
+  unknown-skill: "<prefix><error>Skill <highlight><input></highlight> bestaat niet. <text>Kies uit: <primary><skills>"
+  set-done: "<prefix><success><player> is nu level <level> in <skill>."
+  addxp-done: "<prefix><success><player> heeft <amount> XP in <skill> gekregen."
+  reset-done: "<prefix><success>De XP van <player> in <skill> staat weer op 0."
+  reset-all-done: "<prefix><success>Alle skills van <player> staan weer op 0."
+  menu:
+    title: "<dark_gray>Jouw skills"
+    title-others: "<dark_gray>Skills van <player>"
+    head:
+      name: "<primary><bold><player>"
+      lore:
+        - "<text>Totaal level: <highlight><total></highlight> <muted>/ <max>"
+        - "<text>Totale XP: <highlight><xp>"
+      boost: "<gradient:#FFC857:#E9724C><bold>XP-boost <multiplier>x</bold></gradient> <muted>(nog <time>)"
+    skill:
+      name: "<primary><bold><skill></bold> <muted>· <text>level <highlight><level>"
+      disabled: "<muted>Deze skill staat uit."
+      xp: "<text>XP: <highlight><xp></highlight> <muted>/ <next>"
+      xp-max: "<text>XP: <highlight><xp>"
+      max: "<success>✦ Maximaal level bereikt!"
+      bar: "<bar> <muted><percent>%"
+      left: "<muted>Nog <left> XP tot level <next_level>"
+      reward: "<muted>Volgende level-up: <primary>+<reward>"
+      position: "<muted>Plek op de ranglijst: <primary>#<position>"
+      click: "<muted>» <text>Klik voor de ranglijst"
+    top:
+      name: "<primary><bold>Ranglijst"
+      lore:
+        - "<text>Wie heeft de hoogste levels?"
+        - ""
+        - "<muted>» <text>Klik om te bekijken"
+    close: "<error>Sluiten"
+  top:
+    title: "<dark_gray>Ranglijst: <skill>"
+    title-total: "<dark_gray>Ranglijst: totaal level"
+    tab-total: "<primary><bold>Totaal level"
+    tab: "<primary><bold><skill>"
+    empty: "<muted>Nog niemand op de ranglijst."
+    entry: "<primary>#<position> <highlight><player>"
+    entry-lore:
+      - "<text>Level <highlight><level>"
+      - "<muted><xp> XP"
+    entry-lore-total:
+      - "<text>Totaal level <highlight><level>"
+      - "<muted><xp> XP"
+    back: "<primary>« Naar je skills"
+
+sleep:
+  enter: "<prefix><primary><player></primary> <text>ligt in bed. <muted>(<sleeping>/<needed> nodig)"
+  leave: "<prefix><muted><player> is uit bed gestapt. (<sleeping>/<needed> nodig)"
+  progress: "[actionbar]<text>Slapen: <highlight><sleeping></highlight><muted>/<needed></muted> <text>nodig om de nacht over te slaan"
+  skipping: "<prefix><success>Genoeg spelers slapen. <text>De nacht wordt overgeslagen..."
+  skipping-storm: "<prefix><success>Genoeg spelers slapen. <text>Het onweer wordt overgeslagen..."
+  morning: "<prefix><primary>Goedemorgen!</primary> <text>Het is dag <highlight><day></highlight> op <server>."
 
 panel:
   usage: "<prefix><text>Gebruik: <primary>/panel</primary> <muted>(inloglink)</muted> <text>of <primary>/panel logout</primary> <muted>(overal uitloggen)"

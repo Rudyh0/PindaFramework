@@ -113,6 +113,7 @@ public final class PanelModule extends PindaModule {
         new ShopsApi(this).register(created);
         new ServerApi(this).register(created);
         new ConsoleApi(this).register(created);
+        new SkillsApi(this).register(created);
         String bind = bind();
         int port = port();
         try {

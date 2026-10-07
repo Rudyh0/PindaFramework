@@ -24,6 +24,8 @@ import nl.pinda.framework.modules.msg.MsgModule;
 import nl.pinda.framework.modules.panel.PanelModule;
 import nl.pinda.framework.modules.settings.SettingsModule;
 import nl.pinda.framework.modules.shop.ShopModule;
+import nl.pinda.framework.modules.skills.SkillsModule;
+import nl.pinda.framework.modules.sleep.SleepModule;
 import nl.pinda.framework.modules.spawn.SpawnModule;
 import nl.pinda.framework.modules.staff.StaffModule;
 import nl.pinda.framework.modules.tips.TipsModule;
@@ -34,6 +36,7 @@ import nl.pinda.framework.player.PlayerManager;
 import nl.pinda.framework.player.SettingsService;
 import nl.pinda.framework.storage.CoreSchema;
 import nl.pinda.framework.storage.Database;
+import nl.pinda.framework.storage.ServerData;
 import nl.pinda.framework.teleport.TeleportService;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -52,6 +55,7 @@ public final class PindaFramework extends JavaPlugin {
     private Theme theme;
     private LanguageManager lang;
     private Database database;
+    private ServerData serverData;
     private PlayerManager players;
     private SettingsService settings;
     private CommandManager commands;
@@ -74,6 +78,8 @@ public final class PindaFramework extends JavaPlugin {
             database = new Database(this);
             database.connect(mainConfig.get().getString("database.file", "data.db"));
             database.migrate("core", CoreSchema.MIGRATIONS);
+            serverData = new ServerData(this);
+            serverData.load();
 
             players = new PlayerManager(this);
             settings = new SettingsService(this);
@@ -104,6 +110,8 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new ShopModule(this));
             modules.register(new LockModule(this));
             modules.register(new ModerationModule(this));
+            modules.register(new SkillsModule(this));
+            modules.register(new SleepModule(this));
             modules.register(new PanelModule(this));
             modules.enableAll();
 
@@ -173,6 +181,11 @@ public final class PindaFramework extends JavaPlugin {
 
     public Database database() {
         return database;
+    }
+
+    /** Losse gegevens van de server, zoals een lopende XP-boost. */
+    public ServerData serverData() {
+        return serverData;
     }
 
     public PlayerManager players() {

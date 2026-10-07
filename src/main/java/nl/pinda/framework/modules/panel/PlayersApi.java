@@ -176,6 +176,13 @@ final class PlayersApi extends PanelApi {
                     "mute", mute == null ? null : punishment(mute), "canPunish", canPunish));
         }
 
+        if (user.has(PanelUser.SKILLS)) {
+            Map<String, Object> skills = SkillsApi.profile(this, uuid, user.has(PanelUser.SKILLS_EDIT));
+            if (skills != null) {
+                profile.put("skills", skills);
+            }
+        }
+
         ShopModule shops = shops();
         if (shops != null && user.has(PanelUser.SHOPS)) {
             profile.put("shop", sync(() -> {

@@ -480,6 +480,14 @@ select { appearance: none; padding-right: 34px; background-image: linear-gradien
 
 .punish-bar { display: flex; flex-wrap: wrap; gap: 8px; }
 
+/* ----------------------------------------------------------------- skills */
+
+.skills-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: 12px 16px; }
+.skill-row { min-width: 0; }
+.skill-top { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.skill-row .meter { margin-top: 6px; }
+.skill-sub { font-size: 12px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
 /* ----------------------------------------------------------------- grafiek */
 
 .chart { position: relative; height: 230px; }

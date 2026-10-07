@@ -258,6 +258,22 @@ permissions:
     description: Meldingen zien als iemand gestraft wordt
     default: op
 
+  # Skills
+  pinda.skills.use:
+    description: /skills, je eigen skills en de ranglijst
+    default: true
+  pinda.skills.others:
+    description: /skills <speler>, de skills van anderen bekijken
+    default: true
+  pinda.skills.admin:
+    description: /skills set, addxp, reset en boost
+    default: op
+
+  # Slapen
+  pinda.sleep.exempt:
+    description: Telt niet mee bij het aantal spelers dat moet slapen
+    default: false
+
   # Webpaneel (/panel)
   pinda.panel.*:
     description: Alles in het webpaneel
@@ -275,6 +291,8 @@ permissions:
       pinda.panel.stop: true
       pinda.panel.console: true
       pinda.panel.log: true
+      pinda.panel.skills: true
+      pinda.panel.skills.edit: true
   pinda.panel.use:
     description: /panel, inloggen op het webpaneel en het dashboard zien
     default: op
@@ -310,4 +328,10 @@ permissions:
     default: op
   pinda.panel.log:
     description: Paneel - het logboek en actieve sessies bekijken
+    default: op
+  pinda.panel.skills:
+    description: Paneel - skills en ranglijsten bekijken
+    default: op
+  pinda.panel.skills.edit:
+    description: Paneel - levels aanpassen en XP-boosts starten
     default: op

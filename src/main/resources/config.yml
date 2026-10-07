@@ -29,6 +29,8 @@ modules:
   shop: true
   locks: true
   moderation: true
+  skills: true
+  sleep: true
   panel: true
 
 # Opmaak van alle berichten, in MiniMessage-formaat.
@@ -88,6 +90,10 @@ theme:
       sound: "block.note_block.bell"
       volume: 0.6
       pitch: 1.8
+    levelup:
+      sound: "entity.player.levelup"
+      volume: 0.7
+      pitch: 1.0
 
 # Commando's aan/uit en eigen aliassen. Na het aanpassen is een herstart nodig.
 commands:

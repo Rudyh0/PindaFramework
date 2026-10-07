@@ -14,7 +14,7 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 
 ## Wat zit erin
 
-Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie en een webpaneel.
+Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage en een webpaneel.
 
 ## To-do
 
@@ -24,7 +24,7 @@ Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/inst
 4. Overige basis: automatische broadcasts, scoreboard en leaderboards (+ PlaceholderAPI), antilag
 5. World control: creepers en TNT zonder blokschade, phantoms uit, spawnrates, ender dragon respawn
 6. Backpack: tweede inventory die bij doodgaan blijft liggen
-7. Skills: level 0-99 (RuneScape-curve), geld bij tier-up, menu met voortgang
+7. ~~Skills: level 0-99 (RuneScape-curve), geld bij level-up, menu met voortgang~~ ✅
 8. Bomen kappen (timber)
 9. Live gaan: testopties uit, installatiehandleiding Ubuntu-VPS, automatische back-ups
 
@@ -41,6 +41,31 @@ PindaFramework heeft een eigen rangensysteem; LuckPerms is niet nodig. De rangen
 - Rang geven: `/rank set <speler> <rang>` (ook vanuit de console). Je eigen rang: `/rank`. Alle rangen: `/rank list`.
 - Wie al operator is, wordt bij de eerste join automatisch PindaAdmin. Spelers zonder operator-rang verliezen hun operator-status.
 - In `ranks.yml` kun je ook permissies van andere plugins zetten (bijv. `worldedit.*` of `coreprotect.rollback`).
+
+## Skills
+
+Acht skills zoals in RuneScape: **Mijnbouw, Houthakken, Vissen, Vechten, Koken, Landbouw, Boogschieten en Alchemie**. Elke skill gaat van level 0 tot 99 en elk level is ongeveer 10% duurder dan het vorige.
+
+| Skill | XP voor |
+|---|---|
+| Mijnbouw | steen en ertsen (zeldzamer = meer XP) |
+| Houthakken | stammen en paddenstoelblokken |
+| Vissen | vis, schatten en rommel |
+| Vechten | mobs verslaan met zwaard, bijl of hand |
+| Koken | gebakken eten uit een oven/smoker halen, eten craften |
+| Landbouw | volgroeide gewassen, meloenen/pompoenen/suikerriet, bessen plukken, dieren fokken |
+| Boogschieten | mobs verslaan met boog of kruisboog (extra XP van ver) |
+| Alchemie | drankjes brouwen |
+
+- Bij elke **level-up** krijg je **contant geld** (oplopend per level, extra bij 50, 75 en 99). Level 50, 75 en 99 worden aan de hele server gemeld.
+- Bij elke XP zie je een **melding boven je hotbar**; uit te zetten in `/instellingen`.
+- **Tegen misbruik:** zelf neergezette blokken en steen uit een generator geven geen XP, mobs uit spawners maar een kwart, en geen XP in creative.
+- `/skills` toont je voortgang, `/skills top` de ranglijst. Admins geven een **XP-boost** voor iedereen met `/skills boost 2 1u`.
+- Alle XP-waarden, de curve en de beloningen staan in `modules/skills.yml`. Met de standaardinstellingen is level 50 een paar uur spelen en is 99 een echte prestatie.
+
+## Slapen
+
+Als genoeg spelers in een wereld slapen (standaard **50%**), wordt de nacht of het onweer overgeslagen: de tijd spoelt in een paar seconden door en het weer klaart op. Iedereen in de wereld ziet wie er slaapt en hoeveel er nog nodig zijn. AFK-spelers, staff in vanish en spelers in creative/spectator tellen niet mee. Instellen in `modules/sleep.yml` (en straks in het webpaneel).
 
 ## Webpaneel
 
@@ -61,6 +86,8 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | Saldo aanpassen | geven, afnemen, instellen (bank of contant) | `pinda.panel.economy.edit` | Admin |
 | Rangen | rang geven (alleen lager dan je eigen rang, behalve operators) | `pinda.panel.ranks` | Admin |
 | Shops | alle shops en hun aanbod bekijken | `pinda.panel.shops` | Mod |
+| Skills | ranglijsten en levels per speler | `pinda.panel.skills` | Mod |
+| Skills aanpassen | levels zetten, XP geven, resetten, XP-boost starten | `pinda.panel.skills.edit` | Admin |
 | Shop sluiten | een shop dichtzetten | `pinda.panel.shops.manage` | Admin |
 | Server | tijd, weer, mededeling, whitelist, opslaan, `/pinda reload` | `pinda.panel.server` | Admin |
 | Server stoppen | | `pinda.panel.stop` | Admin |
@@ -126,6 +153,8 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | `/warn <speler> <reden>` | `/waarschuw` | `pinda.mod.warn` | Mod |
 | `/history <speler>`, `/banlist` | `/straffen`, `/bans` | `pinda.mod.history` | Mod |
 | `/panel [logout]` | `/paneel`, `/webpanel` | `pinda.panel.use` | Mod |
+| `/skills [speler]`, `/skills top [skill]` | `/skill`, `/vaardigheden`, `/levels` | `pinda.skills.use` (+ `.others`) | iedereen |
+| `/skills set\|addxp\|reset <speler> ...`, `/skills boost <x> <duur>\|stop` | | `pinda.skills.admin` | op |
 
 Extra permissies:
 
@@ -148,6 +177,7 @@ Extra permissies:
 | `pinda.shop.sign` | Shopbord plaatsen met `[shop]` | iedereen |
 | `pinda.shop.admin` | Shopborden van anderen afbreken | op |
 | `pinda.lock.bypass` | Bij alle afgesloten kisten en deuren kunnen | op |
+| `pinda.sleep.exempt` | Telt niet mee bij het aantal spelers dat moet slapen | niemand |
 
 `pinda.admin` geeft alle beheerrechten. Aliassen pas je aan in `config.yml` onder `commands`, bijvoorbeeld:
 
@@ -182,6 +212,8 @@ plugins/PindaFramework/
     ├── locks.yml       welke blokken op slot gaan, hoppers, bescherming, max partners
     ├── ranks.yml       rangen, kleuren, prefixes, permissies en de chatopmaak
     ├── moderation.yml  max tempban voor mods, straffen openbaar of alleen staff
+    ├── skills.yml      XP per blok/mob/item, levelcurve, geld per level-up, meldingen
+    ├── sleep.yml       percentage slapers, doorspoelen, meldingen
     └── panel.yml       webpaneel: poort, adres (public-url), hoe lang inloggen geldig is
 ```
 

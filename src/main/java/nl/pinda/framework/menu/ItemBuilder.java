@@ -20,6 +20,7 @@ public final class ItemBuilder {
     private Boolean glint;
     private OfflinePlayer headOwner;
     private boolean hideTooltip;
+    private boolean hideAttributes;
 
     private ItemBuilder(Material material) {
         this.material = material;
@@ -67,6 +68,12 @@ public final class ItemBuilder {
         return this;
     }
 
+    /** Verbergt de aanvalsschade en -snelheid van gereedschap en wapens in de tooltip. */
+    public ItemBuilder hideAttributes() {
+        this.hideAttributes = true;
+        return this;
+    }
+
     public ItemStack build() {
         ItemStack item = new ItemStack(material, amount);
         item.editMeta(meta -> {
@@ -87,6 +94,9 @@ public final class ItemBuilder {
             }
             if (hideTooltip) {
                 meta.setHideTooltip(true);
+            }
+            if (hideAttributes) {
+                meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ATTRIBUTES);
             }
             if (headOwner != null && meta instanceof SkullMeta skull) {
                 skull.setOwningPlayer(headOwner);

@@ -69,7 +69,9 @@
     check: '<path d="M20 6L9 17l-5-5"/>',
     reload: '<path d="M3 12a9 9 0 0 1 15.4-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.4 6.4L3 16M3 21v-5h5"/>',
     box: '<path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
-    trending: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>'
+    trending: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>',
+    award: '<circle cx="12" cy="8" r="6"/><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5"/>',
+    zap: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'
   };
   const icon = (name, cls = '') => raw(`<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`);
 
@@ -142,7 +144,8 @@
     start: 'Startbedrag', 'admin-give': 'Gegeven door staff', 'admin-take': 'Afgenomen door staff', 'admin-set': 'Ingesteld door staff',
     death: 'Verloren bij dood', deposit: 'Gestort op bank', withdraw: 'Opgenomen van bank', pay: 'Betaald aan speler',
     'pay-received': 'Ontvangen van speler', pickup: 'Geld opgeraapt', playtime: 'Online-bonus', refund: 'Terugbetaling',
-    'shop-buy': 'Aankoop in shop', 'shop-fee': 'Marketplace fee', 'shop-sale': 'Verkoop in shop', spend: 'Uitgegeven', income: 'Inkomsten'
+    'shop-buy': 'Aankoop in shop', 'shop-fee': 'Marketplace fee', 'shop-sale': 'Verkoop in shop', spend: 'Uitgegeven', income: 'Inkomsten',
+    'skill-level': 'Skill-beloning'
   };
 
   const PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8" fill="#2a251f"/><rect x="2" y="2" width="4" height="4" fill="#3d352c"/></svg>');
@@ -171,7 +174,8 @@
     use: 'pinda.panel.use', players: 'pinda.panel.players', moderate: 'pinda.panel.moderate',
     ecoView: 'pinda.panel.economy.view', ecoEdit: 'pinda.panel.economy.edit', ranks: 'pinda.panel.ranks',
     shops: 'pinda.panel.shops', shopsManage: 'pinda.panel.shops.manage', server: 'pinda.panel.server',
-    stop: 'pinda.panel.stop', console: 'pinda.panel.console', log: 'pinda.panel.log', banPermanent: 'pinda.mod.ban.permanent'
+    stop: 'pinda.panel.stop', console: 'pinda.panel.console', log: 'pinda.panel.log', banPermanent: 'pinda.mod.ban.permanent',
+    skills: 'pinda.panel.skills', skillsEdit: 'pinda.panel.skills.edit'
   };
 
   const state = { me: null, info: null, timers: [], renderId: 0, history: null, playerQuery: '' };
@@ -299,6 +303,7 @@
     { path: 'spelers', title: 'Spelers', icon: 'players', perm: P.players, page: pagePlayers },
     { path: 'economie', title: 'Economie', icon: 'coin', perm: P.ecoView, feature: 'economy', page: pageEconomy },
     { path: 'shops', title: 'Shops', icon: 'shop', perm: P.shops, feature: 'shop', page: pageShops },
+    { path: 'skills', title: 'Skills', icon: 'award', perm: P.skills, feature: 'skills', page: pageSkills },
     { path: 'straffen', title: 'Straffen', icon: 'shield', perm: P.players, feature: 'moderation', page: pagePunishments },
     { path: 'server', title: 'Server', icon: 'server', perm: P.server, page: pageServer, group: 'Beheer' },
     { path: 'console', title: 'Console', icon: 'terminal', perm: P.console, page: pageConsole, group: 'Beheer' },
@@ -633,6 +638,20 @@
           </div></form>` : ''}
       </div>`, html`<span class="count">in ${currency()}</span>`));
     }
+    if (p.skills) {
+      const sk = p.skills;
+      sections.push(card('Skills', 'award', html`<div class="card-body">
+        <div class="skills-list">${sk.skills.map(x => html`<div class="skill-row">
+          <div class="skill-top"><b>${x.name}</b><span><span class="muted">level</span> <b>${num(x.level)}</b></span></div>
+          <div class="meter"><i style="width:${Math.round(x.progress * 100)}%"></i></div>
+          <div class="skill-sub muted">${x.max ? `${num(x.xp)} XP · maximaal level` : `${num(x.xp)} / ${num(x.next)} XP`}</div></div>`)}</div>
+        ${sk.canEdit ? html`<form data-form="skills" class="row" style="margin-top:16px">
+          <label class="field">${label('Skill')}<select name="skill"><option value="">Alle skills (alleen resetten)</option>${sk.skills.map(x => html`<option value="${x.id}">${x.name}</option>`)}</select></label>
+          <label class="field">${label('Actie')}<select name="action"><option value="level">Level instellen</option><option value="xp">XP geven</option><option value="reset">Resetten</option></select></label>
+          <label class="field">${label('Waarde')}<input class="input" name="value" inputmode="numeric" placeholder="bijv. 50"></label>
+          <button class="btn primary">Uitvoeren</button></form>` : ''}
+      </div>`, html`<span class="count">totaal level ${num(sk.total)} / ${num(sk.maxTotal)}</span>`));
+    }
     if (p.shop) {
       sections.push(card('Shop', 'shop', html`<div class="card-body"><dl class="kv">
         <dt>Naam</dt><dd>${p.shop.name}</dd>
@@ -790,6 +809,44 @@
       ${card('Aanbod', 'shop', html`<div class="card-body">${items}</div>`, html`<span class="count">${num(s.items.length)}</span>`)}`);
   }
 
+  // =============================================================== skills
+
+  async function pageSkills(main, _, alive) {
+    const data = await api('/skills');
+    if (!alive()) return;
+    const tabs = [{ id: 'total', name: 'Totaal level' }, ...data.skills];
+    const boost = data.boost;
+    const boostCard = boost
+      ? html`<div class="card-body"><div class="alert warning" style="margin-top:0"><b>${fixed(boost.multiplier, 1)}x XP</b> voor iedereen, nog ${human(boost.until - Date.now())} <span class="muted">(gestart door ${boost.by})</span></div>
+          ${can(P.skillsEdit) ? html`<p style="margin-top:12px"><button class="btn danger sm" data-action="boost-stop">${icon('x')} Boost stoppen</button></p>` : ''}</div>`
+      : html`<div class="card-body"><p class="muted">Er loopt nu geen XP-boost. Met een boost krijgt iedereen tijdelijk meer XP, handig voor een event.</p>
+          ${can(P.skillsEdit) ? html`<form data-form="boost" class="row">
+            <label class="field">${label('Vermenigvuldiger')}<select name="multiplier"><option value="1.5">1,5x</option><option value="2" selected>2x</option><option value="3">3x</option><option value="5">5x</option></select></label>
+            <label class="field">${label('Duur', '(bijv. 30m, 2u, 1d)')}<input class="input" name="duration" value="1u" required></label>
+            <button class="btn primary">${icon('zap')} Boost starten</button></form>` : ''}</div>`;
+    render(main, html`${pageHead('Skills', `Level 0 tot ${data.maxLevel} in ${data.skills.length} skills. Bij elke level-up krijgen spelers contant geld.`)}
+      <div class="grid two">
+        ${card('XP-boost', 'zap', boostCard)}
+        ${card('Wat kost een level?', 'trending', html`<div class="table-wrap"><table><thead><tr><th>Level</th><th class="num">Totale XP</th></tr></thead>
+          <tbody>${data.curve.map(c => html`<tr><td>Level ${c.level}</td><td class="num">${num(c.xp)}</td></tr>`)}</tbody></table></div>`)}
+      </div>
+      <section class="card">
+        <div class="card-head"><h2>${icon('crown')}Ranglijst</h2>
+          <div class="seg" role="tablist">${tabs.map((t, i) => html`<label><input type="radio" name="skill-tab" value="${t.id}" ${i === 0 ? 'checked' : ''}><span>${t.name}</span></label>`)}</div></div>
+        <div id="skill-top"></div>
+      </section>`);
+    const show = id => {
+      const rows = data.top[id] || [];
+      render($('#skill-top', main), html`<div class="table-wrap"><table>
+        <thead><tr><th style="width:1%">#</th><th>Speler</th><th class="num">${id === 'total' ? 'Totaal level' : 'Level'}</th><th class="num">XP</th></tr></thead>
+        <tbody>${rows.length ? rows.map(r => html`<tr ${can(P.players) ? raw(`data-href="#/spelers/${esc(r.uuid)}" tabindex="0"`) : ''}>
+          <td class="muted num">${r.position}</td><td>${who(r.name, null, null)}</td><td class="num"><b>${num(r.level)}</b></td><td class="num muted">${num(r.xp)}</td></tr>`)
+          : emptyRow(4, 'Nog niemand op deze ranglijst.')}</tbody></table></div>`);
+    };
+    $$('input[name=skill-tab]', main).forEach(input => input.addEventListener('change', () => show(input.value)));
+    show('total');
+  }
+
   // =============================================================== straffen
 
   async function pagePunishments(main, _, alive) {
@@ -942,6 +999,11 @@
   // =============================================================== acties (knoppen)
 
   const actions = {
+    async 'boost-stop'(button) {
+      const result = await busy(button, () => post('/skills/boost', { stop: true }));
+      if (result) { toast('De XP-boost is gestopt.'); navigate(); }
+    },
+
     reload: () => navigate(),
     close: () => closeModal(),
     'open-nav': () => document.body.classList.add('nav-open'),
@@ -1032,6 +1094,24 @@
   // =============================================================== formulieren
 
   const forms = {
+    async skills(form, data, button) {
+      const uuid = $('#main').dataset.uuid;
+      const action = data.get('action');
+      const skill = data.get('skill');
+      if (action !== 'reset' && !skill) { toast('Kies een skill.', 'error'); return; }
+      if (action === 'reset') {
+        const ok = await confirmDialog({ title: 'Skills resetten?', text: skill ? 'De XP van deze skill gaat terug naar 0.' : 'Alle skills van deze speler gaan terug naar 0.', confirm: 'Resetten', danger: true });
+        if (!ok) return;
+      }
+      const result = await busy(button, () => post(`/players/${uuid}/skills`, { action, skill: skill || null, value: data.get('value') || '0' }));
+      if (result) { toast('Skills bijgewerkt.'); navigate(); }
+    },
+
+    async boost(form, data, button) {
+      const result = await busy(button, () => post('/skills/boost', { multiplier: data.get('multiplier'), duration: data.get('duration') }));
+      if (result) { toast('De XP-boost is gestart.'); navigate(); }
+    },
+
     async punish(form, data, button) {
       const type = form.dataset.type;
       const preset = data.get('preset');

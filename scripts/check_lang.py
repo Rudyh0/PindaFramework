@@ -15,7 +15,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 LANG = ROOT / "src/main/resources/lang"
 JAVA = ROOT / "src/main/java"
 SECTIONS = ("general", "settings", "tips", "admin", "menu", "teleport", "homes", "tpa", "spawn",
-            "back", "msg", "gamemode", "afk", "utility", "vanish", "invsee", "economy", "shop", "lock", "partner", "rank", "moderation", "panel")
+            "back", "msg", "gamemode", "afk", "utility", "vanish", "invsee", "economy", "shop", "lock", "partner", "rank", "moderation", "skills", "sleep", "panel")
 
 
 def flatten(data, prefix=""):
@@ -59,7 +59,7 @@ known = flatten(nl)
 pattern = re.compile(r'"((?:' + "|".join(SECTIONS) + r')\.[a-z0-9.-]+)"')
 for file in JAVA.rglob("*.java"):
     for line in file.read_text(encoding="utf-8").splitlines():
-        if "config()" in line or "cfg()" in line:
+        if any(marker in line for marker in ("config()", "cfg()", "config.", "(config,", "serverData")):
             continue  # instellingen uit een configbestand, geen berichten
         for match in pattern.finditer(line):
             key = match.group(1)

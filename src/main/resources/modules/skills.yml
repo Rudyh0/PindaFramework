@@ -1,0 +1,282 @@
+# ┌──────────────────────────────────────────────┐
+# │            PindaFramework - skills           │
+# └──────────────────────────────────────────────┘
+# Skills zoals in RuneScape: level 0 tot 99, elk level is ongeveer 10% duurder dan het vorige.
+# Bij elke level-up krijg je contant geld. Spelers zien hun voortgang met /skills.
+# XP-waarden mogen decimalen hebben (bijv. 0.5). Een blok, mob of item dat niet in de lijst
+# staat, geeft geen XP (behalve waar een 'default' staat).
+
+# Het hoogste level
+max-level: 99
+
+curve:
+  # Hoeveel XP de levels kosten. 1.0 = precies RuneScape (level 99 = ruim 14 miljoen XP).
+  # 0.1 = tien keer zo snel (level 50 = ca. 11.000 XP, level 99 = ca. 1,4 miljoen XP).
+  multiplier: 0.1
+
+# Vaste vermenigvuldiger voor alle XP (een tijdelijke XP-boost zet je met /skills boost).
+xp-multiplier: 1.0
+
+reward:
+  # Contant geld bij elke level-up: basis + (level x per-level)
+  enabled: true
+  base: 10
+  per-level: 5
+  # Extra bonus bij deze levels, bovenop het gewone bedrag
+  milestones:
+    "50": 1000
+    "75": 2500
+    "99": 10000
+
+# Bij deze levels ziet de hele server het in de chat
+announce-levels: [50, 75, 99]
+
+notifications:
+  # Staat de XP-melding in de actionbar standaard aan? Spelers kunnen dit zelf wijzigen in /instellingen.
+  default-enabled: true
+  # Ook tonen in het setupmenu bij de eerste keer joinen
+  show-in-setup: false
+  # XP die binnen zoveel seconden binnenkomt, wordt opgeteld in één melding
+  combo-seconds: 3
+
+# Werelden waarin je geen XP krijgt
+disabled-worlds: []
+
+# Krijg je XP in creative?
+creative-gives-xp: false
+
+# Blokken die spelers zelf neergezet hebben, geven geen XP (anders kun je eindeloos hetzelfde blok plaatsen en breken).
+placed-blocks-give-xp: false
+# Steen en cobblestone uit een generator (lava + water) tellen ook als neergezet
+generated-blocks-give-xp: false
+
+# Mobs uit een spawner of spawn-ei geven minder XP (0.25 = een kwart)
+spawner-mob-multiplier: 0.25
+reduced-spawn-reasons: [SPAWNER, SPAWNER_EGG, DISPENSE_EGG]
+
+skills:
+  mining:
+    enabled: true
+    # XP per blok
+    blocks:
+      STONE: 1
+      DEEPSLATE: 1.5
+      GRANITE: 1
+      DIORITE: 1
+      ANDESITE: 1
+      TUFF: 1
+      CALCITE: 2
+      DRIPSTONE_BLOCK: 1
+      SANDSTONE: 1
+      RED_SANDSTONE: 1
+      TERRACOTTA: 1
+      NETHERRACK: 0.5
+      BASALT: 1
+      BLACKSTONE: 1
+      END_STONE: 2
+      MAGMA_BLOCK: 2
+      GLOWSTONE: 3
+      PACKED_ICE: 2
+      BLUE_ICE: 3
+      OBSIDIAN: 10
+      CRYING_OBSIDIAN: 12
+      AMETHYST_CLUSTER: 8
+      COAL_ORE: 5
+      DEEPSLATE_COAL_ORE: 6
+      COPPER_ORE: 5
+      DEEPSLATE_COPPER_ORE: 6
+      IRON_ORE: 10
+      DEEPSLATE_IRON_ORE: 12
+      GOLD_ORE: 15
+      DEEPSLATE_GOLD_ORE: 17
+      NETHER_GOLD_ORE: 8
+      REDSTONE_ORE: 8
+      DEEPSLATE_REDSTONE_ORE: 10
+      LAPIS_ORE: 12
+      DEEPSLATE_LAPIS_ORE: 14
+      DIAMOND_ORE: 40
+      DEEPSLATE_DIAMOND_ORE: 45
+      EMERALD_ORE: 50
+      DEEPSLATE_EMERALD_ORE: 55
+      NETHER_QUARTZ_ORE: 6
+      GILDED_BLACKSTONE: 10
+      RAW_IRON_BLOCK: 20
+      RAW_COPPER_BLOCK: 15
+      ANCIENT_DEBRIS: 100
+
+  woodcutting:
+    enabled: true
+    # XP per blok
+    blocks:
+      OAK_LOG: 6
+      SPRUCE_LOG: 6
+      BIRCH_LOG: 6
+      JUNGLE_LOG: 6
+      ACACIA_LOG: 6
+      DARK_OAK_LOG: 7
+      MANGROVE_LOG: 7
+      CHERRY_LOG: 7
+      PALE_OAK_LOG: 8
+      CRIMSON_STEM: 8
+      WARPED_STEM: 8
+      MANGROVE_ROOTS: 2
+      MUSHROOM_STEM: 3
+      RED_MUSHROOM_BLOCK: 2
+      BROWN_MUSHROOM_BLOCK: 2
+
+  fishing:
+    enabled: true
+    # XP per gevangen vis
+    fish:
+      COD: 10
+      SALMON: 12
+      PUFFERFISH: 15
+      TROPICAL_FISH: 20
+    # Schatten (betoverde spullen, naamkaartjes, nautilusschelpen, zadels)
+    treasure: 40
+    # Al het andere (rommel)
+    junk: 5
+
+  fighting:
+    enabled: true
+    # XP per gedode mob (met zwaard, bijl of hand)
+    mobs:
+      ZOMBIE: 10
+      HUSK: 10
+      DROWNED: 12
+      ZOMBIE_VILLAGER: 10
+      SKELETON: 10
+      STRAY: 12
+      BOGGED: 12
+      SPIDER: 10
+      CAVE_SPIDER: 12
+      CREEPER: 12
+      ENDERMAN: 20
+      WITCH: 20
+      SLIME: 4
+      MAGMA_CUBE: 5
+      PHANTOM: 15
+      PILLAGER: 15
+      VINDICATOR: 25
+      EVOKER: 50
+      RAVAGER: 60
+      VEX: 8
+      BLAZE: 20
+      GHAST: 25
+      WITHER_SKELETON: 30
+      PIGLIN: 12
+      PIGLIN_BRUTE: 40
+      ZOMBIFIED_PIGLIN: 10
+      HOGLIN: 20
+      ZOGLIN: 20
+      GUARDIAN: 20
+      ELDER_GUARDIAN: 200
+      SHULKER: 25
+      SILVERFISH: 3
+      ENDERMITE: 4
+      BREEZE: 30
+      CREAKING: 25
+      WARDEN: 500
+      WITHER: 1000
+      ENDER_DRAGON: 1500
+    # Vijandige mobs die niet in de lijst staan
+    default-hostile: 8
+    # Dieren en andere vriendelijke mobs
+    default-passive: 2
+    # Andere spelers doden (0 = geen XP, voorkomt misbruik met een tweede account)
+    player: 0
+
+  cooking:
+    enabled: true
+    # XP per stuk dat je uit een oven of smoker haalt
+    smelt:
+      COOKED_BEEF: 6
+      COOKED_PORKCHOP: 6
+      COOKED_MUTTON: 6
+      COOKED_CHICKEN: 5
+      COOKED_RABBIT: 6
+      COOKED_COD: 5
+      COOKED_SALMON: 6
+      BAKED_POTATO: 3
+      DRIED_KELP: 1
+    # Ander eten uit een oven dat niet in de lijst staat
+    default-food: 3
+    # XP per stuk eten dat je craft
+    craft:
+      BREAD: 4
+      COOKIE: 2
+      PUMPKIN_PIE: 10
+      CAKE: 20
+      MUSHROOM_STEW: 6
+      BEETROOT_SOUP: 6
+      RABBIT_STEW: 15
+      SUSPICIOUS_STEW: 8
+      GOLDEN_CARROT: 10
+      GOLDEN_APPLE: 25
+
+  farming:
+    enabled: true
+    # Gewassen: alleen XP als ze volgroeid zijn
+    crops:
+      WHEAT: 4
+      CARROTS: 4
+      POTATOES: 4
+      BEETROOTS: 5
+      NETHER_WART: 5
+      COCOA: 5
+      SWEET_BERRY_BUSH: 3
+    # Blokken die groeien (zelf neergezette geven geen XP)
+    blocks:
+      MELON: 6
+      PUMPKIN: 6
+      SUGAR_CANE: 2
+      CACTUS: 2
+      BAMBOO: 1
+      CHORUS_PLANT: 2
+      CHORUS_FLOWER: 3
+      TORCHFLOWER: 8
+      PITCHER_PLANT: 10
+    # Plukken met rechtsklik (bessen)
+    harvest:
+      SWEET_BERRY_BUSH: 3
+      CAVE_VINES: 3
+      CAVE_VINES_PLANT: 3
+    # Dieren fokken
+    breed: 6
+
+  archery:
+    enabled: true
+    # XP = de XP van de mob uit 'fighting' x deze waarde
+    multiplier: 1.0
+    # Extra XP als je van ver schiet: vanaf zoveel blokken afstand...
+    distance: 30
+    # ...krijg je zoveel extra (0.5 = 50% meer)
+    distance-bonus: 0.5
+
+  alchemy:
+    enabled: true
+    # XP per drankje dat klaar is, afhankelijk van het ingrediënt
+    ingredients:
+      NETHER_WART: 3
+      REDSTONE: 8
+      GLOWSTONE_DUST: 8
+      GUNPOWDER: 8
+      SUGAR: 10
+      GLISTERING_MELON_SLICE: 10
+      SPIDER_EYE: 10
+      RABBIT_FOOT: 12
+      PUFFERFISH: 12
+      MAGMA_CREAM: 12
+      GOLDEN_CARROT: 12
+      BLAZE_POWDER: 12
+      FERMENTED_SPIDER_EYE: 12
+      GHAST_TEAR: 15
+      PHANTOM_MEMBRANE: 15
+      BREEZE_ROD: 15
+      SLIME_BLOCK: 15
+      COBWEB: 15
+      STONE: 10
+      TURTLE_HELMET: 20
+      DRAGON_BREATH: 20
+    # Ingrediënten die niet in de lijst staan
+    default: 6

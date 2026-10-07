@@ -88,6 +88,7 @@ ranks:
       - pinda.panel.moderate
       - pinda.panel.economy.view
       - pinda.panel.shops
+      - pinda.panel.skills
       # Vanilla /tp naar spelers
       - minecraft.command.teleport
       - minecraft.command.tp
@@ -123,3 +124,5 @@ ranks:
       - pinda.partner.use
       - pinda.rank.info
       - pinda.rank.list
+      - pinda.skills.use
+      - pinda.skills.others
