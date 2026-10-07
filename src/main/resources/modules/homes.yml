@@ -1,0 +1,11 @@
+# ┌──────────────────────────────────────────────┐
+# │            PindaFramework - homes            │
+# └──────────────────────────────────────────────┘
+# Wachttijd, cooldown en kosten staan in teleport.yml.
+
+# Aantal homes voor iedereen. Meer per rank via LuckPerms met pinda.homes.limit.<aantal>
+# (bijv. pinda.homes.limit.10). Onbeperkt met pinda.homes.unlimited.
+default-limit: 5
+
+# Werelden waarin spelers geen home mogen zetten
+blocked-worlds: []

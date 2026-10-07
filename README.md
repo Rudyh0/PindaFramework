@@ -19,7 +19,8 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 | Fundament (modules, taal, database, menu's, commando's) | ✅ |
 | Setup bij eerste join + `/instellingen` + `/taal` | ✅ |
 | Tips | ✅ |
-| Core: homes, TPA, msg, AFK, kick/ban, broadcast, scoreboard, antilag | ⏳ |
+| Teleports: homes, TPA, spawn, back (wachttijd, cooldown, kosten) | ✅ |
+| Core: msg, AFK, kick/ban, broadcast, scoreboard, antilag | ⏳ |
 | Economy | ⏳ |
 | Shops | ⏳ |
 | World control | ⏳ |
@@ -34,21 +35,55 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 | `/pinda reload` | | `pinda.admin.reload` | op |
 | `/pinda modules` | | `pinda.admin.modules` | op |
 | `/pinda setup [speler]` | | `pinda.admin.setup` | op |
+| `/sethome [naam]` | `/createhome` | `pinda.homes.use` | iedereen |
+| `/home [naam]` | | `pinda.homes.use` | iedereen |
+| `/delhome <naam>` | `/deletehome`, `/removehome` | `pinda.homes.use` | iedereen |
+| `/homes` | | `pinda.homes.use` | iedereen |
+| `/homes <speler>`, `/home speler:naam` | | `pinda.homes.others` | op |
+| `/delhome speler:naam` | | `pinda.homes.others.delete` | op |
+| `/tpa <speler>` | | `pinda.tpa.use` | iedereen |
+| `/tpahere <speler>` | | `pinda.tpa.here` | iedereen |
+| `/tpaccept [speler]`, `/tpdeny [speler]`, `/tpacancel` | `/tpyes`, `/tpno` | `pinda.tpa.use` | iedereen |
+| `/spawn` | | `pinda.spawn.use` | iedereen |
+| `/setspawn` | | `pinda.spawn.set` | op |
+| `/back` | | `pinda.back.use` | iedereen |
 
-`pinda.admin` geeft alle beheerrechten. Aliassen pas je aan in `config.yml` onder `commands`.
+Extra permissies:
+
+| Permissie | Wat | Standaard |
+|---|---|---|
+| `pinda.homes.limit.<aantal>` | Meer homes, bijv. `pinda.homes.limit.10` (standaard 5, zie `modules/homes.yml`) | - |
+| `pinda.homes.unlimited` | Onbeperkt homes | niemand |
+| `pinda.back.death` | `/back` naar de plek waar je doodging | iedereen |
+| `pinda.teleport.bypass.warmup` | Geen wachttijd | niemand |
+| `pinda.teleport.bypass.cooldown` | Geen cooldown | niemand |
+| `pinda.teleport.free` | Teleports altijd gratis | niemand |
+
+`pinda.admin` geeft alle beheerrechten. Aliassen pas je aan in `config.yml` onder `commands`, bijvoorbeeld:
+
+```yaml
+commands:
+  home:
+    aliases: [thuis]
+```
 
 ## Bestanden
 
 ```
 plugins/PindaFramework/
-├── config.yml          standaardtaal, modules aan/uit, kleuren, prefix, geluiden
+├── config.yml          servernaam, standaardtaal, modules aan/uit, kleuren, prefix, geluiden
+├── teleport.yml        wachttijd, cooldown en kosten voor alle teleports
 ├── data.db             database (SQLite)
 ├── lang/
 │   ├── nl.yml          alle Nederlandse teksten
 │   └── en.yml          alle Engelse teksten
 └── modules/
     ├── settings.yml    setup bij eerste join
-    └── tips.yml        interval en instellingen voor tips
+    ├── tips.yml        interval en instellingen voor tips
+    ├── homes.yml       aantal homes, geblokkeerde werelden
+    ├── tpa.yml         verlooptijd, testoptie TPA naar jezelf
+    ├── spawn.yml       spawnlocatie en wanneer spelers erheen gaan
+    └── back.yml        /back na doodgaan
 ```
 
 - **Teksten** gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format). Gebruik de thema-kleuren als tag: `<primary>`, `<secondary>`, `<text>`, `<muted>`, `<highlight>`, `<success>`, `<error>`, `<warning>`, `<prefix>` voor de prefix en `<server>` voor de servernaam (`server-name` in `config.yml`).

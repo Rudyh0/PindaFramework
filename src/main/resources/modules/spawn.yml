@@ -1,0 +1,14 @@
+# ┌──────────────────────────────────────────────┐
+# │            PindaFramework - spawn            │
+# └──────────────────────────────────────────────┘
+# De spawn zet je ingame met /setspawn; die wordt onderaan dit bestand opgeslagen.
+# Wachttijd, cooldown en kosten staan in teleport.yml.
+
+# Nieuwe spelers bij hun eerste join naar de spawn sturen
+teleport-on-first-join: true
+
+# Iedereen bij elke join naar de spawn sturen
+teleport-on-join: false
+
+# Na doodgaan op de spawn respawnen (tenzij iemand een bed of respawn anchor heeft)
+respawn-at-spawn: true

@@ -32,3 +32,52 @@ permissions:
   pinda.language.use:
     description: Je taal wijzigen met /taal
     default: true
+
+  # Teleports (algemeen). Standaard voor niemand, zodat je wachttijd en cooldown zelf kunt testen.
+  pinda.teleport.bypass.warmup:
+    description: Direct teleporteren zonder wachttijd
+    default: false
+  pinda.teleport.bypass.cooldown:
+    description: Geen cooldown tussen teleports
+    default: false
+  pinda.teleport.free:
+    description: Teleports kosten nooit geld
+    default: false
+
+  # Homes. Meer homes per rank met pinda.homes.limit.<aantal>, bijv. pinda.homes.limit.10
+  pinda.homes.use:
+    description: /sethome, /home, /delhome en /homes
+    default: true
+  pinda.homes.unlimited:
+    description: Onbeperkt aantal homes
+    default: false
+  pinda.homes.others:
+    description: Homes van anderen bekijken en erheen gaan (/homes <speler>, /home speler:naam)
+    default: op
+  pinda.homes.others.delete:
+    description: Homes van anderen verwijderen
+    default: op
+
+  # TPA
+  pinda.tpa.use:
+    description: /tpa, /tpaccept, /tpdeny en /tpacancel
+    default: true
+  pinda.tpa.here:
+    description: /tpahere
+    default: true
+
+  # Spawn
+  pinda.spawn.use:
+    description: /spawn
+    default: true
+  pinda.spawn.set:
+    description: /setspawn
+    default: op
+
+  # Back
+  pinda.back.use:
+    description: /back na een teleport
+    default: true
+  pinda.back.death:
+    description: /back naar de plek waar je doodging
+    default: true

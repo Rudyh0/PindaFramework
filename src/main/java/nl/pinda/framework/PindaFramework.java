@@ -5,16 +5,23 @@ import nl.pinda.framework.command.AdminCommand;
 import nl.pinda.framework.command.CommandManager;
 import nl.pinda.framework.config.ConfigFile;
 import nl.pinda.framework.config.Theme;
+import nl.pinda.framework.economy.DisabledEconomy;
+import nl.pinda.framework.economy.Economy;
 import nl.pinda.framework.lang.LanguageManager;
 import nl.pinda.framework.menu.Menu;
 import nl.pinda.framework.menu.MenuListener;
 import nl.pinda.framework.module.ModuleManager;
+import nl.pinda.framework.modules.back.BackModule;
+import nl.pinda.framework.modules.homes.HomesModule;
 import nl.pinda.framework.modules.settings.SettingsModule;
+import nl.pinda.framework.modules.spawn.SpawnModule;
 import nl.pinda.framework.modules.tips.TipsModule;
+import nl.pinda.framework.modules.tpa.TpaModule;
 import nl.pinda.framework.player.PlayerManager;
 import nl.pinda.framework.player.SettingsService;
 import nl.pinda.framework.storage.CoreSchema;
 import nl.pinda.framework.storage.Database;
+import nl.pinda.framework.teleport.TeleportService;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -36,6 +43,8 @@ public final class PindaFramework extends JavaPlugin {
     private SettingsService settings;
     private CommandManager commands;
     private ModuleManager modules;
+    private TeleportService teleports;
+    private Economy economy = new DisabledEconomy();
 
     @Override
     public void onEnable() {
@@ -54,13 +63,19 @@ public final class PindaFramework extends JavaPlugin {
             players = new PlayerManager(this);
             settings = new SettingsService(this);
             commands = new CommandManager(this);
+            teleports = new TeleportService(this);
 
             getServer().getPluginManager().registerEvents(players, this);
             getServer().getPluginManager().registerEvents(new MenuListener(this), this);
+            getServer().getPluginManager().registerEvents(teleports, this);
 
             modules = new ModuleManager(this);
             modules.register(new SettingsModule(this));
             modules.register(new TipsModule(this));
+            modules.register(new HomesModule(this));
+            modules.register(new TpaModule(this));
+            modules.register(new SpawnModule(this));
+            modules.register(new BackModule(this));
             modules.enableAll();
 
             commands.register(new AdminCommand(this));
@@ -106,6 +121,7 @@ public final class PindaFramework extends JavaPlugin {
         mainConfig.reload();
         theme.load(mainConfig.get());
         lang.load();
+        teleports.reload();
         modules.reloadAll();
         return (System.nanoTime() - start) / 1_000_000L;
     }
@@ -144,5 +160,19 @@ public final class PindaFramework extends JavaPlugin {
 
     public ModuleManager modules() {
         return modules;
+    }
+
+    public TeleportService teleports() {
+        return teleports;
+    }
+
+    /** De actieve economy. Zonder economy-module is alles gratis. */
+    public Economy economy() {
+        return economy;
+    }
+
+    /** Wordt later door de economy-module aangeroepen om zich aan te melden. */
+    public void setEconomy(Economy economy) {
+        this.economy = economy == null ? new DisabledEconomy() : economy;
     }
 }

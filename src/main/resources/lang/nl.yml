@@ -66,6 +66,11 @@ settings:
       description:
         - "<text>Af en toe een handige tip"
         - "<text>over <server> in de chat."
+    tpa:
+      name: "<primary>TPA-verzoeken"
+      description:
+        - "<text>Andere spelers kunnen vragen"
+        - "<text>of ze naar je toe mogen."
 
   setup:
     done: "<prefix><success>Je voorkeuren zijn opgeslagen! <text>Veel plezier op <primary><server></primary>."
@@ -82,6 +87,118 @@ tips:
     - "Pas je taal en voorkeuren aan met <click:run_command:/instellingen><hover:show_text:'<text>Klik om te openen'><primary>/instellingen</primary></hover></click>."
     - "Wissel snel van taal met <primary>/taal</primary>. <muted>(Nederlands / English)"
     - "Liever geen tips meer? Zet ze uit in <click:run_command:/instellingen><hover:show_text:'<text>Klik om te openen'><primary>/instellingen</primary></hover></click>."
+    - "Zet een home met <primary>/sethome [naam]</primary> en bekijk ze allemaal met <click:run_command:/homes><hover:show_text:'<text>Klik om te openen'><primary>/homes</primary></hover></click>."
+    - "Wil je naar een vriend toe? Gebruik <primary>/tpa [speler]</primary>."
+    - "Doodgegaan? Met <primary>/back</primary> ga je terug naar die plek."
+
+menu:
+  previous: "<primary>« Vorige pagina"
+  next: "<primary>Volgende pagina »"
+  confirm:
+    title: "<dark_gray>Weet je het zeker?"
+    accept: "<success><bold>Ja"
+    decline: "<error><bold>Nee, annuleren"
+
+teleport:
+  warmup: "<prefix><text>Je wordt over <primary><seconds></primary> seconden geteleporteerd. <muted>Niet bewegen!"
+  countdown: "[actionbar]<text>Teleporteren over <primary><bold><seconds></bold></primary>..."
+  cancelled-move: "<prefix><error>Teleport geannuleerd: je bewoog."
+  cancelled-damage: "<prefix><error>Teleport geannuleerd: je kreeg schade."
+  already-pending: "<prefix><error>Je bent al aan het teleporteren."
+  cooldown: "<prefix><error>Wacht nog <highlight><seconds></highlight> seconden voordat je weer kunt teleporteren."
+  no-money: "<prefix><error>Je hebt niet genoeg geld. Deze teleport kost <highlight><cost></highlight>."
+  paid: "<prefix><muted>Deze teleport kostte <text><cost></text>."
+  no-safe-location: "<prefix><error>Er is geen veilige plek gevonden bij de bestemming."
+  destination-gone: "<prefix><error>De bestemming is niet meer beschikbaar."
+  failed: "<prefix><error>Teleporteren is mislukt."
+  cost-line: "<muted>Kosten: <text><cost>"
+  cost-free: "<muted>Kosten: <success>Gratis"
+
+homes:
+  set: "<prefix><success>Home <primary><home></primary> is ingesteld. <muted>(<count>/<limit>)"
+  updated: "<prefix><success>Home <primary><home></primary> is verplaatst naar je huidige plek."
+  deleted: "<prefix><text>Home <primary><home></primary> is verwijderd."
+  teleported: "<prefix><text>Welkom thuis! <muted>(<home>)"
+  not-found: "<prefix><error>Je hebt geen home met de naam <highlight><home></highlight>."
+  none: "<prefix><text>Je hebt nog geen homes. Zet er een met <click:suggest_command:/sethome ><hover:show_text:'<text>Klik om in te vullen'><primary>/sethome [naam]</primary></hover></click>."
+  limit-reached: "<prefix><error>Je hebt het maximum van <highlight><limit></highlight> homes bereikt. <text>Verwijder er eerst een met <primary>/delhome</primary>."
+  invalid-name: "<prefix><error>Een homenaam mag alleen letters, cijfers, - en _ bevatten (max. 16 tekens)."
+  world-blocked: "<prefix><error>In deze wereld kun je geen home zetten."
+  world-missing: "<prefix><error>De wereld van deze home bestaat niet meer."
+  usage-delhome: "<prefix><text>Gebruik: <primary>/delhome <naam>"
+  player-unknown: "<prefix><error>Speler <highlight><player></highlight> is nog nooit op <server> geweest."
+  others-not-found: "<prefix><error><player> heeft geen home met de naam <highlight><home></highlight>."
+  others-teleported: "<prefix><text>Je bent bij home <primary><home></primary> van <primary><player></primary>."
+  others-deleted: "<prefix><text>Home <primary><home></primary> van <primary><player></primary> is verwijderd."
+  menu:
+    title: "<dark_gray>Je homes (<count>/<limit>)"
+    title-others: "<dark_gray>Homes van <player>"
+    item:
+      name: "<primary><bold><home>"
+      info:
+        - "<muted>Wereld: <text><world>"
+        - "<muted>Locatie: <text><x>, <y>, <z>"
+      actions:
+        - "<muted>» <text>Klik om te teleporteren"
+        - "<muted>» <text>Shift-klik om te verwijderen"
+      actions-no-delete:
+        - "<muted>» <text>Klik om te teleporteren"
+    empty:
+      name: "<text>Nog geen homes"
+      lore:
+        - "<muted>Zet je eerste home met"
+        - "<primary>/sethome [naam]"
+    info:
+      name: "<primary><bold>Je homes"
+      name-others: "<primary><bold>Homes van <player>"
+      lore:
+        - "<text>Je hebt <primary><count></primary> van de <primary><limit></primary> homes."
+        - ""
+        - "<muted>Nieuwe home: <primary>/sethome [naam]"
+      lore-others:
+        - "<text><player> heeft <primary><count></primary> homes."
+    delete-subject: "<error><bold>Home <home> verwijderen"
+
+tpa:
+  usage: "<prefix><text>Gebruik: <primary>/<command> <speler>"
+  sent: "<prefix><text>Verzoek verstuurd naar <primary><player></primary>. <muted>Verloopt over <seconds>s.</muted> <click:run_command:/tpacancel><hover:show_text:'<text>Klik om in te trekken'><error>[Intrekken]</error></hover></click>"
+  sent-here: "<prefix><text>Je hebt <primary><player></primary> gevraagd naar jou te komen. <muted>Verloopt over <seconds>s.</muted> <click:run_command:/tpacancel><hover:show_text:'<text>Klik om in te trekken'><error>[Intrekken]</error></hover></click>"
+  received:
+    - ""
+    - "<prefix><primary><player></primary> <text>wil naar jou toe teleporteren."
+    - "   <accept><success><bold>[ACCEPTEREN]</bold></success></accept>   <deny><error><bold>[WEIGEREN]</bold></error></deny>"
+    - ""
+  received-here:
+    - ""
+    - "<prefix><primary><player></primary> <text>wil jou naar zich toe teleporteren."
+    - "   <accept><success><bold>[ACCEPTEREN]</bold></success></accept>   <deny><error><bold>[WEIGEREN]</bold></error></deny>"
+    - ""
+  hover-accept: "<text>Klik om te accepteren"
+  hover-deny: "<text>Klik om te weigeren"
+  accepted-target: "<prefix><success>Verzoek van <player> geaccepteerd."
+  accepted-sender: "<prefix><success><player> heeft je verzoek geaccepteerd."
+  denied-target: "<prefix><text>Verzoek van <primary><player></primary> geweigerd."
+  denied-sender: "<prefix><error><player> heeft je verzoek geweigerd."
+  cancelled-sender: "<prefix><text>Je verzoek aan <primary><player></primary> is ingetrokken."
+  cancelled-target: "<prefix><text><primary><player></primary> heeft het verzoek ingetrokken."
+  expired-sender: "<prefix><text>Je verzoek aan <primary><player></primary> is verlopen."
+  expired-target: "<prefix><text>Het verzoek van <primary><player></primary> is verlopen."
+  no-request: "<prefix><error>Je hebt geen openstaand verzoek."
+  no-request-from: "<prefix><error>Je hebt geen verzoek van <highlight><player></highlight>."
+  no-outgoing: "<prefix><error>Je hebt geen openstaand verzoek om in te trekken."
+  self: "<prefix><error>Je kunt geen verzoek naar jezelf sturen."
+  disabled-target: "<prefix><error><player> accepteert op dit moment geen TPA-verzoeken."
+  already-sent: "<prefix><error>Je hebt <player> al een verzoek gestuurd."
+  teleported: "<prefix><text>Je bent bij <primary><player></primary>."
+
+spawn:
+  teleported: "<prefix><text>Je bent op de spawn van <primary><server></primary>."
+  set: "<prefix><success>De spawn is ingesteld op je huidige plek."
+
+back:
+  teleported: "<prefix><text>Je bent terug op je vorige plek."
+  none: "<prefix><error>Er is geen vorige plek om naar terug te gaan."
+  death-hint: "<prefix><text>Terug naar waar je doodging? <click:run_command:/back><hover:show_text:'<text>Klik om terug te gaan'><primary>[/back]</primary></hover></click>"
 
 admin:
   help:

@@ -1,0 +1,12 @@
+# ┌──────────────────────────────────────────────┐
+# │            PindaFramework - back             │
+# └──────────────────────────────────────────────┘
+# /back brengt je terug naar je plek van vóór je laatste teleport.
+# Wachttijd, cooldown en kosten staan in teleport.yml.
+
+# Ook terug kunnen naar de plek waar je doodging.
+# Per rank te regelen met de permissie pinda.back.death (staat standaard aan voor iedereen).
+on-death: true
+
+# Na het respawnen een klikbaar berichtje tonen om terug te gaan
+death-hint: true

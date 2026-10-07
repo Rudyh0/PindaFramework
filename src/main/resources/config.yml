@@ -15,6 +15,10 @@ default-language: nl
 # Modules aan- of uitzetten. Na het aanpassen is een herstart nodig.
 modules:
   tips: true
+  homes: true
+  tpa: true
+  spawn: true
+  back: true
 
 # Opmaak van alle berichten, in MiniMessage-formaat.
 # Uitleg: https://docs.advntr.dev/minimessage/format
@@ -57,6 +61,18 @@ theme:
       sound: "block.note_block.chime"
       volume: 0.5
       pitch: 1.6
+    countdown:
+      sound: "block.note_block.hat"
+      volume: 0.6
+      pitch: 1.5
+    teleport:
+      sound: "entity.enderman.teleport"
+      volume: 0.6
+      pitch: 1.0
+    request:
+      sound: "block.note_block.pling"
+      volume: 0.7
+      pitch: 1.2
 
 # Commando's aan/uit en eigen aliassen. Na het aanpassen is een herstart nodig.
 commands:

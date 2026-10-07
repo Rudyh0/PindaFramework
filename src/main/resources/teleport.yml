@@ -1,0 +1,27 @@
+# ┌──────────────────────────────────────────────┐
+# │          PindaFramework - teleports          │
+# └──────────────────────────────────────────────┘
+# Geldt voor alle teleports: homes, TPA, spawn en back.
+
+# Hoeveel seconden een speler moet stilstaan voordat hij teleporteert (0 = direct).
+# Overslaan kan met de permissie pinda.teleport.bypass.warmup
+warmup-seconds: 3
+
+# Wachttijd tussen twee teleports in seconden.
+# Overslaan kan met de permissie pinda.teleport.bypass.cooldown
+cooldown-seconds: 5
+
+# De teleport afbreken als de speler beweegt of schade krijgt tijdens het aftellen
+cancel-on-move: true
+cancel-on-damage: true
+
+# Kosten per teleport. Werkt pas zodra de economy-module actief is; tot die tijd is alles gratis.
+# Gratis teleporteren kan altijd met de permissie pinda.teleport.free
+costs:
+  enabled: true
+  # Nieuwe spelers teleporteren de eerste zoveel uur na hun eerste join gratis
+  free-hours: 24
+  home: 5
+  tpa: 10
+  spawn: 0
+  back: 5

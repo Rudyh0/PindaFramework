@@ -1,0 +1,18 @@
+# ┌──────────────────────────────────────────────┐
+# │             PindaFramework - TPA             │
+# └──────────────────────────────────────────────┘
+# Wachttijd, cooldown en kosten staan in teleport.yml.
+# Bij /tpahere betaalt de aanvrager, niet degene die verplaatst wordt.
+
+# Na hoeveel seconden een verzoek verloopt
+timeout-seconds: 60
+
+# Staan TPA-verzoeken standaard aan voor nieuwe spelers? (aan/uit te zetten in /instellingen)
+default-enabled: true
+
+# De TPA-schakelaar tonen in het setupmenu bij de eerste keer joinen
+show-in-setup: true
+
+# ALLEEN OM TE TESTEN: verzoeken naar jezelf toestaan (bijv. /tpa <jouw naam>).
+# Zet dit weer op false zodra de server open gaat.
+allow-self-requests: false

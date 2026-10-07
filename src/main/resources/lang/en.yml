@@ -62,6 +62,11 @@ settings:
       description:
         - "<text>A useful tip about <server>"
         - "<text>in chat every now and then."
+    tpa:
+      name: "<primary>TPA requests"
+      description:
+        - "<text>Other players can ask"
+        - "<text>to teleport to you."
 
   setup:
     done: "<prefix><success>Your preferences have been saved! <text>Have fun on <primary><server></primary>."
@@ -78,6 +83,118 @@ tips:
     - "Change your language and preferences with <click:run_command:/settings><hover:show_text:'<text>Click to open'><primary>/settings</primary></hover></click>."
     - "Quickly switch languages with <primary>/language</primary>. <muted>(Nederlands / English)"
     - "Rather not get tips? Turn them off in <click:run_command:/settings><hover:show_text:'<text>Click to open'><primary>/settings</primary></hover></click>."
+    - "Set a home with <primary>/sethome [name]</primary> and see them all with <click:run_command:/homes><hover:show_text:'<text>Click to open'><primary>/homes</primary></hover></click>."
+    - "Want to visit a friend? Use <primary>/tpa [player]</primary>."
+    - "Died? Use <primary>/back</primary> to return to that spot."
+
+menu:
+  previous: "<primary>« Previous page"
+  next: "<primary>Next page »"
+  confirm:
+    title: "<dark_gray>Are you sure?"
+    accept: "<success><bold>Yes"
+    decline: "<error><bold>No, cancel"
+
+teleport:
+  warmup: "<prefix><text>Teleporting in <primary><seconds></primary> seconds. <muted>Don't move!"
+  countdown: "[actionbar]<text>Teleporting in <primary><bold><seconds></bold></primary>..."
+  cancelled-move: "<prefix><error>Teleport cancelled: you moved."
+  cancelled-damage: "<prefix><error>Teleport cancelled: you took damage."
+  already-pending: "<prefix><error>You are already teleporting."
+  cooldown: "<prefix><error>Please wait <highlight><seconds></highlight> more seconds before teleporting again."
+  no-money: "<prefix><error>You don't have enough money. This teleport costs <highlight><cost></highlight>."
+  paid: "<prefix><muted>This teleport cost <text><cost></text>."
+  no-safe-location: "<prefix><error>No safe spot was found at the destination."
+  destination-gone: "<prefix><error>The destination is no longer available."
+  failed: "<prefix><error>Teleporting failed."
+  cost-line: "<muted>Cost: <text><cost>"
+  cost-free: "<muted>Cost: <success>Free"
+
+homes:
+  set: "<prefix><success>Home <primary><home></primary> has been set. <muted>(<count>/<limit>)"
+  updated: "<prefix><success>Home <primary><home></primary> has been moved to your current spot."
+  deleted: "<prefix><text>Home <primary><home></primary> has been deleted."
+  teleported: "<prefix><text>Welcome home! <muted>(<home>)"
+  not-found: "<prefix><error>You don't have a home called <highlight><home></highlight>."
+  none: "<prefix><text>You don't have any homes yet. Set one with <click:suggest_command:/sethome ><hover:show_text:'<text>Click to fill in'><primary>/sethome [name]</primary></hover></click>."
+  limit-reached: "<prefix><error>You've reached the maximum of <highlight><limit></highlight> homes. <text>Delete one first with <primary>/delhome</primary>."
+  invalid-name: "<prefix><error>A home name can only contain letters, numbers, - and _ (max. 16 characters)."
+  world-blocked: "<prefix><error>You can't set a home in this world."
+  world-missing: "<prefix><error>The world of this home no longer exists."
+  usage-delhome: "<prefix><text>Usage: <primary>/delhome <name>"
+  player-unknown: "<prefix><error>Player <highlight><player></highlight> has never been on <server>."
+  others-not-found: "<prefix><error><player> doesn't have a home called <highlight><home></highlight>."
+  others-teleported: "<prefix><text>You're at <primary><player></primary>'s home <primary><home></primary>."
+  others-deleted: "<prefix><text>Home <primary><home></primary> of <primary><player></primary> has been deleted."
+  menu:
+    title: "<dark_gray>Your homes (<count>/<limit>)"
+    title-others: "<dark_gray>Homes of <player>"
+    item:
+      name: "<primary><bold><home>"
+      info:
+        - "<muted>World: <text><world>"
+        - "<muted>Location: <text><x>, <y>, <z>"
+      actions:
+        - "<muted>» <text>Click to teleport"
+        - "<muted>» <text>Shift-click to delete"
+      actions-no-delete:
+        - "<muted>» <text>Click to teleport"
+    empty:
+      name: "<text>No homes yet"
+      lore:
+        - "<muted>Set your first home with"
+        - "<primary>/sethome [name]"
+    info:
+      name: "<primary><bold>Your homes"
+      name-others: "<primary><bold>Homes of <player>"
+      lore:
+        - "<text>You have <primary><count></primary> of <primary><limit></primary> homes."
+        - ""
+        - "<muted>New home: <primary>/sethome [name]"
+      lore-others:
+        - "<text><player> has <primary><count></primary> homes."
+    delete-subject: "<error><bold>Delete home <home>"
+
+tpa:
+  usage: "<prefix><text>Usage: <primary>/<command> <player>"
+  sent: "<prefix><text>Request sent to <primary><player></primary>. <muted>Expires in <seconds>s.</muted> <click:run_command:/tpacancel><hover:show_text:'<text>Click to cancel'><error>[Cancel]</error></hover></click>"
+  sent-here: "<prefix><text>You asked <primary><player></primary> to come to you. <muted>Expires in <seconds>s.</muted> <click:run_command:/tpacancel><hover:show_text:'<text>Click to cancel'><error>[Cancel]</error></hover></click>"
+  received:
+    - ""
+    - "<prefix><primary><player></primary> <text>wants to teleport to you."
+    - "   <accept><success><bold>[ACCEPT]</bold></success></accept>   <deny><error><bold>[DENY]</bold></error></deny>"
+    - ""
+  received-here:
+    - ""
+    - "<prefix><primary><player></primary> <text>wants to teleport you to them."
+    - "   <accept><success><bold>[ACCEPT]</bold></success></accept>   <deny><error><bold>[DENY]</bold></error></deny>"
+    - ""
+  hover-accept: "<text>Click to accept"
+  hover-deny: "<text>Click to deny"
+  accepted-target: "<prefix><success>Accepted the request from <player>."
+  accepted-sender: "<prefix><success><player> accepted your request."
+  denied-target: "<prefix><text>Denied the request from <primary><player></primary>."
+  denied-sender: "<prefix><error><player> denied your request."
+  cancelled-sender: "<prefix><text>Your request to <primary><player></primary> has been cancelled."
+  cancelled-target: "<prefix><text><primary><player></primary> cancelled the request."
+  expired-sender: "<prefix><text>Your request to <primary><player></primary> has expired."
+  expired-target: "<prefix><text>The request from <primary><player></primary> has expired."
+  no-request: "<prefix><error>You don't have any pending requests."
+  no-request-from: "<prefix><error>You don't have a request from <highlight><player></highlight>."
+  no-outgoing: "<prefix><error>You don't have a pending request to cancel."
+  self: "<prefix><error>You can't send a request to yourself."
+  disabled-target: "<prefix><error><player> isn't accepting TPA requests right now."
+  already-sent: "<prefix><error>You already sent <player> a request."
+  teleported: "<prefix><text>You're at <primary><player></primary>."
+
+spawn:
+  teleported: "<prefix><text>You're at the <primary><server></primary> spawn."
+  set: "<prefix><success>The spawn has been set to your current spot."
+
+back:
+  teleported: "<prefix><text>You're back at your previous spot."
+  none: "<prefix><error>There's no previous spot to go back to."
+  death-hint: "<prefix><text>Go back to where you died? <click:run_command:/back><hover:show_text:'<text>Click to go back'><primary>[/back]</primary></hover></click>"
 
 admin:
   help:

@@ -114,6 +114,13 @@ public abstract class PindaModule {
         return config.get();
     }
 
+    /** Slaat de config van deze module op, bijvoorbeeld na /setspawn. */
+    protected void saveConfig() {
+        if (config != null) {
+            config.save();
+        }
+    }
+
     protected void listen(Listener listener) {
         plugin.getServer().getPluginManager().registerEvents(listener, plugin);
         listeners.add(listener);

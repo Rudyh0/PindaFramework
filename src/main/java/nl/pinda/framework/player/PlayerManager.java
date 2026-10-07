@@ -184,6 +184,29 @@ public final class PlayerManager implements Listener {
         });
     }
 
+    /**
+     * Zoekt een speler op naam, ook als die offline is. Het resultaat is null als de speler
+     * nooit op de server is geweest. Let op: de future wordt niet op de hoofdthread afgerond.
+     */
+    public CompletableFuture<KnownPlayer> findKnown(String name) {
+        Player online = plugin.getServer().getPlayerExact(name);
+        if (online != null) {
+            return CompletableFuture.completedFuture(new KnownPlayer(online.getUniqueId(), online.getName()));
+        }
+        return plugin.database().query(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT uuid, name FROM pinda_players WHERE name = ? COLLATE NOCASE ORDER BY last_seen DESC LIMIT 1")) {
+                statement.setString(1, name);
+                try (ResultSet result = statement.executeQuery()) {
+                    if (result.next()) {
+                        return new KnownPlayer(UUID.fromString(result.getString("uuid")), result.getString("name"));
+                    }
+                    return null;
+                }
+            }
+        });
+    }
+
     /** Zet alle online spelers klaar in het geheugen, bijvoorbeeld na een herstart van de plugin. */
     public void loadOnlinePlayers() {
         for (Player player : plugin.getServer().getOnlinePlayers()) {
