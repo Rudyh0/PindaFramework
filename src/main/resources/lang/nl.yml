@@ -725,6 +725,20 @@ moderation:
   banlist-header: "<prefix><text>Actieve bans <muted>(<count>)</muted>:"
   banlist-entry: " <error><player> <muted>· <text><reason> <muted>· door <actor> · tot <expires>"
 
+panel:
+  usage: "<prefix><text>Gebruik: <primary>/panel</primary> <muted>(inloglink)</muted> <text>of <primary>/panel logout</primary> <muted>(overal uitloggen)"
+  offline: "<prefix><error>Het webpaneel draait niet. <text>Kijk in de console of de poort vrij is (modules/panel.yml)."
+  link:
+    - "<prefix><text>Jouw inloglink voor het <primary>webpaneel</primary> van <server>:"
+    - " <link><gradient:#FFC857:#E9724C><bold><u>» Klik hier om in te loggen «</u></bold></gradient></link>"
+    - " <muted>De link werkt één keer en is <minutes> minuten geldig. Deel hem met niemand!"
+  link-hover: "<text>Open het webpaneel in je browser"
+  logged-out: "<prefix><success>Je bent overal uitgelogd uit het webpaneel. <muted>(<count> sessies beëindigd)"
+  broadcast: "<prefix><primary><bold>Mededeling</bold></primary> <muted>» <highlight><message>"
+  broadcast-title: "<gradient:#FFC857:#E9724C><bold>Mededeling"
+  broadcast-subtitle: "<text><message>"
+  shop-closed: "<prefix><warning>Je shop is gesloten door <highlight><actor></highlight> <muted>(via het webpaneel)<warning>."
+
 admin:
   help:
     - "<prefix><primary><bold>PindaFramework</bold> <muted>v<version>"

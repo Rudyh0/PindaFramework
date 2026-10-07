@@ -16,6 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.lang.Text;
 import nl.pinda.framework.modules.ranks.Rank;
@@ -83,6 +84,43 @@ public final class ModerationService {
         });
     }
 
+    /** Alle bans en mutes die nu gelden, nieuwste eerst. */
+    public CompletableFuture<List<Punishment>> activeAll(int limit) {
+        long now = System.currentTimeMillis();
+        return plugin.database().query(connection -> {
+            List<Punishment> result = new ArrayList<>();
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT * FROM pinda_punishments WHERE active = 1 AND (expires IS NULL OR expires > ?) "
+                            + "ORDER BY created DESC LIMIT ?")) {
+                statement.setLong(1, now);
+                statement.setInt(2, limit);
+                try (ResultSet rows = statement.executeQuery()) {
+                    while (rows.next()) {
+                        result.add(read(rows));
+                    }
+                }
+            }
+            return result;
+        });
+    }
+
+    /** De nieuwste straffen van iedereen. */
+    public CompletableFuture<List<Punishment>> recent(int limit) {
+        return plugin.database().query(connection -> {
+            List<Punishment> result = new ArrayList<>();
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT * FROM pinda_punishments ORDER BY created DESC LIMIT ?")) {
+                statement.setInt(1, limit);
+                try (ResultSet rows = statement.executeQuery()) {
+                    while (rows.next()) {
+                        result.add(read(rows));
+                    }
+                }
+            }
+            return result;
+        });
+    }
+
     private CompletableFuture<List<Punishment>> list(String sql, String uuid, int limit) {
         return plugin.database().query(connection -> {
             List<Punishment> result = new ArrayList<>();
@@ -130,25 +168,35 @@ public final class ModerationService {
      * De console mag altijd. Wordt niet op de hoofdthread afgerond.
      */
     public CompletableFuture<Boolean> canPunish(CommandSender actor, UUID target) {
-        if (!(actor instanceof Player player)) {
+        return canPunish(actor instanceof Player player ? player.getUniqueId() : null, target);
+    }
+
+    /** Zelfde, op UUID (null = console). Gebruikt door het webpaneel. */
+    public CompletableFuture<Boolean> canPunish(UUID actor, UUID target) {
+        if (actor == null) {
             return CompletableFuture.completedFuture(true);
         }
         RankModule ranks = plugin.modules().get(RankModule.class);
         if (ranks == null || !ranks.isEnabled()) {
             return CompletableFuture.completedFuture(true);
         }
-        Rank own = ranks.service().rankOf(player);
-        return ranks.service().rankOf(target).thenApply(theirs -> own.weight() > theirs.weight());
+        return ranks.service().rankOf(actor).thenCombine(ranks.service().rankOf(target),
+                (own, theirs) -> own.weight() > theirs.weight());
     }
 
     /** Slaat een straf op. Een nieuwe ban of mute vervangt de vorige. */
     public CompletableFuture<Punishment> punish(UUID target, String targetName, Punishment.Type type,
                                                 String reason, CommandSender actor, Long durationMillis) {
+        return punish(target, targetName, type, reason,
+                actor instanceof Player player ? player.getUniqueId() : null, actor.getName(), durationMillis);
+    }
+
+    /** Zelfde, met de dader als UUID en naam (null = console). Gebruikt door het webpaneel. */
+    public CompletableFuture<Punishment> punish(UUID target, String targetName, Punishment.Type type,
+                                                String reason, UUID actorId, String actorName, Long durationMillis) {
         long now = System.currentTimeMillis();
         Long expires = durationMillis == null ? null : now + durationMillis;
         boolean active = type == Punishment.Type.BAN || type == Punishment.Type.MUTE;
-        UUID actorId = actor instanceof Player player ? player.getUniqueId() : null;
-        String actorName = actor.getName();
         return plugin.database().query(connection -> {
             if (active) {
                 try (PreparedStatement statement = connection.prepareStatement(
@@ -191,7 +239,10 @@ public final class ModerationService {
 
     /** Heft een actieve ban of mute op. Geeft het aantal opgeheven straffen. */
     public CompletableFuture<Integer> revoke(UUID target, Punishment.Type type, CommandSender actor) {
-        String actorName = actor.getName();
+        return revoke(target, type, actor.getName());
+    }
+
+    public CompletableFuture<Integer> revoke(UUID target, Punishment.Type type, String actorName) {
         if (type == Punishment.Type.MUTE) {
             mutes.remove(target);
         }
@@ -226,6 +277,61 @@ public final class ModerationService {
                 Punishment.Type.valueOf(rows.getString("type")), rows.getString("reason"),
                 actor == null ? null : UUID.fromString(actor), rows.getString("actor_name"),
                 rows.getLong("created"), noExpiry ? null : expires, rows.getInt("active") == 1);
+    }
+
+    // ============================================================ gevolgen en meldingen (hoofdthread)
+
+    /** Voert een straf uit op een online speler: kicken, muten of waarschuwen. */
+    public void applyEffects(Punishment punishment) {
+        Player target = plugin.getServer().getPlayer(punishment.target());
+        if (target == null) {
+            return;
+        }
+        String code = plugin.lang().languageOf(target);
+        switch (punishment.type()) {
+            case BAN -> target.kick(banScreen(code, punishment));
+            case KICK -> target.kick(plugin.lang().component(code, "moderation.kick-screen",
+                    Text.p("reason", punishment.reason()), Text.p("actor", punishment.actorName())));
+            case MUTE -> {
+                cacheMute(target.getUniqueId(), punishment);
+                plugin.lang().send(target, "moderation.muted-target", Text.p("reason", punishment.reason()),
+                        Text.p("expires", expiryText(code, punishment)));
+                plugin.theme().play(target, "error");
+            }
+            case WARN -> {
+                plugin.lang().send(target, "moderation.warned-target", Text.p("reason", punishment.reason()),
+                        Text.p("actor", punishment.actorName()));
+                plugin.lang().sendTitle(target, "moderation.warned-title", "moderation.warned-subtitle",
+                        Text.p("reason", punishment.reason()));
+                plugin.theme().play(target, "error");
+            }
+        }
+    }
+
+    /** Meldt iets aan staff (of iedereen als broadcast aan staat) en in de console. */
+    public void notifyStaff(Object exclude, String key, TagResolver... resolvers) {
+        boolean everyone = module.cfg().getBoolean("broadcast", false);
+        for (Player online : plugin.getServer().getOnlinePlayers()) {
+            if (online == exclude) {
+                continue;
+            }
+            if (everyone || online.hasPermission(ModerationModule.NOTIFY)) {
+                plugin.lang().send(online, key, resolvers);
+            }
+        }
+        if (exclude != plugin.getServer().getConsoleSender()) {
+            plugin.getServer().getConsoleSender().sendMessage(
+                    plugin.lang().component(plugin.lang().defaultLanguage(), key, resolvers));
+        }
+    }
+
+    /** De standaardmelding aan staff na een nieuwe straf. */
+    public void announce(Object exclude, Punishment punishment) {
+        String type = punishment.type().name().toLowerCase(java.util.Locale.ROOT);
+        notifyStaff(exclude, "moderation.notify-" + type,
+                Text.p("player", punishment.targetName()), Text.p("actor", punishment.actorName()),
+                Text.p("reason", punishment.reason()),
+                Text.p("expires", expiryText(plugin.lang().defaultLanguage(), punishment)));
     }
 
     // ============================================================ teksten

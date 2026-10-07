@@ -30,7 +30,14 @@ jobs:
       - name: Plugin bouwen
         run: |
           chmod +x gradlew
-          ./gradlew build --no-daemon --stacktrace
+          set -o pipefail
+          if ! ./gradlew build --no-daemon --stacktrace 2>&1 | tee build.log; then
+            # Compileerfouten als melding tonen, zodat ze ook zonder het volledige log te lezen zijn
+            grep -E "\.java:[0-9]+: (error|warning)" build.log | head -n 40 | while IFS= read -r line; do
+              echo "::error::${line#*/src/main/java/}"
+            done
+            exit 1
+          fi
 
       - name: Jar bewaren als artifact
         uses: actions/upload-artifact@v4

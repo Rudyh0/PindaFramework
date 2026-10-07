@@ -257,3 +257,57 @@ permissions:
   pinda.mod.notify:
     description: Meldingen zien als iemand gestraft wordt
     default: op
+
+  # Webpaneel (/panel)
+  pinda.panel.*:
+    description: Alles in het webpaneel
+    default: op
+    children:
+      pinda.panel.use: true
+      pinda.panel.players: true
+      pinda.panel.moderate: true
+      pinda.panel.economy.view: true
+      pinda.panel.economy.edit: true
+      pinda.panel.ranks: true
+      pinda.panel.shops: true
+      pinda.panel.shops.manage: true
+      pinda.panel.server: true
+      pinda.panel.stop: true
+      pinda.panel.console: true
+      pinda.panel.log: true
+  pinda.panel.use:
+    description: /panel, inloggen op het webpaneel en het dashboard zien
+    default: op
+  pinda.panel.players:
+    description: Paneel - spelers zoeken en profielen en straffen bekijken
+    default: op
+  pinda.panel.moderate:
+    description: Paneel - kicken, waarschuwen, muten en bannen (zelfde regels als in-game)
+    default: op
+  pinda.panel.economy.view:
+    description: Paneel - saldo's en transacties bekijken
+    default: op
+  pinda.panel.economy.edit:
+    description: Paneel - geld geven, afnemen en saldo's instellen
+    default: op
+  pinda.panel.ranks:
+    description: Paneel - rangen geven (alleen lager dan je eigen rang, behalve operators)
+    default: op
+  pinda.panel.shops:
+    description: Paneel - shops bekijken
+    default: op
+  pinda.panel.shops.manage:
+    description: Paneel - shops sluiten
+    default: op
+  pinda.panel.server:
+    description: Paneel - tijd, weer, mededelingen, whitelist, opslaan en herladen
+    default: op
+  pinda.panel.stop:
+    description: Paneel - de server stoppen
+    default: op
+  pinda.panel.console:
+    description: Paneel - de serverconsole lezen en commando's uitvoeren
+    default: op
+  pinda.panel.log:
+    description: Paneel - het logboek en actieve sessies bekijken
+    default: op

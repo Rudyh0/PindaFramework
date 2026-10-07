@@ -14,13 +14,13 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 
 ## Wat zit erin
 
-Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners en een eigen rangensysteem.
+Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie en een webpaneel.
 
 ## To-do
 
 1. ~~Rangensysteem (Pinda, PindaMod, PindaAdmin) met prefix in chat en tablist~~ ✅
 2. ~~Moderatie: kick, mute, tijdelijke en permanente ban, banlijst en logboek~~ ✅
-3. Webpaneel: eigen webserver (IP + poort, later instelbare URL), eenmalige inloglink vanaf PindaMod, dashboard, spelers en rangen, moderatie, economy, shops, serverbeheer, statistieken, actielog
+3. ~~Webpaneel: eigen webserver (IP + poort, later instelbare URL), eenmalige inloglink vanaf PindaMod, dashboard, spelers en rangen, moderatie, economy, shops, serverbeheer, statistieken, actielog~~ ✅
 4. Overige basis: automatische broadcasts, scoreboard en leaderboards (+ PlaceholderAPI), antilag
 5. World control: creepers en TNT zonder blokschade, phantoms uit, spawnrates, ender dragon respawn
 6. Backpack: tweede inventory die bij doodgaan blijft liggen
@@ -35,12 +35,45 @@ PindaFramework heeft een eigen rangensysteem; LuckPerms is niet nodig. De rangen
 | Rang | Kleur | Prefix | Wat extra |
 |---|---|---|---|
 | **Pinda** | paars | `[Pinda]` | alle gewone commando's |
-| **PindaMod** | blauw | `[Mod]` | geen teleport-wachttijd, socialspy, vanish, invsee (bekijken), `/fly`, `/heal`, `/feed`, `/gms`, `/gmsp`, `/tp`, CoreProtect inspecteren |
+| **PindaMod** | blauw | `[Mod]` | geen teleport-wachttijd, socialspy, vanish, invsee (bekijken), `/fly`, `/heal`, `/feed`, `/gms`, `/gmsp`, `/tp`, CoreProtect inspecteren, moderatie, webpaneel (bekijken en straffen) |
 | **PindaAdmin** | goud | `[Admin]` | alles (operator) |
 
 - Rang geven: `/rank set <speler> <rang>` (ook vanuit de console). Je eigen rang: `/rank`. Alle rangen: `/rank list`.
 - Wie al operator is, wordt bij de eerste join automatisch PindaAdmin. Spelers zonder operator-rang verliezen hun operator-status.
 - In `ranks.yml` kun je ook permissies van andere plugins zetten (bijv. `worldedit.*` of `coreprotect.rollback`).
+
+## Webpaneel
+
+Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
+
+1. Typ in-game **`/panel`** (vanaf PindaMod). Je krijgt een link in de chat.
+2. Klik erop: je bent ingelogd. De link werkt **één keer** en is 5 minuten geldig.
+3. Na 60 minuten zonder activiteit (of maximaal 12 uur) log je vanzelf uit. `/panel logout` logt je overal uit.
+
+**Wat kan er in?**
+
+| Onderdeel | Wat | Permissie | Wie |
+|---|---|---|---|
+| Dashboard | online, TPS, geheugen, uptime, grafiek van 24 uur, werelden | `pinda.panel.use` | Mod |
+| Spelers | zoeken, profiel (live positie, saldo, straffen, shop, transacties) | `pinda.panel.players` | Mod |
+| Straffen | kicken, waarschuwen, muten, bannen en opheffen (zelfde regels als in-game) | `pinda.panel.moderate` | Mod |
+| Economie | totalen, rijkste spelers, alle transacties | `pinda.panel.economy.view` | Mod |
+| Saldo aanpassen | geven, afnemen, instellen (bank of contant) | `pinda.panel.economy.edit` | Admin |
+| Rangen | rang geven (alleen lager dan je eigen rang, behalve operators) | `pinda.panel.ranks` | Admin |
+| Shops | alle shops en hun aanbod bekijken | `pinda.panel.shops` | Mod |
+| Shop sluiten | een shop dichtzetten | `pinda.panel.shops.manage` | Admin |
+| Server | tijd, weer, mededeling, whitelist, opslaan, `/pinda reload` | `pinda.panel.server` | Admin |
+| Server stoppen | | `pinda.panel.stop` | Admin |
+| Console | live meelezen en commando's uitvoeren | `pinda.panel.console` | Admin |
+| Logboek | wie wat deed in het paneel, actieve sessies | `pinda.panel.log` | Admin |
+
+**Bereikbaar maken** (`modules/panel.yml`):
+
+- **Laptop/thuis:** niets instellen. De link gebruikt automatisch het IP-adres van je laptop in je netwerk, bijvoorbeeld `http://192.168.1.20:8085`. Werkt op elk apparaat in hetzelfde netwerk.
+- **VPS:** zet `public-url: "http://<ip-van-je-vps>:8085"` en open de poort: `sudo ufw allow 8085/tcp`.
+- **Eigen adres met https (aanrader als je live gaat):** zet nginx of Caddy ervoor, zet `public-url: "https://panel.jouwdomein.nl"`, `bind: "127.0.0.1"` en `behind-proxy: true`. Met Caddy is dat één regel: `panel.jouwdomein.nl { reverse_proxy 127.0.0.1:8085 }`.
+
+**Veiligheid:** inloglinks zijn lang en willekeurig en werken maar één keer; ze verdwijnen direct uit je adresbalk. Het paneel controleert bij elke actie opnieuw je rang, dus wie een lagere rang krijgt, verliest meteen zijn rechten. Elke actie komt in het logboek én in de serverconsole. Zonder https gaat het verkeer onversleuteld over het netwerk: prima thuis, maar gebruik https zodra het paneel via internet bereikbaar is.
 
 ## Commando's en permissies
 
@@ -92,6 +125,7 @@ PindaFramework heeft een eigen rangensysteem; LuckPerms is niet nodig. De rangen
 | `/mute <speler> [duur] [reden]`, `/unmute <speler>` | | `pinda.mod.mute` | Mod |
 | `/warn <speler> <reden>` | `/waarschuw` | `pinda.mod.warn` | Mod |
 | `/history <speler>`, `/banlist` | `/straffen`, `/bans` | `pinda.mod.history` | Mod |
+| `/panel [logout]` | `/paneel`, `/webpanel` | `pinda.panel.use` | Mod |
 
 Extra permissies:
 
@@ -147,7 +181,8 @@ plugins/PindaFramework/
     ├── shop.yml        marketplace fee, belasting, shortcodes voor het shopbord
     ├── locks.yml       welke blokken op slot gaan, hoppers, bescherming, max partners
     ├── ranks.yml       rangen, kleuren, prefixes, permissies en de chatopmaak
-    └── moderation.yml  max tempban voor mods, straffen openbaar of alleen staff
+    ├── moderation.yml  max tempban voor mods, straffen openbaar of alleen staff
+    └── panel.yml       webpaneel: poort, adres (public-url), hoe lang inloggen geldig is
 ```
 
 - **Teksten** gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format). Gebruik de thema-kleuren als tag: `<primary>`, `<secondary>`, `<text>`, `<muted>`, `<highlight>`, `<success>`, `<error>`, `<warning>`, `<prefix>` voor de prefix en `<server>` voor de servernaam (`server-name` in `config.yml`).

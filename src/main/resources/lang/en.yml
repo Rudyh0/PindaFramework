@@ -721,6 +721,20 @@ moderation:
   banlist-header: "<prefix><text>Active bans <muted>(<count>)</muted>:"
   banlist-entry: " <error><player> <muted>· <text><reason> <muted>· by <actor> · until <expires>"
 
+panel:
+  usage: "<prefix><text>Usage: <primary>/panel</primary> <muted>(login link)</muted> <text>or <primary>/panel logout</primary> <muted>(log out everywhere)"
+  offline: "<prefix><error>The web panel isn't running. <text>Check the console to see if the port is free (modules/panel.yml)."
+  link:
+    - "<prefix><text>Your login link for the <server> <primary>web panel</primary>:"
+    - " <link><gradient:#FFC857:#E9724C><bold><u>» Click here to log in «</u></bold></gradient></link>"
+    - " <muted>The link works once and is valid for <minutes> minutes. Don't share it with anyone!"
+  link-hover: "<text>Open the web panel in your browser"
+  logged-out: "<prefix><success>You've been logged out of the web panel everywhere. <muted>(<count> sessions ended)"
+  broadcast: "<prefix><primary><bold>Announcement</bold></primary> <muted>» <highlight><message>"
+  broadcast-title: "<gradient:#FFC857:#E9724C><bold>Announcement"
+  broadcast-subtitle: "<text><message>"
+  shop-closed: "<prefix><warning>Your shop was closed by <highlight><actor></highlight> <muted>(via the web panel)<warning>."
+
 admin:
   help:
     - "<prefix><primary><bold>PindaFramework</bold> <muted>v<version>"

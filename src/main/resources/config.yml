@@ -29,6 +29,7 @@ modules:
   shop: true
   locks: true
   moderation: true
+  panel: true
 
 # Opmaak van alle berichten, in MiniMessage-formaat.
 # Uitleg: https://docs.advntr.dev/minimessage/format

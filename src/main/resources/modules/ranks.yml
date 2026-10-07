@@ -81,6 +81,13 @@ ranks:
       - pinda.mod.warn
       - pinda.mod.history
       - pinda.mod.notify
+      # Webpaneel: dashboard, spelers, straffen, saldo's en shops bekijken
+      # (geld aanpassen, rangen, serverbeheer, console en logboek: alleen PindaAdmin)
+      - pinda.panel.use
+      - pinda.panel.players
+      - pinda.panel.moderate
+      - pinda.panel.economy.view
+      - pinda.panel.shops
       # Vanilla /tp naar spelers
       - minecraft.command.teleport
       - minecraft.command.tp

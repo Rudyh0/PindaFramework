@@ -21,6 +21,7 @@ import nl.pinda.framework.modules.locks.LockModule;
 import nl.pinda.framework.modules.moderation.ModerationModule;
 import nl.pinda.framework.modules.ranks.RankModule;
 import nl.pinda.framework.modules.msg.MsgModule;
+import nl.pinda.framework.modules.panel.PanelModule;
 import nl.pinda.framework.modules.settings.SettingsModule;
 import nl.pinda.framework.modules.shop.ShopModule;
 import nl.pinda.framework.modules.spawn.SpawnModule;
@@ -103,6 +104,7 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new ShopModule(this));
             modules.register(new LockModule(this));
             modules.register(new ModerationModule(this));
+            modules.register(new PanelModule(this));
             modules.enableAll();
 
             commands.register(new AdminCommand(this));

@@ -99,29 +99,7 @@ final class ModerationActions {
     }
 
     private void applyEffects(Punishment punishment) {
-        Player target = plugin.getServer().getPlayer(punishment.target());
-        if (target == null) {
-            return;
-        }
-        String code = plugin.lang().languageOf(target);
-        switch (punishment.type()) {
-            case BAN -> target.kick(service.banScreen(code, punishment));
-            case KICK -> target.kick(plugin.lang().component(code, "moderation.kick-screen",
-                    Text.p("reason", punishment.reason()), Text.p("actor", punishment.actorName())));
-            case MUTE -> {
-                service.cacheMute(target.getUniqueId(), punishment);
-                plugin.lang().send(target, "moderation.muted-target", Text.p("reason", punishment.reason()),
-                        Text.p("expires", service.expiryText(code, punishment)));
-                plugin.theme().play(target, "error");
-            }
-            case WARN -> {
-                plugin.lang().send(target, "moderation.warned-target", Text.p("reason", punishment.reason()),
-                        Text.p("actor", punishment.actorName()));
-                plugin.lang().sendTitle(target, "moderation.warned-title", "moderation.warned-subtitle",
-                        Text.p("reason", punishment.reason()));
-                plugin.theme().play(target, "error");
-            }
-        }
+        service.applyEffects(punishment);
     }
 
     private void announce(CommandSender sender, Punishment punishment) {
@@ -131,25 +109,11 @@ final class ModerationActions {
                 Text.p("player", punishment.targetName()), Text.p("reason", punishment.reason()),
                 Text.p("expires", service.expiryText(code, punishment)));
         plugin.theme().play(sender, "success");
-        notifyStaff(sender, "moderation.notify-" + type,
-                Text.p("player", punishment.targetName()), Text.p("actor", punishment.actorName()),
-                Text.p("reason", punishment.reason()), Text.p("expires", service.expiryText(plugin.lang().defaultLanguage(), punishment)));
+        service.announce(sender, punishment);
     }
 
-    /** Meldt een straf aan staff, of aan iedereen als broadcast aan staat. Niet aan de afzender zelf. */
     private void notifyStaff(CommandSender sender, String key, TagResolver... resolvers) {
-        boolean everyone = module.cfg().getBoolean("broadcast", false);
-        for (Player online : plugin.getServer().getOnlinePlayers()) {
-            if (online == sender) {
-                continue;
-            }
-            if (everyone || online.hasPermission(ModerationModule.NOTIFY)) {
-                plugin.lang().send(online, key, resolvers);
-            }
-        }
-        if (sender instanceof Player) {
-            plugin.getServer().getConsoleSender().sendMessage(plugin.lang().component(plugin.lang().defaultLanguage(), key, resolvers));
-        }
+        service.notifyStaff(sender, key, resolvers);
     }
 
     private void fail(CommandSender sender, String key, TagResolver... resolvers) {

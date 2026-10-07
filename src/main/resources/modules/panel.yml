@@ -1,0 +1,40 @@
+# ┌──────────────────────────────────────────────┐
+# │           PindaFramework - webpaneel         │
+# └──────────────────────────────────────────────┘
+# Een eigen beheerpaneel in de browser. Staff (vanaf PindaMod) typt /panel in-game en krijgt
+# een link waarmee hij één keer kan inloggen. Wat je in het paneel mag, hangt af van je rang
+# (permissies pinda.panel.*, zie modules/ranks.yml).
+#
+# Bereikbaar maken:
+#  - Thuis/laptop: zet niets, de link gebruikt automatisch het IP-adres in je eigen netwerk.
+#  - VPS: zet public-url op "http://<ip-van-je-vps>:<poort>" en open de poort in je firewall
+#    (bijv. sudo ufw allow 8085/tcp).
+#  - Later met een eigen adres en https (aanrader): zet nginx of Caddy ervoor, zet
+#    public-url op bijv. "https://panel.pindacraft.nl" en behind-proxy op true.
+# Na het aanpassen: /pinda reload
+
+web:
+  # Op welk adres de webserver luistert. "0.0.0.0" = bereikbaar via elk netwerk.
+  # Gebruik je een reverse proxy op dezelfde machine? Zet dan "127.0.0.1".
+  bind: "0.0.0.0"
+  # De poort van het paneel. Mag niet dezelfde zijn als die van Minecraft.
+  port: 8085
+
+# Het adres van het paneel zoals spelers het openen, zonder / aan het einde.
+# Leeg = automatisch: http://<ip-in-je-netwerk>:<poort>
+public-url: ""
+
+# Draait het paneel achter nginx/Caddy? Dan wordt het echte IP van de bezoeker gelezen.
+behind-proxy: false
+
+login:
+  # Hoe lang een inloglink geldig is (minuten). Een link werkt maar één keer.
+  link-minutes: 5
+  # Na hoeveel minuten zonder activiteit je automatisch wordt uitgelogd
+  idle-minutes: 60
+  # Hoe lang je maximaal ingelogd blijft (uren)
+  max-hours: 12
+
+console:
+  # Hoeveel regels van de serverconsole het paneel laat zien
+  lines: 400
