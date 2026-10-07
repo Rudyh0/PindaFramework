@@ -1,0 +1,28 @@
+# ┌──────────────────────────────────────────────┐
+# │            PindaFramework - shops            │
+# └──────────────────────────────────────────────┘
+# Elke speler kan één shop hebben (/shop). Een shop is alleen open als:
+#  - de eigenaar hem op open heeft gezet,
+#  - de eigenaar online is,
+#  - de marketplace fee van vandaag betaald is,
+#  - er iets te koop is (uitverkocht = geen fee).
+# De opbrengst gaat zonder stortkosten naar de bank van de eigenaar.
+
+# Marketplace fee per dag dat de shop open is
+daily-fee: 25
+
+# Belasting op elke verkoop, in procenten. Dit geld verdwijnt uit de economie.
+sales-tax-percent: 5
+
+# Hoogste prijs per stuk
+max-price: 1000000
+
+# Wat er op de eerste regel van een bord moet staan om er een shopbord van te maken.
+# Elke speler kan één shopbord hebben; alleen de eigenaar kan het afbreken.
+sign-shortcodes:
+  - "[shop]"
+  - "[winkel]"
+
+# ALLEEN OM TE TESTEN: bij je eigen shop kunnen kopen (via de marktplaats).
+# Zet dit weer op false zodra de server open gaat.
+allow-own-purchases: false

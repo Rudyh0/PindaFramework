@@ -73,6 +73,7 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 | `/bank [storten\|opnemen <bedrag\|alles>]` | | `pinda.eco.bank` | iedereen |
 | `/baltop` | `/geldtop`, `/moneytop` | `pinda.eco.baltop` | iedereen |
 | `/eco give\|take\|set <speler> <bedrag> [bank\|contant]` | | `pinda.eco.admin` | op |
+| `/shop [markt\|beheer\|open\|sluit]` | `/winkel`, `/markt`, `/market` | `pinda.shop.use` | iedereen |
 
 Extra permissies:
 
@@ -92,6 +93,8 @@ Extra permissies:
 | `pinda.vanish.see` | Onzichtbare staff toch zien | op |
 | `pinda.invsee.modify` | Items aanpassen bij /invsee (anders alleen kijken) | op |
 | `pinda.eco.keep-cash` | Geen contant geld verliezen bij doodgaan | niemand |
+| `pinda.shop.sign` | Shopbord plaatsen met `[shop]` | iedereen |
+| `pinda.shop.admin` | Shopborden van anderen afbreken | op |
 
 `pinda.admin` geeft alle beheerrechten. Aliassen pas je aan in `config.yml` onder `commands`, bijvoorbeeld:
 
@@ -121,7 +124,8 @@ plugins/PindaFramework/
     ├── msg.yml         privéberichten, testoptie berichten naar jezelf
     ├── afk.yml         automatisch AFK, kicken, tablist
     ├── staff.yml       vanish-instellingen
-    └── economy.yml     valuta, startbedrag, stortkosten, geld bij doodgaan, online-bonus
+    ├── economy.yml     valuta, startbedrag, stortkosten, geld bij doodgaan, online-bonus
+    └── shop.yml        marketplace fee, belasting, shortcodes voor het shopbord
 ```
 
 - **Teksten** gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format). Gebruik de thema-kleuren als tag: `<primary>`, `<secondary>`, `<text>`, `<muted>`, `<highlight>`, `<success>`, `<error>`, `<warning>`, `<prefix>` voor de prefix en `<server>` voor de servernaam (`server-name` in `config.yml`).

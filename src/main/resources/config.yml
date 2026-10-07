@@ -25,6 +25,7 @@ modules:
   utility: true
   staff: true
   economy: true
+  shop: true
 
 # Opmaak van alle berichten, in MiniMessage-formaat.
 # Uitleg: https://docs.advntr.dev/minimessage/format

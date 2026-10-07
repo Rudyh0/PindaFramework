@@ -195,3 +195,14 @@ permissions:
   pinda.eco.keep-cash:
     description: Geen contant geld verliezen bij doodgaan
     default: false
+
+  # Shops
+  pinda.shop.use:
+    description: /shop, de marktplaats en kopen
+    default: true
+  pinda.shop.sign:
+    description: Een shopbord plaatsen met [shop]
+    default: true
+  pinda.shop.admin:
+    description: Shopborden van anderen afbreken
+    default: op

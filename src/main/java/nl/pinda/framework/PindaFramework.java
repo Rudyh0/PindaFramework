@@ -7,6 +7,7 @@ import nl.pinda.framework.config.ConfigFile;
 import nl.pinda.framework.config.Theme;
 import nl.pinda.framework.economy.DisabledEconomy;
 import nl.pinda.framework.economy.Economy;
+import nl.pinda.framework.input.ChatInput;
 import nl.pinda.framework.lang.LanguageManager;
 import nl.pinda.framework.menu.Menu;
 import nl.pinda.framework.menu.MenuListener;
@@ -18,6 +19,7 @@ import nl.pinda.framework.modules.gamemode.GamemodeModule;
 import nl.pinda.framework.modules.homes.HomesModule;
 import nl.pinda.framework.modules.msg.MsgModule;
 import nl.pinda.framework.modules.settings.SettingsModule;
+import nl.pinda.framework.modules.shop.ShopModule;
 import nl.pinda.framework.modules.spawn.SpawnModule;
 import nl.pinda.framework.modules.staff.StaffModule;
 import nl.pinda.framework.modules.tips.TipsModule;
@@ -50,6 +52,7 @@ public final class PindaFramework extends JavaPlugin {
     private CommandManager commands;
     private ModuleManager modules;
     private TeleportService teleports;
+    private ChatInput input;
     private Economy economy = new DisabledEconomy();
 
     @Override
@@ -70,10 +73,12 @@ public final class PindaFramework extends JavaPlugin {
             settings = new SettingsService(this);
             commands = new CommandManager(this);
             teleports = new TeleportService(this);
+            input = new ChatInput(this);
 
             getServer().getPluginManager().registerEvents(players, this);
             getServer().getPluginManager().registerEvents(new MenuListener(this), this);
             getServer().getPluginManager().registerEvents(teleports, this);
+            getServer().getPluginManager().registerEvents(input, this);
 
             modules = new ModuleManager(this);
             modules.register(new SettingsModule(this));
@@ -88,6 +93,7 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new UtilityModule(this));
             modules.register(new StaffModule(this));
             modules.register(new EconomyModule(this));
+            modules.register(new ShopModule(this));
             modules.enableAll();
 
             commands.register(new AdminCommand(this));
@@ -172,6 +178,11 @@ public final class PindaFramework extends JavaPlugin {
 
     public ModuleManager modules() {
         return modules;
+    }
+
+    /** Spelers iets laten typen in de chat, zoals een prijs of naam. */
+    public ChatInput input() {
+        return input;
     }
 
     public TeleportService teleports() {

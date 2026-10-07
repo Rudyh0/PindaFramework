@@ -115,7 +115,34 @@ public abstract class Menu implements InventoryHolder {
         return slots;
     }
 
+    /**
+     * Voor menu's die zelf met items willen werken (zoals een shop waar je items in sleept).
+     * Geef true terug als je de klik volledig zelf afhandelt, inclusief het annuleren.
+     * Standaard false: alles is vergrendeld en alleen knoppen werken.
+     */
+    protected boolean onRawClick(InventoryClickEvent event) {
+        return false;
+    }
+
+    /** Zelfde als {@link #onRawClick} maar voor slepen. */
+    protected boolean onRawDrag(org.bukkit.event.inventory.InventoryDragEvent event) {
+        return false;
+    }
+
+    /** Voert de knop-actie van het aangeklikte vakje uit (voor gebruik vanuit {@link #onRawClick}). */
+    protected final void runAction(InventoryClickEvent event) {
+        handleClick(event);
+    }
+
     // ------------------------------------------------- aangeroepen door MenuListener
+
+    final boolean handleRawClick(InventoryClickEvent event) {
+        return onRawClick(event);
+    }
+
+    final boolean handleRawDrag(org.bukkit.event.inventory.InventoryDragEvent event) {
+        return onRawDrag(event);
+    }
 
     final void handleClick(InventoryClickEvent event) {
         Consumer<MenuClick> action = actions.get(event.getRawSlot());

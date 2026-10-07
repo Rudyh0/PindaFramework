@@ -24,6 +24,9 @@ general:
   data-load-failed: "<error>Je spelersgegevens konden niet geladen worden.<newline><text>Probeer het over een paar seconden opnieuw."
   enabled: "<success>Aan"
   disabled: "<error>Uit"
+  input-hint: "<muted>Typ je antwoord in de chat, of <primary>annuleer</primary> om te stoppen."
+  input-cancelled: "<prefix><text>Geannuleerd."
+  input-timeout: "<prefix><muted>Je hebt niet op tijd geantwoord."
 
 settings:
   menu:
@@ -99,6 +102,7 @@ tips:
     - "Stuur iemand een privébericht met <primary>/msg [speler] [bericht]</primary> en antwoord snel met <primary>/r</primary>."
     - "Even weg? Typ <primary>/afk</primary>, dan weten anderen dat je niet meteen reageert."
     - "Zet je geld op tijd op de <primary>/bank</primary>: contant geld verlies je als je doodgaat."
+    - "Begin je eigen shop of koop bij anderen met <click:run_command:/shop><hover:show_text:'<text>Klik om te openen'><primary>/shop</primary></hover></click>."
 
 menu:
   previous: "<primary>« Vorige pagina"
@@ -348,6 +352,195 @@ economy:
         - "<muted>Gaat naar je contante geld."
       unavailable: "<error>Niet genoeg op je bank"
     withdraw-all: "<warning><bold>Alles opnemen <muted>(<amount>)"
+
+shop:
+  default-name: "Shop van %player%"
+  no-shop: "<prefix><error>Je hebt nog geen shop. <text>Begin er een met <primary>/shop</primary>."
+  created: "<prefix><success>Je shop <primary><shop></primary> is aangemaakt! <text>Sleep items erin, geef ze een prijs en zet hem open."
+  deleted: "<prefix><text>Je shop is opgeheven."
+  delete-not-empty: "<prefix><error>Haal eerst alle items uit je shop voordat je hem opheft."
+  renamed: "<prefix><success>Je shop heet nu <primary><shop></primary>."
+  rename-prompt: "<prefix><text>Typ de nieuwe naam voor je shop <muted>(3 tot 24 tekens)</muted>."
+  name-too-short: "<prefix><error>Die naam is te kort. Gebruik minimaal 3 tekens."
+  price-prompt: "<prefix><text>Typ de prijs <primary>per stuk</primary> voor <primary><item></primary>, bijvoorbeeld <primary>10</primary> of <primary>2,50</primary>."
+  price-set: "<prefix><success><item> kost nu <primary><price></primary> per stuk."
+  price-too-high: "<prefix><error>Dat is te duur. De hoogste prijs is <highlight><max></highlight> per stuk."
+  set-price-hint: "[actionbar]<warning>Rechtsklik op het vak om een prijs in te stellen"
+  slot-taken: "<prefix><error>In dit vak ligt al een ander item. Kies een leeg vak."
+  full: "<prefix><error>Je shop is vol."
+  inventory-full: "<prefix><error>Je inventory is vol."
+  opened: "<prefix><success>Je shop is open! <muted>Hij blijft open zolang je online bent."
+  opened-empty: "<prefix><text>Je shop staat op open, maar er is nog niets te koop. <muted>Geef je items een prijs."
+  open-failed: "<prefix><error>Je shop kon niet open: je hebt niet genoeg geld voor de marketplace fee."
+  closed-by-owner: "<prefix><text>Je shop is gesloten."
+  reopened: "<prefix><text>Je shop is weer open."
+  reopened-empty: "<prefix><text>Je shop staat op open, maar is uitverkocht. <muted>Vul hem aan via /shop."
+  fee-paid: "<prefix><muted>Marketplace fee van vandaag betaald: <text><amount></text>."
+  fee-failed: "<prefix><error>Je shop is gesloten: je hebt niet genoeg geld voor de marketplace fee van <highlight><amount></highlight>."
+  closed: "<prefix><error>De shop van <highlight><player></highlight> is nu gesloten."
+  own-shop: "<prefix><error>Je kunt niet bij je eigen shop kopen."
+  bought: "<prefix><success>Gekocht: <amount>x <item> <text>voor <primary><price></primary> bij <primary><shop></primary>."
+  sold: "<prefix><success><player> kocht <amount>x <item> <text>voor <primary><price></primary>. <muted>Na <tax> belasting: +<net> op je bank."
+  item-sold-out: "<prefix><warning><item> is uitverkocht."
+  sold-out: "<prefix><warning>Je shop is uitverkocht en daarom gesloten voor kopers. <muted>Vul hem aan via /shop."
+  sign-no-shop: "<prefix><error>Je hebt nog geen shop. Maak er eerst een met <primary>/shop</primary>."
+  sign-limit: "<prefix><error>Je hebt al een shopbord op <highlight><x>, <y>, <z></highlight>. Breek dat eerst af."
+  sign-created: "<prefix><success>Shopbord geplaatst! <text>Spelers kunnen erop klikken om je shop te openen."
+  sign-protected: "<prefix><error>Dit shopbord is van <highlight><player></highlight>."
+  sign-broken: "<prefix><text>Je shopbord is weggehaald. <muted>Plaats een nieuw bord met [shop] om het terug te zetten."
+  sign-broken-support: "<prefix><text>Het blok onder je shopbord is weg, dus het bord ook."
+  menu:
+    back: "<primary>« Terug"
+  status:
+    open: "<success>● Open"
+    closed: "<error>● Gesloten"
+    sold-out: "<warning>● Uitverkocht"
+    offline: "<muted>● Eigenaar offline"
+    fee-unpaid: "<warning>● Fee niet betaald"
+  sign:
+    line-1: "<dark_aqua><bold>[Shop]"
+    line-2: "<black><shop>"
+    line-3: "<dark_gray><player>"
+    open: "<dark_green>● Open"
+    closed: "<dark_red>● Gesloten"
+    removed: "<dark_gray>Shop opgeheven"
+  hub:
+    title: "<dark_gray>Shops"
+    market:
+      name: "<primary><bold>Marktplaats"
+      lore:
+        - "<text>Bekijk de shops van andere spelers."
+        - "<muted><count> shops zijn nu open."
+        - ""
+        - "<muted>» <text>Klik om te openen"
+    help:
+      name: "<primary><bold>Zo werkt het"
+      lore:
+        - "<text>Iedereen kan één eigen shop hebben."
+        - "<text>Je shop is alleen open als je online bent."
+        - ""
+        - "<muted>Marketplace fee: <text><fee> per dag"
+        - "<muted>Uitverkocht? Dan betaal je geen fee."
+        - "<muted>Belasting op verkopen: <text><tax>%"
+        - "<muted>Je opbrengst gaat naar je bank."
+        - ""
+        - "<muted>Zet een bord neer met <text>[shop]</text> erop"
+        - "<muted>zodat spelers je shop kunnen openen."
+    create:
+      name: "<success><bold>Begin een shop"
+      lore:
+        - "<text>Begin je eigen shop en verdien"
+        - "<text>PindaCredits met je spullen."
+        - ""
+        - "<muted>Marketplace fee: <text><fee> per dag open"
+        - ""
+        - "<muted>» <text>Klik om je shop te maken"
+    manage:
+      name: "<primary><bold><shop>"
+      lore:
+        - "<text>Status: <status>"
+        - ""
+        - "<muted>» <text>Klik om je shop te beheren"
+  manage:
+    title: "<dark_gray><shop>"
+    help:
+      name: "<primary><bold>Zo vul je je shop"
+      lore:
+        - "<muted>» <text>Sleep een item naar een vak"
+        - "<muted>» <text>Of shift-klik een item in je inventory"
+        - "<muted>» <text>Rechtsklik op een vak: prijs instellen"
+        - "<muted>» <text>Klik op een vak: 1 stack terugnemen"
+        - "<muted>» <text>Shift-klik op een vak: alles terugnemen"
+    toggle:
+      open: "<success><bold>Shop is open"
+      closed: "<error><bold>Shop is gesloten"
+      lore-close:
+        - "<muted>» <text>Klik om te sluiten"
+      lore-open:
+        - "<muted>Openen kost <text><fee></text> per dag."
+        - "<muted>Uitverkocht = geen fee."
+        - ""
+        - "<muted>» <text>Klik om te openen"
+    info:
+      name: "<primary><bold><shop>"
+      lore:
+        - "<text>Status: <status>"
+        - "<muted>Te koop: <text><items> items"
+        - "<muted>Verkopen: <text><sales>"
+        - "<muted>Verdiend: <text><earned>"
+        - ""
+        - "<muted>Fee: <text><fee> per dag"
+        - "<muted>Belasting: <text><tax>%"
+        - "<muted>Shopbord: <sign>"
+      no-sign: "<text>geen <muted>(bord met [shop])"
+      sign: "<text><x>, <y>, <z>"
+    rename:
+      name: "<primary><bold>Naam wijzigen"
+      lore:
+        - "<muted>» <text>Klik en typ de nieuwe naam"
+    delete:
+      name: "<error><bold>Shop opheffen"
+      lore:
+        - "<muted>Haal eerst alle items eruit."
+        - ""
+        - "<muted>» <text>Klik om op te heffen"
+      confirm: "<error><bold><shop> opheffen"
+    listing:
+      stock: "<muted>Voorraad: <text><stock>"
+      price: "<muted>Prijs: <text><price> per stuk"
+      no-price: "<warning>Nog geen prijs: niet te koop"
+      sold-out: "<warning>Uitverkocht"
+      actions:
+        - "<muted>Rechtsklik: <text>prijs instellen"
+        - "<muted>Klik: <text>1 stack terugnemen"
+        - "<muted>Shift-klik: <text>alles terugnemen"
+  market:
+    title: "<dark_gray>Marktplaats"
+    shop:
+      name: "<primary><bold><shop>"
+      lore:
+        - "<muted>Eigenaar: <text><player>"
+        - "<muted>Te koop: <text><items> items"
+        - "<muted>Verkopen: <text><sales>"
+        - ""
+        - "<muted>» <text>Klik om te bekijken"
+      lore-own:
+        - "<muted>Dit is jouw shop."
+        - "<muted>Te koop: <text><items> items"
+        - ""
+        - "<muted>» <text>Klik om te beheren"
+    empty:
+      name: "<text>Er is nu geen shop open"
+      lore:
+        - "<muted>Shops zijn alleen open als"
+        - "<muted>de eigenaar online is."
+    info:
+      name: "<primary><bold>Marktplaats"
+      lore:
+        - "<muted><count> shops zijn nu open."
+  view:
+    title: "<dark_gray><shop>"
+    price: "<muted>Prijs: <primary><price></primary> per stuk"
+    stock: "<muted>Voorraad: <text><stock>"
+    click: "<muted>» <text>Klik om te kopen"
+    info:
+      name: "<primary><bold><shop>"
+      lore:
+        - "<muted>Eigenaar: <text><player>"
+        - "<muted>Verkopen: <text><sales>"
+    balance:
+      name: "<primary><bold>Jouw geld"
+      lore:
+        - "<muted>Contant: <text><cash>"
+        - "<muted>Bank: <text><bank>"
+  buy:
+    title: "<dark_gray>Hoeveel wil je kopen?"
+    amount: "<primary><bold>Koop <amount>x"
+    total: "<muted>Totaal: <text><price>"
+    max: "<primary><bold>Koop zoveel als kan (<amount>x)"
+    cannot: "<error>Niet genoeg geld of ruimte"
+    not-enough-stock: "<error>Niet genoeg voorraad"
+    sold-out: "<error>Dit item is uitverkocht."
 
 admin:
   help:

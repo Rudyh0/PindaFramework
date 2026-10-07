@@ -25,6 +25,15 @@ public final class MenuListener implements Listener {
         if (!(top.getHolder(false) instanceof Menu menu)) {
             return;
         }
+        try {
+            if (menu.handleRawClick(event)) {
+                return;
+            }
+        } catch (Exception e) {
+            event.setCancelled(true);
+            plugin.getLogger().log(Level.SEVERE, "Fout bij een klik in menu " + menu.getClass().getSimpleName(), e);
+            return;
+        }
         // Alles in een menu is vergrendeld, ook shift-klikken vanuit de eigen inventory.
         event.setCancelled(true);
         if (event.getRawSlot() < 0 || event.getRawSlot() >= top.getSize()) {
@@ -39,7 +48,14 @@ public final class MenuListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onDrag(InventoryDragEvent event) {
-        if (event.getView().getTopInventory().getHolder(false) instanceof Menu) {
+        if (event.getView().getTopInventory().getHolder(false) instanceof Menu menu) {
+            try {
+                if (menu.handleRawDrag(event)) {
+                    return;
+                }
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Fout bij slepen in menu " + menu.getClass().getSimpleName(), e);
+            }
             event.setCancelled(true);
         }
     }

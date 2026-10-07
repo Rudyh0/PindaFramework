@@ -21,6 +21,9 @@ general:
   data-load-failed: "<error>Your player data could not be loaded.<newline><text>Please try again in a few seconds."
   enabled: "<success>On"
   disabled: "<error>Off"
+  input-hint: "<muted>Type your answer in chat, or <primary>cancel</primary> to stop."
+  input-cancelled: "<prefix><text>Cancelled."
+  input-timeout: "<prefix><muted>You didn't answer in time."
 
 settings:
   menu:
@@ -95,6 +98,7 @@ tips:
     - "Send someone a private message with <primary>/msg [player] [message]</primary> and reply quickly with <primary>/r</primary>."
     - "Stepping away? Type <primary>/afk</primary> so others know you might not respond."
     - "Put your money in the <primary>/bank</primary> in time: you lose your cash when you die."
+    - "Start your own shop or buy from others with <click:run_command:/shop><hover:show_text:'<text>Click to open'><primary>/shop</primary></hover></click>."
 
 menu:
   previous: "<primary>« Previous page"
@@ -344,6 +348,195 @@ economy:
         - "<muted>Goes to your cash."
       unavailable: "<error>Not enough in the bank"
     withdraw-all: "<warning><bold>Withdraw all <muted>(<amount>)"
+
+shop:
+  default-name: "%player%'s Shop"
+  no-shop: "<prefix><error>You don't have a shop yet. <text>Start one with <primary>/shop</primary>."
+  created: "<prefix><success>Your shop <primary><shop></primary> has been created! <text>Drag items into it, give them a price and open it."
+  deleted: "<prefix><text>Your shop has been closed down."
+  delete-not-empty: "<prefix><error>Take all items out of your shop before closing it down."
+  renamed: "<prefix><success>Your shop is now called <primary><shop></primary>."
+  rename-prompt: "<prefix><text>Type the new name for your shop <muted>(3 to 24 characters)</muted>."
+  name-too-short: "<prefix><error>That name is too short. Use at least 3 characters."
+  price-prompt: "<prefix><text>Type the price <primary>per item</primary> for <primary><item></primary>, for example <primary>10</primary> or <primary>2.50</primary>."
+  price-set: "<prefix><success><item> now costs <primary><price></primary> each."
+  price-too-high: "<prefix><error>That's too expensive. The highest price is <highlight><max></highlight> each."
+  set-price-hint: "[actionbar]<warning>Right-click the slot to set a price"
+  slot-taken: "<prefix><error>There's already a different item in this slot. Pick an empty one."
+  full: "<prefix><error>Your shop is full."
+  inventory-full: "<prefix><error>Your inventory is full."
+  opened: "<prefix><success>Your shop is open! <muted>It stays open while you're online."
+  opened-empty: "<prefix><text>Your shop is set to open, but nothing is for sale yet. <muted>Give your items a price."
+  open-failed: "<prefix><error>Your shop couldn't open: you don't have enough money for the marketplace fee."
+  closed-by-owner: "<prefix><text>Your shop is closed."
+  reopened: "<prefix><text>Your shop is open again."
+  reopened-empty: "<prefix><text>Your shop is set to open, but it's sold out. <muted>Restock it with /shop."
+  fee-paid: "<prefix><muted>Today's marketplace fee paid: <text><amount></text>."
+  fee-failed: "<prefix><error>Your shop is closed: you don't have enough money for the marketplace fee of <highlight><amount></highlight>."
+  closed: "<prefix><error><highlight><player></highlight>'s shop is closed right now."
+  own-shop: "<prefix><error>You can't buy from your own shop."
+  bought: "<prefix><success>Bought <amount>x <item> <text>for <primary><price></primary> at <primary><shop></primary>."
+  sold: "<prefix><success><player> bought <amount>x <item> <text>for <primary><price></primary>. <muted>After <tax> tax: +<net> to your bank."
+  item-sold-out: "<prefix><warning><item> is sold out."
+  sold-out: "<prefix><warning>Your shop is sold out and therefore closed to buyers. <muted>Restock it with /shop."
+  sign-no-shop: "<prefix><error>You don't have a shop yet. Create one first with <primary>/shop</primary>."
+  sign-limit: "<prefix><error>You already have a shop sign at <highlight><x>, <y>, <z></highlight>. Break that one first."
+  sign-created: "<prefix><success>Shop sign placed! <text>Players can click it to open your shop."
+  sign-protected: "<prefix><error>This shop sign belongs to <highlight><player></highlight>."
+  sign-broken: "<prefix><text>Your shop sign has been removed. <muted>Place a new sign with [shop] to put it back."
+  sign-broken-support: "<prefix><text>The block under your shop sign is gone, and so is the sign."
+  menu:
+    back: "<primary>« Back"
+  status:
+    open: "<success>● Open"
+    closed: "<error>● Closed"
+    sold-out: "<warning>● Sold out"
+    offline: "<muted>● Owner offline"
+    fee-unpaid: "<warning>● Fee not paid"
+  sign:
+    line-1: "<dark_aqua><bold>[Shop]"
+    line-2: "<black><shop>"
+    line-3: "<dark_gray><player>"
+    open: "<dark_green>● Open"
+    closed: "<dark_red>● Closed"
+    removed: "<dark_gray>Shop closed down"
+  hub:
+    title: "<dark_gray>Shops"
+    market:
+      name: "<primary><bold>Marketplace"
+      lore:
+        - "<text>Browse the shops of other players."
+        - "<muted><count> shops are open right now."
+        - ""
+        - "<muted>» <text>Click to open"
+    help:
+      name: "<primary><bold>How it works"
+      lore:
+        - "<text>Everyone can have one shop."
+        - "<text>Your shop is only open while you're online."
+        - ""
+        - "<muted>Marketplace fee: <text><fee> per day"
+        - "<muted>Sold out? Then you pay no fee."
+        - "<muted>Sales tax: <text><tax>%"
+        - "<muted>Your earnings go to your bank."
+        - ""
+        - "<muted>Place a sign with <text>[shop]</text> on it"
+        - "<muted>so players can open your shop."
+    create:
+      name: "<success><bold>Start a shop"
+      lore:
+        - "<text>Start your own shop and earn"
+        - "<text>PindaCredits with your items."
+        - ""
+        - "<muted>Marketplace fee: <text><fee> per day open"
+        - ""
+        - "<muted>» <text>Click to create your shop"
+    manage:
+      name: "<primary><bold><shop>"
+      lore:
+        - "<text>Status: <status>"
+        - ""
+        - "<muted>» <text>Click to manage your shop"
+  manage:
+    title: "<dark_gray><shop>"
+    help:
+      name: "<primary><bold>How to fill your shop"
+      lore:
+        - "<muted>» <text>Drag an item onto a slot"
+        - "<muted>» <text>Or shift-click an item in your inventory"
+        - "<muted>» <text>Right-click a slot: set the price"
+        - "<muted>» <text>Click a slot: take 1 stack back"
+        - "<muted>» <text>Shift-click a slot: take everything back"
+    toggle:
+      open: "<success><bold>Shop is open"
+      closed: "<error><bold>Shop is closed"
+      lore-close:
+        - "<muted>» <text>Click to close"
+      lore-open:
+        - "<muted>Opening costs <text><fee></text> per day."
+        - "<muted>Sold out = no fee."
+        - ""
+        - "<muted>» <text>Click to open"
+    info:
+      name: "<primary><bold><shop>"
+      lore:
+        - "<text>Status: <status>"
+        - "<muted>For sale: <text><items> items"
+        - "<muted>Sales: <text><sales>"
+        - "<muted>Earned: <text><earned>"
+        - ""
+        - "<muted>Fee: <text><fee> per day"
+        - "<muted>Tax: <text><tax>%"
+        - "<muted>Shop sign: <sign>"
+      no-sign: "<text>none <muted>(sign with [shop])"
+      sign: "<text><x>, <y>, <z>"
+    rename:
+      name: "<primary><bold>Rename"
+      lore:
+        - "<muted>» <text>Click and type the new name"
+    delete:
+      name: "<error><bold>Close down shop"
+      lore:
+        - "<muted>Take all items out first."
+        - ""
+        - "<muted>» <text>Click to close down"
+      confirm: "<error><bold>Close down <shop>"
+    listing:
+      stock: "<muted>Stock: <text><stock>"
+      price: "<muted>Price: <text><price> each"
+      no-price: "<warning>No price yet: not for sale"
+      sold-out: "<warning>Sold out"
+      actions:
+        - "<muted>Right-click: <text>set price"
+        - "<muted>Click: <text>take 1 stack back"
+        - "<muted>Shift-click: <text>take everything back"
+  market:
+    title: "<dark_gray>Marketplace"
+    shop:
+      name: "<primary><bold><shop>"
+      lore:
+        - "<muted>Owner: <text><player>"
+        - "<muted>For sale: <text><items> items"
+        - "<muted>Sales: <text><sales>"
+        - ""
+        - "<muted>» <text>Click to browse"
+      lore-own:
+        - "<muted>This is your shop."
+        - "<muted>For sale: <text><items> items"
+        - ""
+        - "<muted>» <text>Click to manage"
+    empty:
+      name: "<text>No shops are open right now"
+      lore:
+        - "<muted>Shops are only open while"
+        - "<muted>their owner is online."
+    info:
+      name: "<primary><bold>Marketplace"
+      lore:
+        - "<muted><count> shops are open right now."
+  view:
+    title: "<dark_gray><shop>"
+    price: "<muted>Price: <primary><price></primary> each"
+    stock: "<muted>Stock: <text><stock>"
+    click: "<muted>» <text>Click to buy"
+    info:
+      name: "<primary><bold><shop>"
+      lore:
+        - "<muted>Owner: <text><player>"
+        - "<muted>Sales: <text><sales>"
+    balance:
+      name: "<primary><bold>Your money"
+      lore:
+        - "<muted>Cash: <text><cash>"
+        - "<muted>Bank: <text><bank>"
+  buy:
+    title: "<dark_gray>How many do you want?"
+    amount: "<primary><bold>Buy <amount>x"
+    total: "<muted>Total: <text><price>"
+    max: "<primary><bold>Buy as many as possible (<amount>x)"
+    cannot: "<error>Not enough money or space"
+    not-enough-stock: "<error>Not enough stock"
+    sold-out: "<error>This item is sold out."
 
 admin:
   help:
