@@ -1,0 +1,20 @@
+# ┌──────────────────────────────────────────────┐
+# │            PindaFramework - tips             │
+# └──────────────────────────────────────────────┘
+# Spelers die tips aan hebben staan krijgen af en toe een tip in hun eigen taal.
+# De tips zelf staan in de taalbestanden (lang/nl.yml en lang/en.yml) onder 'tips.list'.
+
+# Elke hoeveel seconden een tip verstuurd wordt (minimaal 30)
+interval-seconds: 300
+
+# true = willekeurige tip, false = de lijst op volgorde aflopen
+random: false
+
+# Staan tips standaard aan voor nieuwe spelers?
+default-enabled: true
+
+# De tips-schakelaar tonen in het setupmenu bij de eerste keer joinen
+show-in-setup: true
+
+# Geluid afspelen bij een tip (geluid instellen in config.yml onder theme.sounds.tip)
+sound: true

@@ -1,0 +1,96 @@
+# ┌──────────────────────────────────────────────┐
+# │         PindaFramework - Nederlands          │
+# └──────────────────────────────────────────────┘
+# Opmaak: MiniMessage (https://docs.advntr.dev/minimessage/format)
+# Thema-tags uit config.yml: <primary> <secondary> <text> <muted> <highlight> <success> <error> <warning> en <prefix>.
+# Een bericht leegmaken ("") zet het uit.
+# Begin een bericht met [actionbar] om het boven de hotbar te tonen in plaats van in de chat.
+
+language:
+  # Naam van deze taal, zoals spelers hem zien in het menu
+  name: "Nederlands"
+  # Item in het menu
+  icon: ORANGE_BANNER
+  # Client-talen die automatisch deze taal krijgen
+  client-locales: [nl]
+
+general:
+  no-permission: "<prefix><error>Daar heb je geen toestemming voor."
+  player-only: "<prefix><error>Dit commando kan alleen door een speler gebruikt worden."
+  player-not-found: "<prefix><error>Speler <highlight><player></highlight> is niet online."
+  command-error: "<prefix><error>Er ging iets mis bij dit commando. Meld het aan een beheerder."
+  data-load-failed: "<error>Je spelersgegevens konden niet geladen worden.<newline><text>Probeer het over een paar seconden opnieuw."
+  enabled: "<success>Aan"
+  disabled: "<error>Uit"
+
+settings:
+  menu:
+    title: "<dark_gray>Instellingen"
+    title-setup: "<dark_gray>Welkom! Kies je voorkeuren"
+    head:
+      name: "<primary><bold><player>"
+      lore-setup:
+        - "<text>Welkom op de server!"
+        - "<text>Kies hieronder je taal en voorkeuren."
+        - ""
+        - "<muted>Je kunt dit later altijd aanpassen"
+        - "<muted>met <primary>/instellingen</primary>."
+      lore:
+        - "<text>Hier pas je je voorkeuren aan."
+        - "<text>Wijzigingen worden direct opgeslagen."
+    language:
+      name: "<primary><language>"
+      lore-selected:
+        - "<success>✔ Geselecteerd"
+      lore-select:
+        - "<muted>» Klik om deze taal te kiezen"
+    toggle:
+      status: "<text>Status: <status>"
+      click: "<muted>» Klik om te wisselen"
+      indicator-on: "<success><bold>AAN"
+      indicator-off: "<error><bold>UIT"
+    confirm:
+      name: "<success><bold>Klaar!"
+      lore:
+        - "<text>Sla je keuzes op en"
+        - "<text>begin met spelen."
+    close:
+      name: "<error><bold>Sluiten"
+      lore: []
+
+  # Teksten per schakelaar in het menu. Modules voegen hier hun eigen schakelaars aan toe.
+  toggles:
+    tips:
+      name: "<primary>Tips"
+      description:
+        - "<text>Af en toe een handige tip"
+        - "<text>over de server in de chat."
+
+  setup:
+    done: "<prefix><success>Je voorkeuren zijn opgeslagen! <text>Veel plezier op de server."
+    done-title: "<gradient:#FFC857:#E9724C><bold>Welkom!"
+    done-subtitle: "<text>Veel plezier op de server"
+    skipped: "<prefix><text>Je kunt je voorkeuren altijd aanpassen met <click:run_command:/instellingen><hover:show_text:'<text>Klik om te openen'><primary>/instellingen</primary></hover></click>."
+
+  language-changed: "<prefix><text>Je taal is ingesteld op <primary><language></primary>."
+  language-unknown: "<prefix><error>Onbekende taal <highlight><language></highlight>. <text>Beschikbaar: <primary><languages></primary>"
+
+tips:
+  format: "<secondary>✦ <bold>Tip</bold> <muted>» <text><tip>"
+  list:
+    - "Pas je taal en voorkeuren aan met <click:run_command:/instellingen><hover:show_text:'<text>Klik om te openen'><primary>/instellingen</primary></hover></click>."
+    - "Wissel snel van taal met <primary>/taal</primary>. <muted>(Nederlands / English)"
+    - "Liever geen tips meer? Zet ze uit in <click:run_command:/instellingen><hover:show_text:'<text>Klik om te openen'><primary>/instellingen</primary></hover></click>."
+
+admin:
+  help:
+    - "<prefix><primary><bold>PindaFramework</bold> <muted>v<version>"
+    - " <primary>/pinda reload</primary> <muted>» <text>Configuratie en taalbestanden herladen"
+    - " <primary>/pinda modules</primary> <muted>» <text>Overzicht van alle modules"
+    - " <primary>/pinda setup [speler]</primary> <muted>» <text>Het setupmenu (opnieuw) openen"
+  reloaded: "<prefix><success>Herladen in <highlight><time>ms</highlight>."
+  reload-failed: "<prefix><error>Herladen mislukt. Kijk in de console voor details."
+  modules-header: "<prefix><text>Modules <muted>(<count>)</muted>"
+  modules-entry: " <muted>• <primary><module></primary> <muted>» <status>"
+  modules-footer: "<muted>Modules aan- of uitzetten doe je in config.yml (herstart nodig)."
+  setup-opened: "<prefix><text>Setupmenu geopend voor <primary><player></primary>."

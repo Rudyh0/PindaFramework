@@ -1,0 +1,46 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code ophalen
+        uses: actions/checkout@v5
+
+      - name: Java 25 installeren
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+
+      - name: Plugin bouwen
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon --stacktrace
+
+      - name: Jar bewaren als artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PindaFramework-build-${{ github.run_number }}
+          path: build/libs/*.jar
+
+      - name: Release maken
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          JAR=$(ls build/libs/*.jar | head -n 1)
+          git log -1 --pretty=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.txt
+          gh release create "build-${{ github.run_number }}" "$JAR" \
+            --title "PindaFramework build #${{ github.run_number }}" \
+            --notes-file notes.txt \
+            --target "${{ github.sha }}"

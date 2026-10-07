@@ -1,0 +1,68 @@
+# ┌──────────────────────────────────────────────┐
+# │          PindaFramework - hoofdconfig         │
+# └──────────────────────────────────────────────┘
+# Na het aanpassen: /pinda reload
+# (modules aan/uit en commando-aliassen vragen een herstart)
+
+# Standaardtaal voor spelers die (nog) niets gekozen hebben, en voor de console.
+# Moet overeenkomen met een bestand in de map lang/ (nl -> lang/nl.yml).
+default-language: nl
+
+# Modules aan- of uitzetten. Na het aanpassen is een herstart nodig.
+modules:
+  tips: true
+
+# Opmaak van alle berichten, in MiniMessage-formaat.
+# Uitleg: https://docs.advntr.dev/minimessage/format
+theme:
+  # Wordt overal gebruikt waar <prefix> in een bericht staat.
+  prefix: "<gradient:#FFC857:#E9724C><bold>ᴘɪɴᴅᴀ</bold></gradient> <muted>»</muted> "
+
+  # Kleuren die je in berichten gebruikt als tag, bijvoorbeeld <primary>tekst</primary>.
+  # Een hex-code (#RRGGBB) of een Minecraft-kleurnaam (gold, gray, ...).
+  colors:
+    primary: "#FFC857"
+    secondary: "#E9724C"
+    text: "#D4D4D4"
+    muted: "#707070"
+    highlight: "#FFFFFF"
+    success: "#7BE495"
+    error: "#FF6B6B"
+    warning: "#FFB347"
+
+  # Geluiden die bij acties horen. Laat 'sound' leeg om een geluid uit te zetten.
+  # Namen: https://minecraft.wiki/w/Sounds.json (bijv. entity.experience_orb.pickup)
+  sounds:
+    success:
+      sound: "entity.experience_orb.pickup"
+      volume: 0.6
+      pitch: 1.3
+    error:
+      sound: "block.note_block.bass"
+      volume: 0.8
+      pitch: 0.7
+    click:
+      sound: "ui.button.click"
+      volume: 0.4
+      pitch: 1.2
+    menu-open:
+      sound: "item.book.page_turn"
+      volume: 0.8
+      pitch: 1.0
+    tip:
+      sound: "block.note_block.chime"
+      volume: 0.5
+      pitch: 1.6
+
+# Commando's aan/uit en eigen aliassen. Na het aanpassen is een herstart nodig.
+commands:
+  instellingen:
+    enabled: true
+    aliases: [settings]
+  taal:
+    enabled: true
+    aliases: [language, lang]
+
+database:
+  # SQLite-bestand in de pluginmap
+  file: data.db

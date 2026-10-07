@@ -1,0 +1,34 @@
+name: PindaFramework
+version: '${version}'
+main: nl.pinda.framework.PindaFramework
+api-version: '26.1'
+author: Rudyh0
+description: Het all-in-one framework voor de server.
+
+# SQLite-driver voor de database. Paper downloadt deze automatisch bij de eerste start.
+libraries:
+  - org.xerial:sqlite-jdbc:3.46.1.2
+
+permissions:
+  pinda.admin:
+    description: Alle beheerrechten van PindaFramework
+    default: op
+    children:
+      pinda.admin.reload: true
+      pinda.admin.modules: true
+      pinda.admin.setup: true
+  pinda.admin.reload:
+    description: Configuratie en taalbestanden herladen met /pinda reload
+    default: op
+  pinda.admin.modules:
+    description: Overzicht van modules bekijken met /pinda modules
+    default: op
+  pinda.admin.setup:
+    description: Het setupmenu (opnieuw) openen met /pinda setup
+    default: op
+  pinda.settings.use:
+    description: Persoonlijke instellingen openen met /instellingen
+    default: true
+  pinda.language.use:
+    description: Je taal wijzigen met /taal
+    default: true

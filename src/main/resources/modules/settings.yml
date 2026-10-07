@@ -1,0 +1,19 @@
+# ┌──────────────────────────────────────────────┐
+# │       PindaFramework - instellingen          │
+# └──────────────────────────────────────────────┘
+# Het /instellingen-menu en de setup bij de eerste keer joinen.
+
+first-join-setup:
+  # Het setupmenu openen bij de eerste keer joinen
+  enabled: true
+
+  # Hoeveel ticks na het joinen het menu opent (20 ticks = 1 seconde)
+  open-delay-ticks: 40
+
+  # Taal vooraf kiezen op basis van de taal van de Minecraft-client.
+  # Speelt iemand met een Nederlandse client, dan staat Nederlands geselecteerd.
+  detect-client-language: true
+
+  # Taal voor spelers waarvan de client-taal niet bestaat op de server
+  # (bijvoorbeeld een Duitse client). Zet op 'nl' om dan ook Nederlands te kiezen.
+  unknown-client-language: en

@@ -1,0 +1,92 @@
+# ┌──────────────────────────────────────────────┐
+# │           PindaFramework - English           │
+# └──────────────────────────────────────────────┘
+# Format: MiniMessage (https://docs.advntr.dev/minimessage/format)
+# Theme tags from config.yml: <primary> <secondary> <text> <muted> <highlight> <success> <error> <warning> and <prefix>.
+# Leave a message empty ("") to disable it.
+# Start a message with [actionbar] to show it above the hotbar instead of in chat.
+
+language:
+  name: "English"
+  icon: BLUE_BANNER
+  client-locales: [en]
+
+general:
+  no-permission: "<prefix><error>You don't have permission to do that."
+  player-only: "<prefix><error>Only players can use this command."
+  player-not-found: "<prefix><error>Player <highlight><player></highlight> is not online."
+  command-error: "<prefix><error>Something went wrong with this command. Please tell a staff member."
+  data-load-failed: "<error>Your player data could not be loaded.<newline><text>Please try again in a few seconds."
+  enabled: "<success>On"
+  disabled: "<error>Off"
+
+settings:
+  menu:
+    title: "<dark_gray>Settings"
+    title-setup: "<dark_gray>Welcome! Choose your preferences"
+    head:
+      name: "<primary><bold><player>"
+      lore-setup:
+        - "<text>Welcome to the server!"
+        - "<text>Choose your language and preferences below."
+        - ""
+        - "<muted>You can always change this later"
+        - "<muted>with <primary>/settings</primary>."
+      lore:
+        - "<text>Change your preferences here."
+        - "<text>Changes are saved right away."
+    language:
+      name: "<primary><language>"
+      lore-selected:
+        - "<success>✔ Selected"
+      lore-select:
+        - "<muted>» Click to choose this language"
+    toggle:
+      status: "<text>Status: <status>"
+      click: "<muted>» Click to toggle"
+      indicator-on: "<success><bold>ON"
+      indicator-off: "<error><bold>OFF"
+    confirm:
+      name: "<success><bold>Done!"
+      lore:
+        - "<text>Save your choices and"
+        - "<text>start playing."
+    close:
+      name: "<error><bold>Close"
+      lore: []
+
+  toggles:
+    tips:
+      name: "<primary>Tips"
+      description:
+        - "<text>A useful tip about the"
+        - "<text>server in chat every now and then."
+
+  setup:
+    done: "<prefix><success>Your preferences have been saved! <text>Have fun on the server."
+    done-title: "<gradient:#FFC857:#E9724C><bold>Welcome!"
+    done-subtitle: "<text>Have fun on the server"
+    skipped: "<prefix><text>You can always change your preferences with <click:run_command:/settings><hover:show_text:'<text>Click to open'><primary>/settings</primary></hover></click>."
+
+  language-changed: "<prefix><text>Your language has been set to <primary><language></primary>."
+  language-unknown: "<prefix><error>Unknown language <highlight><language></highlight>. <text>Available: <primary><languages></primary>"
+
+tips:
+  format: "<secondary>✦ <bold>Tip</bold> <muted>» <text><tip>"
+  list:
+    - "Change your language and preferences with <click:run_command:/settings><hover:show_text:'<text>Click to open'><primary>/settings</primary></hover></click>."
+    - "Quickly switch languages with <primary>/language</primary>. <muted>(Nederlands / English)"
+    - "Rather not get tips? Turn them off in <click:run_command:/settings><hover:show_text:'<text>Click to open'><primary>/settings</primary></hover></click>."
+
+admin:
+  help:
+    - "<prefix><primary><bold>PindaFramework</bold> <muted>v<version>"
+    - " <primary>/pinda reload</primary> <muted>» <text>Reload configuration and language files"
+    - " <primary>/pinda modules</primary> <muted>» <text>Overview of all modules"
+    - " <primary>/pinda setup [player]</primary> <muted>» <text>Open the setup menu (again)"
+  reloaded: "<prefix><success>Reloaded in <highlight><time>ms</highlight>."
+  reload-failed: "<prefix><error>Reload failed. Check the console for details."
+  modules-header: "<prefix><text>Modules <muted>(<count>)</muted>"
+  modules-entry: " <muted>• <primary><module></primary> <muted>» <status>"
+  modules-footer: "<muted>Turn modules on or off in config.yml (restart required)."
+  setup-opened: "<prefix><text>Setup menu opened for <primary><player></primary>."
