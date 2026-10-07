@@ -14,6 +14,7 @@ default-language: nl
 
 # Modules aan- of uitzetten. Na het aanpassen is een herstart nodig.
 modules:
+  ranks: true
   tips: true
   homes: true
   tpa: true

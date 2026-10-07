@@ -14,27 +14,33 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 
 ## Wat zit erin
 
-| Onderdeel | Status |
-|---|---|
-| Fundament (modules, taal, database, menu's, commando's) | ✅ |
-| Setup bij eerste join + `/instellingen` + `/taal` | ✅ |
-| Tips | ✅ |
-| Teleports: homes, TPA, spawn, back (wachttijd, cooldown, kosten) | ✅ |
-| Privéberichten: msg, reply, socialspy, ignore | ✅ |
-| Spelmodus: /gm, /gmc, /gms, /gma, /gmsp | ✅ |
-| AFK: /afk, automatisch AFK, [AFK] in tablist | ✅ |
-| Handig: /fly, /heal, /feed, /god, /speed | ✅ |
-| Staff: /vanish, /invsee | ✅ |
-| Core: kick/ban, broadcast, scoreboard, antilag | ⏳ |
-| Economy: PindaCredits, contant + bank, online-bonus | ✅ |
-| Shops | ⏳ |
-| World control | ⏳ |
-| Sloten op kisten en deuren, partners | ✅ |
-| Eigen rangen (PindaAdmin, PindaMod, Pinda) | ⏳ |
-| Webpaneel voor beheer | ⏳ |
-| Backpack | ⏳ |
-| Skills (RuneScape-stijl, level 0-99) | ⏳ |
-| Bomen kappen (timber) | ⏳ |
+Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners en een eigen rangensysteem.
+
+## To-do
+
+1. ~~Rangensysteem (Pinda, PindaMod, PindaAdmin) met prefix in chat en tablist~~ ✅
+2. Moderatie: kick, mute, tijdelijke en permanente ban, banlijst en logboek
+3. Webpaneel: eigen webserver (IP + poort, later instelbare URL), eenmalige inloglink vanaf PindaMod, dashboard, spelers en rangen, moderatie, economy, shops, serverbeheer, statistieken, actielog
+4. Overige basis: automatische broadcasts, scoreboard en leaderboards (+ PlaceholderAPI), antilag
+5. World control: creepers en TNT zonder blokschade, phantoms uit, spawnrates, ender dragon respawn
+6. Backpack: tweede inventory die bij doodgaan blijft liggen
+7. Skills: level 0-99 (RuneScape-curve), geld bij tier-up, menu met voortgang
+8. Bomen kappen (timber)
+9. Live gaan: testopties uit, installatiehandleiding Ubuntu-VPS, automatische back-ups
+
+## Rangen
+
+PindaFramework heeft een eigen rangensysteem; LuckPerms is niet nodig. De rangen staan in `modules/ranks.yml`:
+
+| Rang | Kleur | Prefix | Wat extra |
+|---|---|---|---|
+| **Pinda** | paars | `[Pinda]` | alle gewone commando's |
+| **PindaMod** | blauw | `[Mod]` | geen teleport-wachttijd, socialspy, vanish, invsee (bekijken), `/fly`, `/heal`, `/feed`, `/gms`, `/gmsp`, `/tp`, CoreProtect inspecteren |
+| **PindaAdmin** | goud | `[Admin]` | alles (operator) |
+
+- Rang geven: `/rank set <speler> <rang>` (ook vanuit de console). Je eigen rang: `/rank`. Alle rangen: `/rank list`.
+- Wie al operator is, wordt bij de eerste join automatisch PindaAdmin. Spelers zonder operator-rang verliezen hun operator-status.
+- In `ranks.yml` kun je ook permissies van andere plugins zetten (bijv. `worldedit.*` of `coreprotect.rollback`).
 
 ## Commando's en permissies
 
@@ -78,6 +84,8 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 | `/eco give\|take\|set <speler> <bedrag> [bank\|contant]` | | `pinda.eco.admin` | op |
 | `/shop [markt\|beheer\|open\|sluit]` | `/winkel`, `/markt`, `/market` | `pinda.shop.use` | iedereen |
 | `/partner [speler\|accept\|deny\|remove\|list]` | `/partners` | `pinda.partner.use` | iedereen |
+| `/rank [info [speler]\|list]` | `/rang` | `pinda.rank.info` (+ `.others`), `pinda.rank.list` | iedereen |
+| `/rank set <speler> <rang>` | | `pinda.rank.set` | op |
 
 Extra permissies:
 
@@ -131,7 +139,8 @@ plugins/PindaFramework/
     ├── staff.yml       vanish-instellingen
     ├── economy.yml     valuta, startbedrag, stortkosten, geld bij doodgaan, online-bonus
     ├── shop.yml        marketplace fee, belasting, shortcodes voor het shopbord
-    └── locks.yml       welke blokken op slot gaan, hoppers, bescherming, max partners
+    ├── locks.yml       welke blokken op slot gaan, hoppers, bescherming, max partners
+    └── ranks.yml       rangen, kleuren, prefixes, permissies en de chatopmaak
 ```
 
 - **Teksten** gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format). Gebruik de thema-kleuren als tag: `<primary>`, `<secondary>`, `<text>`, `<muted>`, `<highlight>`, `<success>`, `<error>`, `<warning>`, `<prefix>` voor de prefix en `<server>` voor de servernaam (`server-name` in `config.yml`).

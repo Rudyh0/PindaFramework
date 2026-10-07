@@ -43,6 +43,9 @@ public final class AfkModule extends PindaModule implements Listener {
     protected void onEnable() {
         listen(this);
         command(new AfkCommand(plugin, this));
+        plugin.display().setSuffix("afk", player -> isAfk(player) && config().getBoolean("tab-suffix", true)
+                ? plugin.lang().component(plugin.lang().defaultLanguage(), "afk.tab-suffix")
+                : null);
         long now = System.currentTimeMillis();
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             lastActivity.put(player.getUniqueId(), now);
@@ -52,14 +55,10 @@ public final class AfkModule extends PindaModule implements Listener {
 
     @Override
     protected void onDisable() {
-        for (UUID uuid : Set.copyOf(afkSince.keySet())) {
-            Player player = plugin.getServer().getPlayer(uuid);
-            if (player != null) {
-                player.playerListName(null);
-            }
-        }
         afkSince.clear();
         lastActivity.clear();
+        plugin.display().removeSuffix("afk");
+        plugin.display().refreshAll();
     }
 
     public boolean isAfk(Player player) {
@@ -77,15 +76,11 @@ public final class AfkModule extends PindaModule implements Listener {
         UUID uuid = player.getUniqueId();
         if (afk) {
             afkSince.put(uuid, System.currentTimeMillis());
-            if (config().getBoolean("tab-suffix", true)) {
-                Component suffix = plugin.lang().component(plugin.lang().defaultLanguage(), "afk.tab-suffix");
-                player.playerListName(player.displayName().append(suffix));
-            }
         } else {
             afkSince.remove(uuid);
             lastActivity.put(uuid, System.currentTimeMillis());
-            player.playerListName(null);
         }
+        plugin.display().refresh(player);
 
         String key = afk ? (reason == null || reason.isBlank() ? "afk.now-afk" : "afk.now-afk-reason") : "afk.no-longer-afk";
         TagResolver[] resolvers = {Text.p("player", player.getName()), Text.p("reason", reason == null ? "" : reason)};

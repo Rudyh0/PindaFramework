@@ -646,6 +646,16 @@ partner:
         - "<muted>» <text>Klik en typ de naam"
     remove-confirm: "<error><bold><player> als partner verwijderen"
 
+rank:
+  usage-set: "<prefix><text>Gebruik: <primary>/rank set <speler> <rang>"
+  unknown: "<prefix><error>Rang <highlight><rank></highlight> bestaat niet. <text>Zie <primary>/rank list</primary>."
+  set: "<prefix><success><player> is nu <rank_name>. <muted>(<rank><muted>)"
+  received: "<prefix><success>Je hebt de rang <primary><rank_name></primary> gekregen!"
+  info-own: "<prefix><text>Jouw rang: <rank><text>(<rank_name>)"
+  info: "<prefix><text>Rang van <primary><player></primary>: <rank><text>(<rank_name>)"
+  list-header: "<prefix><text>Rangen op <server>:"
+  list-entry: " <rank><muted>» <text><rank_name> <muted>(<id>)"
+
 admin:
   help:
     - "<prefix><primary><bold>PindaFramework</bold> <muted>v<version>"

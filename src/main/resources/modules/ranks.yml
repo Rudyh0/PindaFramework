@@ -1,0 +1,110 @@
+# ┌──────────────────────────────────────────────┐
+# │            PindaFramework - rangen           │
+# └──────────────────────────────────────────────┘
+# Eigen rangensysteem (in plaats van LuckPerms).
+#  - Een rang met 'inherits' krijgt ook alle permissies van die andere rang.
+#  - "-permissie" zet een permissie juist uit.
+#  - "plugin.*" geeft alle bekende permissies van een plugin (bijv. "worldedit.*").
+#  - Permissies van andere plugins (WorldEdit, CoreProtect, ...) kun je hier ook gewoon zetten.
+#  - Een rang met 'operator: true' mag alles (ook vanilla commando's zoals /time en /give).
+# Rang geven: /rank set <speler> <rang>   (ook vanuit de console)
+# Na het aanpassen: /pinda reload
+
+# De rang voor nieuwe spelers
+default-rank: pinda
+
+# Spelers die al operator zijn en nog geen rang hebben, krijgen bij hun volgende join deze rang.
+# Zo sluit je jezelf niet buiten als je de rangen voor het eerst gebruikt.
+operators-get-rank: pindaadmin
+
+# Operator weghalen bij spelers zonder operator-rang (zo zijn de rangen leidend)
+sync-operator: true
+
+chat:
+  # Chatberichten opmaken met de rang
+  enabled: true
+  # <rank_prefix> = prefix van de rang, <name> = naam in de kleur van de rang, <message> = het bericht
+  format: "<rank_prefix><name> <dark_gray>»</dark_gray> <message>"
+
+ranks:
+  pindaadmin:
+    display-name: "PindaAdmin"
+    weight: 100
+    inherits: pindamod
+    operator: true
+    # Goud
+    color: "#FFC21A"
+    chat-color: "#FFFFFF"
+    prefix: "<gradient:#FFD84A:#F5A300><bold>[Admin]</bold></gradient> "
+    permissions:
+      - pinda.homes.unlimited
+      - pinda.teleport.free
+
+  pindamod:
+    display-name: "PindaMod"
+    weight: 50
+    inherits: pinda
+    # Blauw
+    color: "#4D9DFF"
+    chat-color: "#F0F0F0"
+    prefix: "<#4D9DFF><bold>[Mod]</bold></#4D9DFF> "
+    permissions:
+      # Teleport zonder wachttijd, homes van anderen bekijken
+      - pinda.teleport.bypass.warmup
+      - pinda.teleport.bypass.cooldown
+      - pinda.homes.others
+      # Chat
+      - pinda.msg.socialspy
+      - pinda.msg.bypass
+      - pinda.ignore.exempt
+      - pinda.chat.format
+      # Economy inzien
+      - pinda.eco.balance.others
+      # Spelmodus: survival en spectator (rondkijken bij grief)
+      - pinda.gamemode.survival
+      - pinda.gamemode.spectator
+      # Handig
+      - pinda.fly
+      - pinda.heal
+      - pinda.feed
+      # Staff
+      - pinda.vanish
+      - pinda.vanish.see
+      - pinda.invsee
+      - pinda.afk.kick-exempt
+      - pinda.rank.info.others
+      # Vanilla /tp naar spelers
+      - minecraft.command.teleport
+      - minecraft.command.tp
+      # CoreProtect: blokken inspecteren en opzoeken
+      - coreprotect.inspect
+      - coreprotect.lookup
+
+  pinda:
+    display-name: "Pinda"
+    weight: 0
+    # Paars
+    color: "#B17CFF"
+    chat-color: "#E0E0E0"
+    prefix: "<#B17CFF>[Pinda]</#B17CFF> "
+    permissions:
+      - pinda.settings.use
+      - pinda.language.use
+      - pinda.afk.use
+      - pinda.homes.use
+      - pinda.tpa.use
+      - pinda.tpa.here
+      - pinda.spawn.use
+      - pinda.back.use
+      - pinda.back.death
+      - pinda.msg.use
+      - pinda.ignore.use
+      - pinda.eco.balance
+      - pinda.eco.pay
+      - pinda.eco.bank
+      - pinda.eco.baltop
+      - pinda.shop.use
+      - pinda.shop.sign
+      - pinda.partner.use
+      - pinda.rank.info
+      - pinda.rank.list

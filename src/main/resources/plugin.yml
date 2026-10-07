@@ -214,3 +214,20 @@ permissions:
   pinda.lock.bypass:
     description: Bij alle afgesloten kisten en deuren kunnen (staff)
     default: op
+
+  # Rangen en chat
+  pinda.rank.set:
+    description: /rank set, rangen geven
+    default: op
+  pinda.rank.info:
+    description: /rank info, je eigen rang bekijken
+    default: true
+  pinda.rank.info.others:
+    description: /rank info <speler>
+    default: op
+  pinda.rank.list:
+    description: /rank list
+    default: true
+  pinda.chat.format:
+    description: Kleuren en opmaak gebruiken in de chat
+    default: op

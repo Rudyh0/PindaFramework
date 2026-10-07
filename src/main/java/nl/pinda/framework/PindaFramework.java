@@ -18,6 +18,7 @@ import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.gamemode.GamemodeModule;
 import nl.pinda.framework.modules.homes.HomesModule;
 import nl.pinda.framework.modules.locks.LockModule;
+import nl.pinda.framework.modules.ranks.RankModule;
 import nl.pinda.framework.modules.msg.MsgModule;
 import nl.pinda.framework.modules.settings.SettingsModule;
 import nl.pinda.framework.modules.shop.ShopModule;
@@ -26,6 +27,7 @@ import nl.pinda.framework.modules.staff.StaffModule;
 import nl.pinda.framework.modules.tips.TipsModule;
 import nl.pinda.framework.modules.tpa.TpaModule;
 import nl.pinda.framework.modules.utility.UtilityModule;
+import nl.pinda.framework.player.DisplayNames;
 import nl.pinda.framework.player.PlayerManager;
 import nl.pinda.framework.player.SettingsService;
 import nl.pinda.framework.storage.CoreSchema;
@@ -54,6 +56,7 @@ public final class PindaFramework extends JavaPlugin {
     private ModuleManager modules;
     private TeleportService teleports;
     private ChatInput input;
+    private DisplayNames display;
     private Economy economy = new DisabledEconomy();
 
     @Override
@@ -75,6 +78,7 @@ public final class PindaFramework extends JavaPlugin {
             commands = new CommandManager(this);
             teleports = new TeleportService(this);
             input = new ChatInput(this);
+            display = new DisplayNames(this);
 
             getServer().getPluginManager().registerEvents(players, this);
             getServer().getPluginManager().registerEvents(new MenuListener(this), this);
@@ -83,6 +87,7 @@ public final class PindaFramework extends JavaPlugin {
 
             modules = new ModuleManager(this);
             modules.register(new SettingsModule(this));
+            modules.register(new RankModule(this));
             modules.register(new TipsModule(this));
             modules.register(new HomesModule(this));
             modules.register(new TpaModule(this));
@@ -180,6 +185,11 @@ public final class PindaFramework extends JavaPlugin {
 
     public ModuleManager modules() {
         return modules;
+    }
+
+    /** Hoe spelernamen eruitzien in de tablist (rangprefix, [AFK], ...). */
+    public DisplayNames display() {
+        return display;
     }
 
     /** Spelers iets laten typen in de chat, zoals een prijs of naam. */

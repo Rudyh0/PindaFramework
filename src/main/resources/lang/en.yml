@@ -642,6 +642,16 @@ partner:
         - "<muted>» <text>Click and type the name"
     remove-confirm: "<error><bold>Remove <player> as partner"
 
+rank:
+  usage-set: "<prefix><text>Usage: <primary>/rank set <player> <rank>"
+  unknown: "<prefix><error>Rank <highlight><rank></highlight> doesn't exist. <text>See <primary>/rank list</primary>."
+  set: "<prefix><success><player> is now <rank_name>. <muted>(<rank><muted>)"
+  received: "<prefix><success>You've been given the rank <primary><rank_name></primary>!"
+  info-own: "<prefix><text>Your rank: <rank><text>(<rank_name>)"
+  info: "<prefix><text>Rank of <primary><player></primary>: <rank><text>(<rank_name>)"
+  list-header: "<prefix><text>Ranks on <server>:"
+  list-entry: " <rank><muted>» <text><rank_name> <muted>(<id>)"
+
 admin:
   help:
     - "<prefix><primary><bold>PindaFramework</bold> <muted>v<version>"
