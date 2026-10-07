@@ -231,3 +231,29 @@ permissions:
   pinda.chat.format:
     description: Kleuren en opmaak gebruiken in de chat
     default: op
+
+  # Moderatie
+  pinda.mod.kick:
+    description: /kick
+    default: op
+  pinda.mod.ban:
+    description: /ban en /tempban (tijdelijk, tot max-temp-ban)
+    default: op
+  pinda.mod.ban.permanent:
+    description: Permanent bannen en langer dan max-temp-ban
+    default: op
+  pinda.mod.unban:
+    description: /unban
+    default: op
+  pinda.mod.mute:
+    description: /mute en /unmute
+    default: op
+  pinda.mod.warn:
+    description: /warn
+    default: op
+  pinda.mod.history:
+    description: /history en /banlist
+    default: op
+  pinda.mod.notify:
+    description: Meldingen zien als iemand gestraft wordt
+    default: op

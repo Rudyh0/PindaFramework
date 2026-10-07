@@ -1,0 +1,25 @@
+# ┌──────────────────────────────────────────────┐
+# │          PindaFramework - moderatie          │
+# └──────────────────────────────────────────────┘
+# /kick, /ban, /tempban, /unban, /mute, /unmute, /warn, /history, /banlist
+# Duur schrijf je als 30m, 2u (of 2h), 1d, 1w, 1mo, 1y. Combineren mag: 1d12u.
+# Staff kan geen spelers straffen met een gelijke of hogere rang.
+
+# Straffen aan iedereen laten zien. Uit = alleen staff (pinda.mod.notify) ziet ze.
+broadcast: false
+
+# De langste tempban voor staff zonder pinda.mod.ban.permanent (PindaMod)
+max-temp-ban: 7d
+
+# Commando's die een gemute speler niet mag gebruiken (zonder slash)
+muted-blocked-commands:
+  - msg
+  - tell
+  - w
+  - whisper
+  - m
+  - pm
+  - r
+  - reply
+  - me
+  - say

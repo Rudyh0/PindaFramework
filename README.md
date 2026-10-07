@@ -19,7 +19,7 @@ Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/inst
 ## To-do
 
 1. ~~Rangensysteem (Pinda, PindaMod, PindaAdmin) met prefix in chat en tablist~~ ✅
-2. Moderatie: kick, mute, tijdelijke en permanente ban, banlijst en logboek
+2. ~~Moderatie: kick, mute, tijdelijke en permanente ban, banlijst en logboek~~ ✅
 3. Webpaneel: eigen webserver (IP + poort, later instelbare URL), eenmalige inloglink vanaf PindaMod, dashboard, spelers en rangen, moderatie, economy, shops, serverbeheer, statistieken, actielog
 4. Overige basis: automatische broadcasts, scoreboard en leaderboards (+ PlaceholderAPI), antilag
 5. World control: creepers en TNT zonder blokschade, phantoms uit, spawnrates, ender dragon respawn
@@ -86,6 +86,12 @@ PindaFramework heeft een eigen rangensysteem; LuckPerms is niet nodig. De rangen
 | `/partner [speler\|accept\|deny\|remove\|list]` | `/partners` | `pinda.partner.use` | iedereen |
 | `/rank [info [speler]\|list]` | `/rang` | `pinda.rank.info` (+ `.others`), `pinda.rank.list` | iedereen |
 | `/rank set <speler> <rang>` | | `pinda.rank.set` | op |
+| `/kick <speler> [reden]` | | `pinda.mod.kick` | Mod |
+| `/ban <speler> [duur] [reden]`, `/tempban <speler> <duur> [reden]` | | `pinda.mod.ban` (+ `.permanent`) | Mod (max 7d) / Admin |
+| `/unban <speler>` | | `pinda.mod.unban` | Mod |
+| `/mute <speler> [duur] [reden]`, `/unmute <speler>` | | `pinda.mod.mute` | Mod |
+| `/warn <speler> <reden>` | `/waarschuw` | `pinda.mod.warn` | Mod |
+| `/history <speler>`, `/banlist` | `/straffen`, `/bans` | `pinda.mod.history` | Mod |
 
 Extra permissies:
 
@@ -140,7 +146,8 @@ plugins/PindaFramework/
     ├── economy.yml     valuta, startbedrag, stortkosten, geld bij doodgaan, online-bonus
     ├── shop.yml        marketplace fee, belasting, shortcodes voor het shopbord
     ├── locks.yml       welke blokken op slot gaan, hoppers, bescherming, max partners
-    └── ranks.yml       rangen, kleuren, prefixes, permissies en de chatopmaak
+    ├── ranks.yml       rangen, kleuren, prefixes, permissies en de chatopmaak
+    └── moderation.yml  max tempban voor mods, straffen openbaar of alleen staff
 ```
 
 - **Teksten** gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format). Gebruik de thema-kleuren als tag: `<primary>`, `<secondary>`, `<text>`, `<muted>`, `<highlight>`, `<success>`, `<error>`, `<warning>`, `<prefix>` voor de prefix en `<server>` voor de servernaam (`server-name` in `config.yml`).

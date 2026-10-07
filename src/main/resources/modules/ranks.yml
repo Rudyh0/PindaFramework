@@ -73,6 +73,14 @@ ranks:
       - pinda.invsee
       - pinda.afk.kick-exempt
       - pinda.rank.info.others
+      # Moderatie: kick, tempban (max 7 dagen), mute, warn, geschiedenis
+      - pinda.mod.kick
+      - pinda.mod.ban
+      - pinda.mod.unban
+      - pinda.mod.mute
+      - pinda.mod.warn
+      - pinda.mod.history
+      - pinda.mod.notify
       # Vanilla /tp naar spelers
       - minecraft.command.teleport
       - minecraft.command.tp
