@@ -59,6 +59,15 @@ settings:
     close:
       name: "<error><bold>Close"
       lore: []
+    partners:
+      name: "<primary><bold>Partners"
+      lore:
+        - "<text>Partners can access all of"
+        - "<text>each other's chests and doors."
+        - ""
+        - "<muted>Partners: <text><count>"
+        - ""
+        - "<muted>» <text>Click to manage"
 
   toggles:
     tips:
@@ -99,6 +108,7 @@ tips:
     - "Stepping away? Type <primary>/afk</primary> so others know you might not respond."
     - "Put your money in the <primary>/bank</primary> in time: you lose your cash when you die."
     - "Start your own shop or buy from others with <click:run_command:/shop><hover:show_text:'<text>Click to open'><primary>/shop</primary></hover></click>."
+    - "Your chests and doors are private automatically. Shift+right-click with an empty hand to give someone access."
 
 menu:
   previous: "<primary>« Previous page"
@@ -537,6 +547,100 @@ shop:
     cannot: "<error>Not enough money or space"
     not-enough-stock: "<error>Not enough stock"
     sold-out: "<error>This item is sold out."
+
+lock:
+  locked: "[actionbar]<success>Locked! <muted>Shift+right-click with an empty hand to give others access"
+  denied: "[actionbar]<error>This belongs to <highlight><player></highlight>"
+  break-denied: "<prefix><error>This belongs to <highlight><player></highlight>. You can't break it."
+  bypass: "[actionbar]<warning>Staff access: this belongs to <player>"
+  no-double-chest: "<prefix><error>You can't place a chest against <highlight><player></highlight>'s chest."
+  add-prompt: "<prefix><text>Type the name of the player who should get access."
+  trusted: "<prefix><success><player> now has access."
+  untrusted: "<prefix><text><primary><player></primary> no longer has access."
+  already-owner: "<prefix><text>That's you."
+  menu:
+    title: "<dark_gray>Access"
+    info:
+      name: "<primary><bold>Private"
+      lore:
+        - "<muted>Owner: <text><player>"
+        - "<muted>Players with access: <text><count>"
+        - "<muted>Owner's partners: <text><partners>"
+        - ""
+        - "<muted>Partners always have access."
+        - "<muted>Staff can always get in too."
+    trusted:
+      name: "<primary><player>"
+      lore:
+        - "<muted>» <text>Click to remove access"
+    everyone:
+      enabled: "<success><bold>Everyone has access"
+      disabled: "<error><bold>Only with access"
+      lore:
+        - "<muted>Turn this on for, for example,"
+        - "<muted>a shared chest or a shop door."
+        - ""
+        - "<muted>» <text>Click to toggle"
+    add:
+      name: "<success><bold>Add player"
+      lore:
+        - "<muted>Give one player access"
+        - "<muted>to just this block."
+        - ""
+        - "<muted>» <text>Click and type the name"
+
+partner:
+  usage: "<prefix><text>Usage: <primary>/partner [player]</primary> <muted>or</muted> <primary>/partner accept|deny|remove <player>"
+  self: "<prefix><error>You can't become your own partner."
+  already: "<prefix><error><player> is already your partner."
+  already-sent: "<prefix><error>You already sent <player> a request."
+  max: "<prefix><error>You can have at most <max> partners."
+  request-sent: "<prefix><text>Partner request sent to <primary><player></primary>. <muted>As partners you get access to each other's chests and doors."
+  request-received:
+    - ""
+    - "<prefix><primary><player></primary> <text>wants to become your partner."
+    - "<muted>Partners can access all of each other's chests and doors, so you get access to <player>'s too."
+    - "   <accept><success><bold>[ACCEPT]</bold></success></accept>   <deny><error><bold>[DENY]</bold></error></deny>"
+    - ""
+  hover-accept: "<text>Click to become partners"
+  hover-deny: "<text>Click to deny"
+  added: "<prefix><success>You and <player> are now partners! <muted>You can access each other's chests and doors."
+  denied: "<prefix><text>Denied the partner request from <primary><player></primary>."
+  denied-sender: "<prefix><error><player> denied your partner request."
+  removed: "<prefix><text>You are no longer partners with <primary><player></primary>."
+  removed-by: "<prefix><text><primary><player></primary> is no longer your partner."
+  not-partners: "<prefix><error><player> isn't your partner."
+  no-request: "<prefix><error>You don't have a partner request from <highlight><player></highlight>."
+  no-requests: "<prefix><error>You don't have any pending partner requests."
+  list: "<prefix><text>Your partners: <primary><players>"
+  list-empty: "<prefix><text>You don't have any partners yet. <muted>Use <primary>/partner <player></primary>."
+  add-prompt: "<prefix><text>Type the name of the player you want as a partner."
+  menu:
+    title: "<dark_gray>Partners"
+    info:
+      name: "<primary><bold>Partners"
+      lore:
+        - "<text>Partners can access all of"
+        - "<text>each other's chests and doors."
+        - "<warning>Note: that works both ways!"
+        - ""
+        - "<muted>Partners: <text><count>/<max>"
+    partner:
+      name: "<primary><player>"
+      lore:
+        - "<muted>» <text>Click to remove as partner"
+    request:
+      name: "<success><bold>Request from <player>"
+      lore:
+        - "<muted>Left-click: <success>accept"
+        - "<muted>Right-click: <error>deny"
+    add:
+      name: "<success><bold>Add partner"
+      lore:
+        - "<muted>Send an online player a request."
+        - ""
+        - "<muted>» <text>Click and type the name"
+    remove-confirm: "<error><bold>Remove <player> as partner"
 
 admin:
   help:

@@ -12,6 +12,8 @@ import nl.pinda.framework.lang.Text;
 import nl.pinda.framework.menu.ItemBuilder;
 import nl.pinda.framework.menu.Menu;
 import nl.pinda.framework.menu.MenuClick;
+import nl.pinda.framework.modules.locks.LockModule;
+import nl.pinda.framework.modules.locks.PartnerMenu;
 import nl.pinda.framework.player.PindaPlayer;
 import nl.pinda.framework.player.PlayerSetting;
 import org.bukkit.Material;
@@ -38,6 +40,7 @@ public final class SettingsMenu extends Menu {
     private static final int LANGUAGE_ROW = 1;
     private static final int SETTINGS_ROW = 3;
     private static final int BUTTON_SLOT = 49;
+    private static final int PARTNER_SLOT = 45;
     private static final int MAX_SETTINGS = 7;
 
     private final Mode mode;
@@ -79,6 +82,19 @@ public final class SettingsMenu extends Menu {
                 plugin.theme().play(viewer, "click");
                 closeLater();
             });
+            LockModule locks = plugin.modules().get(LockModule.class);
+            if (locks != null && locks.isEnabled() && viewer.hasPermission(LockModule.PARTNER)) {
+                set(PARTNER_SLOT, ItemBuilder.of(Material.PLAYER_HEAD)
+                        .head(viewer)
+                        .name(lang.component(code, "settings.menu.partners.name"))
+                        .lore(lang.components(code, "settings.menu.partners.lore",
+                                Text.p("count", locks.service().partners(viewer.getUniqueId()).size())))
+                        .build(), click -> {
+                    plugin.theme().play(viewer, "click");
+                    plugin.getServer().getScheduler().runTask(plugin, () -> new PartnerMenu(plugin, viewer, locks.service(),
+                            () -> new SettingsMenu(plugin, viewer, Mode.NORMAL).open()).open());
+                });
+            }
         }
 
         fillEmpty(ItemBuilder.of(Material.GRAY_STAINED_GLASS_PANE).hideTooltip().build());

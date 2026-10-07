@@ -29,6 +29,9 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 | Economy: PindaCredits, contant + bank, online-bonus | ✅ |
 | Shops | ⏳ |
 | World control | ⏳ |
+| Sloten op kisten en deuren, partners | ✅ |
+| Eigen rangen (PindaAdmin, PindaMod, Pinda) | ⏳ |
+| Webpaneel voor beheer | ⏳ |
 | Backpack | ⏳ |
 | Skills (RuneScape-stijl, level 0-99) | ⏳ |
 | Bomen kappen (timber) | ⏳ |
@@ -74,6 +77,7 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 | `/baltop` | `/geldtop`, `/moneytop` | `pinda.eco.baltop` | iedereen |
 | `/eco give\|take\|set <speler> <bedrag> [bank\|contant]` | | `pinda.eco.admin` | op |
 | `/shop [markt\|beheer\|open\|sluit]` | `/winkel`, `/markt`, `/market` | `pinda.shop.use` | iedereen |
+| `/partner [speler\|accept\|deny\|remove\|list]` | `/partners` | `pinda.partner.use` | iedereen |
 
 Extra permissies:
 
@@ -95,6 +99,7 @@ Extra permissies:
 | `pinda.eco.keep-cash` | Geen contant geld verliezen bij doodgaan | niemand |
 | `pinda.shop.sign` | Shopbord plaatsen met `[shop]` | iedereen |
 | `pinda.shop.admin` | Shopborden van anderen afbreken | op |
+| `pinda.lock.bypass` | Bij alle afgesloten kisten en deuren kunnen | op |
 
 `pinda.admin` geeft alle beheerrechten. Aliassen pas je aan in `config.yml` onder `commands`, bijvoorbeeld:
 
@@ -125,7 +130,8 @@ plugins/PindaFramework/
     ├── afk.yml         automatisch AFK, kicken, tablist
     ├── staff.yml       vanish-instellingen
     ├── economy.yml     valuta, startbedrag, stortkosten, geld bij doodgaan, online-bonus
-    └── shop.yml        marketplace fee, belasting, shortcodes voor het shopbord
+    ├── shop.yml        marketplace fee, belasting, shortcodes voor het shopbord
+    └── locks.yml       welke blokken op slot gaan, hoppers, bescherming, max partners
 ```
 
 - **Teksten** gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format). Gebruik de thema-kleuren als tag: `<primary>`, `<secondary>`, `<text>`, `<muted>`, `<highlight>`, `<success>`, `<error>`, `<warning>`, `<prefix>` voor de prefix en `<server>` voor de servernaam (`server-name` in `config.yml`).

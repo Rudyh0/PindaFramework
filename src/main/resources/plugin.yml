@@ -206,3 +206,11 @@ permissions:
   pinda.shop.admin:
     description: Shopborden van anderen afbreken
     default: op
+
+  # Sloten en partners
+  pinda.partner.use:
+    description: /partner en partners via /instellingen
+    default: true
+  pinda.lock.bypass:
+    description: Bij alle afgesloten kisten en deuren kunnen (staff)
+    default: op

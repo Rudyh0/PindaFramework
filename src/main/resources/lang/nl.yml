@@ -62,6 +62,15 @@ settings:
     close:
       name: "<error><bold>Sluiten"
       lore: []
+    partners:
+      name: "<primary><bold>Partners"
+      lore:
+        - "<text>Partners hebben toegang tot al"
+        - "<text>elkaars kisten en deuren."
+        - ""
+        - "<muted>Partners: <text><count>"
+        - ""
+        - "<muted>» <text>Klik om te beheren"
 
   # Teksten per schakelaar in het menu. Modules voegen hier hun eigen schakelaars aan toe.
   toggles:
@@ -103,6 +112,7 @@ tips:
     - "Even weg? Typ <primary>/afk</primary>, dan weten anderen dat je niet meteen reageert."
     - "Zet je geld op tijd op de <primary>/bank</primary>: contant geld verlies je als je doodgaat."
     - "Begin je eigen shop of koop bij anderen met <click:run_command:/shop><hover:show_text:'<text>Klik om te openen'><primary>/shop</primary></hover></click>."
+    - "Je kisten en deuren zijn automatisch privé. Shift+rechtsklik met lege hand om iemand toegang te geven."
 
 menu:
   previous: "<primary>« Vorige pagina"
@@ -541,6 +551,100 @@ shop:
     cannot: "<error>Niet genoeg geld of ruimte"
     not-enough-stock: "<error>Niet genoeg voorraad"
     sold-out: "<error>Dit item is uitverkocht."
+
+lock:
+  locked: "[actionbar]<success>Op slot! <muted>Shift+rechtsklik met lege hand om anderen toegang te geven"
+  denied: "[actionbar]<error>Dit is van <highlight><player></highlight>"
+  break-denied: "<prefix><error>Dit is van <highlight><player></highlight>. Je kunt het niet afbreken."
+  bypass: "[actionbar]<warning>Staff-toegang: dit is van <player>"
+  no-double-chest: "<prefix><error>Je kunt geen kist plaatsen tegen de kist van <highlight><player></highlight>."
+  add-prompt: "<prefix><text>Typ de naam van de speler die toegang krijgt."
+  trusted: "<prefix><success><player> heeft nu toegang."
+  untrusted: "<prefix><text><primary><player></primary> heeft geen toegang meer."
+  already-owner: "<prefix><text>Dat ben je zelf."
+  menu:
+    title: "<dark_gray>Toegang"
+    info:
+      name: "<primary><bold>Privé"
+      lore:
+        - "<muted>Eigenaar: <text><player>"
+        - "<muted>Spelers met toegang: <text><count>"
+        - "<muted>Partners van de eigenaar: <text><partners>"
+        - ""
+        - "<muted>Partners hebben altijd toegang."
+        - "<muted>Staff kan er ook altijd bij."
+    trusted:
+      name: "<primary><player>"
+      lore:
+        - "<muted>» <text>Klik om toegang af te nemen"
+    everyone:
+      enabled: "<success><bold>Iedereen heeft toegang"
+      disabled: "<error><bold>Alleen met toegang"
+      lore:
+        - "<muted>Zet dit aan voor bijvoorbeeld"
+        - "<muted>een gedeelde kist of een winkeldeur."
+        - ""
+        - "<muted>» <text>Klik om te wisselen"
+    add:
+      name: "<success><bold>Speler toevoegen"
+      lore:
+        - "<muted>Geef één speler toegang tot"
+        - "<muted>alleen dit blok."
+        - ""
+        - "<muted>» <text>Klik en typ de naam"
+
+partner:
+  usage: "<prefix><text>Gebruik: <primary>/partner [speler]</primary> <muted>of</muted> <primary>/partner accept|deny|remove <speler>"
+  self: "<prefix><error>Je kunt niet je eigen partner worden."
+  already: "<prefix><error><player> is al je partner."
+  already-sent: "<prefix><error>Je hebt <player> al een verzoek gestuurd."
+  max: "<prefix><error>Je kunt maximaal <max> partners hebben."
+  request-sent: "<prefix><text>Partnerverzoek verstuurd naar <primary><player></primary>. <muted>Als partners krijgen jullie toegang tot al elkaars kisten en deuren."
+  request-received:
+    - ""
+    - "<prefix><primary><player></primary> <text>wil je partner worden."
+    - "<muted>Partners hebben toegang tot al elkaars kisten en deuren, dus ook jij tot die van <player>."
+    - "   <accept><success><bold>[ACCEPTEREN]</bold></success></accept>   <deny><error><bold>[WEIGEREN]</bold></error></deny>"
+    - ""
+  hover-accept: "<text>Klik om partners te worden"
+  hover-deny: "<text>Klik om te weigeren"
+  added: "<prefix><success>Jij en <player> zijn nu partners! <muted>Jullie kunnen bij elkaars kisten en deuren."
+  denied: "<prefix><text>Partnerverzoek van <primary><player></primary> geweigerd."
+  denied-sender: "<prefix><error><player> heeft je partnerverzoek geweigerd."
+  removed: "<prefix><text>Je bent geen partner meer van <primary><player></primary>."
+  removed-by: "<prefix><text><primary><player></primary> is geen partner meer van je."
+  not-partners: "<prefix><error><player> is niet je partner."
+  no-request: "<prefix><error>Je hebt geen partnerverzoek van <highlight><player></highlight>."
+  no-requests: "<prefix><error>Je hebt geen openstaande partnerverzoeken."
+  list: "<prefix><text>Je partners: <primary><players>"
+  list-empty: "<prefix><text>Je hebt nog geen partners. <muted>Gebruik <primary>/partner <speler></primary>."
+  add-prompt: "<prefix><text>Typ de naam van de speler die je partner wil worden."
+  menu:
+    title: "<dark_gray>Partners"
+    info:
+      name: "<primary><bold>Partners"
+      lore:
+        - "<text>Partners hebben toegang tot al"
+        - "<text>elkaars kisten en deuren."
+        - "<warning>Let op: dat werkt twee kanten op!"
+        - ""
+        - "<muted>Partners: <text><count>/<max>"
+    partner:
+      name: "<primary><player>"
+      lore:
+        - "<muted>» <text>Klik om als partner te verwijderen"
+    request:
+      name: "<success><bold>Verzoek van <player>"
+      lore:
+        - "<muted>Linksklik: <success>accepteren"
+        - "<muted>Rechtsklik: <error>weigeren"
+    add:
+      name: "<success><bold>Partner toevoegen"
+      lore:
+        - "<muted>Stuur een online speler een verzoek."
+        - ""
+        - "<muted>» <text>Klik en typ de naam"
+    remove-confirm: "<error><bold><player> als partner verwijderen"
 
 admin:
   help:

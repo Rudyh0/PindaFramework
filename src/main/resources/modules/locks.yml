@@ -1,0 +1,31 @@
+# ┌──────────────────────────────────────────────┐
+# │       PindaFramework - sloten & partners     │
+# └──────────────────────────────────────────────┘
+# Wat een speler plaatst, is automatisch privé. Shift+rechtsklik met een lege hand
+# opent het menu om anderen toegang te geven. Partners (/partner of via /instellingen)
+# hebben toegang tot al elkaars sloten. Staff kan overal bij met pinda.lock.bypass.
+# Kisten die de wereld zelf maakt (dungeons, dorpen) en kisten van vóór de plugin zijn openbaar.
+# Ovens, smokers, brouwstandaards enzovoort zijn bewust niet afgesloten.
+
+# Welke blokken automatisch op slot gaan
+lock:
+  # Kisten, trapped chests, koperen kisten, vaten en shulkerboxen
+  containers: true
+  # Deuren (niet ijzer)
+  doors: true
+  # Luiken (niet ijzer)
+  trapdoors: true
+  # Hekken
+  fence-gates: true
+
+# Hoppers van anderen kunnen afgesloten kisten niet leegtrekken
+block-hoppers: true
+
+# Afgesloten blokken beschermen tegen explosies, vuur, zuigers en zombies
+protect-blocks: true
+
+# Melding boven de hotbar als je iets op slot zet
+notify-on-place: true
+
+# Maximaal aantal partners per speler
+max-partners: 10

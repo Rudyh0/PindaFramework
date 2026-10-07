@@ -17,6 +17,7 @@ import nl.pinda.framework.modules.back.BackModule;
 import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.gamemode.GamemodeModule;
 import nl.pinda.framework.modules.homes.HomesModule;
+import nl.pinda.framework.modules.locks.LockModule;
 import nl.pinda.framework.modules.msg.MsgModule;
 import nl.pinda.framework.modules.settings.SettingsModule;
 import nl.pinda.framework.modules.shop.ShopModule;
@@ -94,6 +95,7 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new StaffModule(this));
             modules.register(new EconomyModule(this));
             modules.register(new ShopModule(this));
+            modules.register(new LockModule(this));
             modules.enableAll();
 
             commands.register(new AdminCommand(this));
