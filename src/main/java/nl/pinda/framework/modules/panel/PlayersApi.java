@@ -9,6 +9,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import nl.pinda.framework.event.PindaNotifyEvent;
 import nl.pinda.framework.lang.Text;
 import nl.pinda.framework.modules.afk.AfkModule;
 import nl.pinda.framework.modules.economy.Account;
@@ -176,6 +177,11 @@ final class PlayersApi extends PanelApi {
                     "mute", mute == null ? null : punishment(mute), "canPunish", canPunish));
         }
 
+        if (user.has(PanelUser.SECURITY)) {
+            TwoFactorStore.Entry twoFactor = await(module.twoFactor().get(uuid));
+            profile.put("twoFactor", map("enabled", twoFactor != null, "since", twoFactor == null ? null : twoFactor.created()));
+        }
+
         if (user.has(PanelUser.SKILLS)) {
             Map<String, Object> skills = SkillsApi.profile(this, uuid, user.has(PanelUser.SKILLS_EDIT));
             if (skills != null) {
@@ -265,6 +271,7 @@ final class PlayersApi extends PanelApi {
             return null;
         });
         module.log().add(request, "rang", known.name(), current.displayName() + " -> " + target.displayName());
+        PindaNotifyEvent.fire(plugin, "rank", "player", known.name(), "actor", request.user().name(), "rank", target.displayName());
         return map("rank", rank(target));
     }
 
@@ -354,8 +361,7 @@ final class PlayersApi extends PanelApi {
             throw ApiException.badRequest(known.name() + (ban ? " is niet verbannen." : " is niet gemute."));
         }
         sync(() -> {
-            service.notifyStaff(null, ban ? "moderation.notify-unban" : "moderation.notify-unmute",
-                    Text.p("player", known.name()), Text.p("actor", user.name()));
+            service.announceRevoke(null, known.name(), ban ? Punishment.Type.BAN : Punishment.Type.MUTE, user.name());
             Player online = plugin.getServer().getPlayer(uuid);
             if (online != null && !ban) {
                 plugin.lang().send(online, "moderation.unmuted-target");

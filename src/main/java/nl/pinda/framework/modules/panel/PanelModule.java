@@ -51,12 +51,23 @@ public final class PanelModule extends PindaModule {
                         ip TEXT
                     )""",
                     "CREATE INDEX IF NOT EXISTS idx_pinda_panel_log_time ON pinda_panel_log (time)"
+            ),
+            // Versie 2: tweestapsverificatie
+            List.of(
+                    """
+                    CREATE TABLE IF NOT EXISTS pinda_panel_2fa (
+                        uuid TEXT PRIMARY KEY,
+                        secret TEXT NOT NULL,
+                        created INTEGER NOT NULL,
+                        last_step INTEGER NOT NULL DEFAULT 0
+                    )"""
             )
     );
 
     private final PanelSessions sessions = new PanelSessions();
     private final StatsHistory stats = new StatsHistory();
     private PanelLog log;
+    private TwoFactorStore twoFactor;
     private PanelServer server;
     private String runningBind;
     private int runningPort;
@@ -73,6 +84,7 @@ public final class PanelModule extends PindaModule {
             throw new IllegalStateException("Kon de paneel-tabel niet aanmaken", e);
         }
         log = new PanelLog(plugin);
+        twoFactor = new TwoFactorStore(plugin);
         command(new PanelCommand(plugin, this));
         startServer();
         repeat(this::sample, 20L, 20L * 60);
@@ -114,6 +126,12 @@ public final class PanelModule extends PindaModule {
         new ServerApi(this).register(created);
         new ConsoleApi(this).register(created);
         new SkillsApi(this).register(created);
+        new SettingsApi(this).register(created);
+        new TextsApi(this).register(created);
+        new ServerSettingsApi(this).register(created);
+        new DiscordApi(this).register(created);
+        new RanksApi(this).register(created);
+        new PlayerActionsApi(this).register(created);
         String bind = bind();
         int port = port();
         try {
@@ -159,6 +177,21 @@ public final class PanelModule extends PindaModule {
 
     StatsHistory stats() {
         return stats;
+    }
+
+    TwoFactorStore twoFactor() {
+        return twoFactor;
+    }
+
+    /** Is tweestapsverificatie verplicht? (Standaard ja.) */
+    boolean twoFactorRequired() {
+        return config().getBoolean("login.two-factor", true);
+    }
+
+    /** Ontkoppelt de authenticator van een speler en logt hem overal uit. */
+    CompletableFuture<Boolean> resetTwoFactor(UUID uuid) {
+        sessions.removeAll(uuid);
+        return twoFactor.remove(uuid);
     }
 
     private String bind() {

@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.command.PindaCommand;
+import nl.pinda.framework.event.PindaNotifyEvent;
 import nl.pinda.framework.lang.Text;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -62,6 +63,7 @@ public final class RankCommand extends PindaCommand {
                 }
                 plugin.lang().send(sender, "rank.set", Text.p("player", known.name()),
                         Text.c("rank", service.prefix(rank)), Text.p("rank_name", rank.displayName()));
+                PindaNotifyEvent.fire(plugin, "rank", "player", known.name(), "actor", sender.getName(), "rank", rank.displayName());
                 plugin.theme().play(sender, "success");
                 Player target = plugin.getServer().getPlayer(known.uuid());
                 if (target != null && target != sender) {

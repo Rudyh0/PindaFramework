@@ -838,6 +838,39 @@ sleep:
   skipping-storm: "<prefix><success>Genoeg spelers slapen. <text>Het onweer wordt overgeslagen..."
   morning: "<prefix><primary>Goedemorgen!</primary> <text>Het is dag <highlight><day></highlight> op <server>."
 
+discord:
+  status:
+    online: "🟢 **Online**"
+    offline: "🔴 **Offline**"
+    address: "Verbinden: `<address>`"
+    players: "Spelers"
+    tps: "TPS"
+    version: "Versie"
+    since: "Online sinds"
+    player-list: "Wie is er online?"
+    nobody: "Niemand"
+    footer: "Wordt automatisch bijgewerkt"
+  staff:
+    started: "✅ <server> is gestart"
+    stopped: "⛔ <server> is gestopt"
+    test: "Test vanaf het paneel van <server>"
+    test-body: "Als je dit ziet, werkt de webhook! Verstuurd door <player>."
+    by: "Door"
+    reason: "Reden"
+    until: "Tot"
+    ip: "IP"
+    target: "Doel"
+    details: "Details"
+    punishment-ban: "🔨 <player> is verbannen"
+    punishment-mute: "🔇 <player> is gemute"
+    punishment-kick: "👢 <player> is gekickt"
+    punishment-warn: "⚠️ <player> is gewaarschuwd"
+    revoke-ban: "✅ De ban van <player> is opgeheven"
+    revoke-mute: "✅ De mute van <player> is opgeheven"
+    rank: "👑 <player> is nu <rank>"
+    panel-login: "🔐 <player> is ingelogd op het paneel"
+    panel-action: "🛠️ <player>: <action>"
+
 panel:
   usage: "<prefix><text>Gebruik: <primary>/panel</primary> <muted>(inloglink)</muted> <text>of <primary>/panel logout</primary> <muted>(overal uitloggen)"
   offline: "<prefix><error>Het webpaneel draait niet. <text>Kijk in de console of de poort vrij is (modules/panel.yml)."
@@ -850,6 +883,10 @@ panel:
   broadcast: "<prefix><primary><bold>Mededeling</bold></primary> <muted>» <highlight><message>"
   broadcast-title: "<gradient:#FFC857:#E9724C><bold>Mededeling"
   broadcast-subtitle: "<text><message>"
+  message: "<prefix><primary>[Paneel] <actor></primary> <muted>» <text><message>"
+  2fa-usage: "<prefix><text>Gebruik: <primary>/panel 2fa reset <speler></primary> <muted>(ontkoppelt de authenticator-app, bijv. als iemand zijn telefoon kwijt is)"
+  2fa-reset: "<prefix><success>De 2FA van <player> is gereset. <text>Bij de volgende keer inloggen koppelt hij opnieuw."
+  2fa-none: "<prefix><text><player> had geen 2FA gekoppeld."
   shop-closed: "<prefix><warning>Je shop is gesloten door <highlight><actor></highlight> <muted>(via het webpaneel)<warning>."
 
 admin:

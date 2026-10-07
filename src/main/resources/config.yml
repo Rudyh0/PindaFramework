@@ -31,6 +31,8 @@ modules:
   moderation: true
   skills: true
   sleep: true
+  motd: true
+  discord: true
   panel: true
 
 # Opmaak van alle berichten, in MiniMessage-formaat.

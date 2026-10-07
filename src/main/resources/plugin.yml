@@ -5,9 +5,10 @@ api-version: '26.1'
 author: Rudyh0
 description: Het all-in-one framework voor de server.
 
-# SQLite-driver voor de database. Paper downloadt deze automatisch bij de eerste start.
+# SQLite-driver voor de database en ZXing voor QR-codes (2FA). Paper downloadt deze automatisch bij de eerste start.
 libraries:
   - org.xerial:sqlite-jdbc:3.46.1.2
+  - com.google.zxing:core:3.5.3
 
 permissions:
   pinda.admin:
@@ -293,6 +294,11 @@ permissions:
       pinda.panel.log: true
       pinda.panel.skills: true
       pinda.panel.skills.edit: true
+      pinda.panel.config: true
+      pinda.panel.texts: true
+      pinda.panel.ranks.edit: true
+      pinda.panel.players.manage: true
+      pinda.panel.security: true
   pinda.panel.use:
     description: /panel, inloggen op het webpaneel en het dashboard zien
     default: op
@@ -334,4 +340,19 @@ permissions:
     default: op
   pinda.panel.skills.edit:
     description: Paneel - levels aanpassen en XP-boosts starten
+    default: op
+  pinda.panel.config:
+    description: Paneel - alle instellingen, MOTD, server.properties, spelregels en Discord
+    default: op
+  pinda.panel.texts:
+    description: Paneel - alle teksten en het uiterlijk (prefix, kleuren) aanpassen
+    default: op
+  pinda.panel.ranks.edit:
+    description: Paneel - rangen maken, bewerken en verwijderen
+    default: op
+  pinda.panel.players.manage:
+    description: Paneel - speleracties (spelmodus, healen, teleporteren, inventory, items, homes)
+    default: op
+  pinda.panel.security:
+    description: Paneel - de 2FA van anderen resetten
     default: op

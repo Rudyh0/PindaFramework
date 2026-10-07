@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import nl.pinda.framework.PindaFramework;
+import nl.pinda.framework.event.PindaNotifyEvent;
 
 /** Het logboek van het paneel: wie heeft wat gedaan, wanneer en vanaf welk IP. */
 final class PanelLog {
@@ -28,6 +29,8 @@ final class PanelLog {
         long time = System.currentTimeMillis();
         plugin.getLogger().info("[Paneel] " + name + ": " + action
                 + (target == null ? "" : " " + target) + (details == null ? "" : " (" + details + ")"));
+        PindaNotifyEvent.fire(plugin, action.equals("inloggen") ? "panel-login" : "panel-action", "player", name,
+                "action", action, "target", target, "details", details, "ip", ip);
         plugin.database().execute(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
                     "INSERT INTO pinda_panel_log (time, uuid, name, action, target, details, ip) VALUES (?, ?, ?, ?, ?, ?, ?)")) {

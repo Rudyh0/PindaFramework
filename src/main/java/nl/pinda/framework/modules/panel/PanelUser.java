@@ -30,10 +30,16 @@ record PanelUser(UUID uuid, String name, String rankId, String rankName, String 
     static final String LOG = "pinda.panel.log";
     static final String SKILLS = "pinda.panel.skills";
     static final String SKILLS_EDIT = "pinda.panel.skills.edit";
+    static final String CONFIG = "pinda.panel.config";
+    static final String TEXTS = "pinda.panel.texts";
+    static final String RANKS_EDIT = "pinda.panel.ranks.edit";
+    static final String PLAYERS_MANAGE = "pinda.panel.players.manage";
+    static final String SECURITY = "pinda.panel.security";
 
     /** Alle permissies die het paneel kent; de website laat alleen zien wat je mag. */
     static final List<String> NODES = List.of(USE, PLAYERS, MODERATE, ECONOMY_VIEW, ECONOMY_EDIT, RANKS,
-            SHOPS, SHOPS_MANAGE, SERVER, STOP, CONSOLE, LOG, SKILLS, SKILLS_EDIT, "pinda.mod.ban.permanent");
+            SHOPS, SHOPS_MANAGE, SERVER, STOP, CONSOLE, LOG, SKILLS, SKILLS_EDIT, CONFIG, TEXTS, RANKS_EDIT,
+            PLAYERS_MANAGE, SECURITY, "pinda.mod.ban.permanent");
 
     boolean has(String node) {
         if (operator) {

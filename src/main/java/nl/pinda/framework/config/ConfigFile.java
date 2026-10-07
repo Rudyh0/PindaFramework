@@ -71,8 +71,12 @@ public final class ConfigFile {
             }
             Object newDefault = defaults.get(key);
             if (!loaded.isSet(key)) {
-                loaded.set(key, newDefault);
-                added++;
+                // Alleen echt nieuwe instellingen toevoegen. Stond hij al in de vorige standaardversie,
+                // dan heeft de beheerder hem bewust weggehaald (bijv. een rang of een blok uit een lijst).
+                if (previous == null || !previous.isSet(key)) {
+                    loaded.set(key, newDefault);
+                    added++;
+                }
                 continue;
             }
             if (previous != null && previous.isSet(key)) {

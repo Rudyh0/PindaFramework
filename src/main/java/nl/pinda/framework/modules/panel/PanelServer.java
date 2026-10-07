@@ -36,6 +36,8 @@ final class PanelServer {
     }
 
     static final String COOKIE = "pinda_panel";
+    /** Geef dit terug als de handler het antwoord zelf al verstuurd heeft (bijv. een plaatje). */
+    static final Object HANDLED = new Object();
     private static final List<String> FILES = List.of("index.html", "app.js", "app.css", "favicon.svg");
     private static final String CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
             + "img-src 'self' data: https://mc-heads.net; connect-src 'self'; font-src 'self'; "
@@ -170,6 +172,9 @@ final class PanelServer {
                 authenticate(request, match.permission());
             }
             Object result = match.handler().handle(request);
+            if (result == HANDLED) {
+                return;
+            }
             sendJson(exchange, 200, result == null ? Map.of("ok", true) : result);
         } catch (ApiException e) {
             sendError(exchange, e.status(), e.getMessage());
@@ -188,6 +193,9 @@ final class PanelServer {
         PanelSessions.Session session = module.sessions().get(request.cookie(COOKIE), module.idleMillis(), module.maxMillis());
         if (session == null) {
             throw new ApiException(401, "Je bent niet (meer) ingelogd. Typ /panel in-game voor een nieuwe link.");
+        }
+        if (session.pending) {
+            throw new ApiException(401, "Vul eerst de code uit je authenticator-app in.");
         }
         PanelUser user = session.user;
         long now = System.currentTimeMillis();

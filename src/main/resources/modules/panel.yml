@@ -34,6 +34,10 @@ login:
   idle-minutes: 60
   # Hoe lang je maximaal ingelogd blijft (uren)
   max-hours: 12
+  # Tweestapsverificatie met een authenticator-app (Google/Microsoft Authenticator, Authy, ...).
+  # De eerste keer scan je een QR-code, daarna vul je bij elke login de code uit de app in.
+  # Telefoon kwijt? Een admin reset het met: /panel 2fa reset <speler>
+  two-factor: true
 
 console:
   # Hoeveel regels van de serverconsole het paneel laat zien

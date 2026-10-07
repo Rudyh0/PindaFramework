@@ -17,6 +17,8 @@ final class PanelSessions {
 
     private static final int MAX_FAILED_LOGINS = 10;
     private static final long FAILED_WINDOW_MS = 10 * 60 * 1000L;
+    /** Hoe lang je hebt om de 2FA-code in te vullen. */
+    private static final long PENDING_MS = 10 * 60 * 1000L;
 
     /** Een inloglink die nog niet gebruikt is. */
     record Token(UUID uuid, String name, long expires) {
@@ -32,6 +34,11 @@ final class PanelSessions {
         volatile long lastSeen;
         volatile PanelUser user;
         volatile long userLoaded;
+        /** Nog niet klaar met inloggen: de 2FA-code moet nog ingevuld worden. */
+        volatile boolean pending;
+        /** Bij de eerste keer: het nieuwe geheim dat nog bevestigd moet worden. */
+        volatile String setupSecret;
+        volatile int attempts;
 
         Session(String id, UUID uuid, String name, String ip) {
             this.id = id;
@@ -97,7 +104,8 @@ final class PanelSessions {
             return null;
         }
         long now = System.currentTimeMillis();
-        if (now - session.lastSeen > idleMillis || now - session.created > maxMillis) {
+        if (now - session.lastSeen > idleMillis || now - session.created > maxMillis
+                || (session.pending && now - session.created > PENDING_MS)) {
             sessions.remove(id);
             return null;
         }
@@ -129,6 +137,7 @@ final class PanelSessions {
     List<Session> active(long idleMillis, long maxMillis) {
         cleanup(idleMillis, maxMillis);
         List<Session> list = new ArrayList<>(sessions.values());
+        list.removeIf(session -> session.pending);
         list.sort(Comparator.comparingLong((Session session) -> session.lastSeen).reversed());
         return list;
     }

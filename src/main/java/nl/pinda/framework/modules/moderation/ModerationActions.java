@@ -85,8 +85,7 @@ final class ModerationActions {
                 }
                 plugin.lang().send(sender, ban ? "moderation.unbanned" : "moderation.unmuted", Text.p("player", known.name()));
                 plugin.theme().play(sender, "success");
-                notifyStaff(sender, ban ? "moderation.notify-unban" : "moderation.notify-unmute",
-                        Text.p("player", known.name()), Text.p("actor", sender.getName()));
+                service.announceRevoke(sender, known.name(), type, sender.getName());
                 Player target = plugin.getServer().getPlayer(known.uuid());
                 if (target != null && !ban) {
                     plugin.lang().send(target, "moderation.unmuted-target");

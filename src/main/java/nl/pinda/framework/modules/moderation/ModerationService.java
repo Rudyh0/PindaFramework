@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import nl.pinda.framework.PindaFramework;
+import nl.pinda.framework.event.PindaNotifyEvent;
 import nl.pinda.framework.lang.Text;
 import nl.pinda.framework.modules.ranks.Rank;
 import nl.pinda.framework.modules.ranks.RankModule;
@@ -328,10 +329,21 @@ public final class ModerationService {
     /** De standaardmelding aan staff na een nieuwe straf. */
     public void announce(Object exclude, Punishment punishment) {
         String type = punishment.type().name().toLowerCase(java.util.Locale.ROOT);
+        String expires = expiryText(plugin.lang().defaultLanguage(), punishment);
         notifyStaff(exclude, "moderation.notify-" + type,
                 Text.p("player", punishment.targetName()), Text.p("actor", punishment.actorName()),
-                Text.p("reason", punishment.reason()),
-                Text.p("expires", expiryText(plugin.lang().defaultLanguage(), punishment)));
+                Text.p("reason", punishment.reason()), Text.p("expires", expires));
+        PindaNotifyEvent.fire(plugin, "punishment", "player", punishment.targetName(), "actor", punishment.actorName(),
+                "kind", type, "reason", punishment.reason(),
+                "expires", punishment.type() == Punishment.Type.BAN || punishment.type() == Punishment.Type.MUTE ? expires : null);
+    }
+
+    /** De melding aan staff als een ban of mute is opgeheven. */
+    public void announceRevoke(Object exclude, String player, Punishment.Type type, String actor) {
+        boolean ban = type == Punishment.Type.BAN;
+        notifyStaff(exclude, ban ? "moderation.notify-unban" : "moderation.notify-unmute",
+                Text.p("player", player), Text.p("actor", actor));
+        PindaNotifyEvent.fire(plugin, "revoke", "player", player, "actor", actor, "kind", ban ? "ban" : "mute");
     }
 
     // ============================================================ teksten

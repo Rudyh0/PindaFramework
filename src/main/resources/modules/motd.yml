@@ -1,0 +1,20 @@
+# ┌──────────────────────────────────────────────┐
+# │              PindaFramework - MOTD           │
+# └──────────────────────────────────────────────┘
+# Het bericht dat spelers in hun serverlijst zien. Makkelijker aan te passen in het webpaneel
+# (Server > MOTD), met een voorbeeld van hoe het eruitziet.
+
+# Deze MOTD gebruiken in plaats van die uit server.properties
+enabled: true
+
+# Eén of meer MOTD's; bij meerdere wordt elke keer een willekeurige gekozen.
+# Twee regels: zet <newline> tussen de eerste en tweede regel. Opmaak: MiniMessage (zoals in de taalbestanden).
+# Placeholders: <online> (spelers online), <max> (maximum) en <server> (de servernaam)
+motds:
+  - "<gradient:#FFC857:#E9724C><bold>PindaCraft</bold></gradient> <dark_gray>»</dark_gray> <gray>Survival<newline><yellow>Skills, shops en een eigen economie!"
+
+# Een ander maximum aantal spelers tonen in de serverlijst (-1 = het echte maximum)
+shown-max-players: -1
+
+# De namen van online spelers verbergen als je met je muis over het aantal gaat
+hide-players: false

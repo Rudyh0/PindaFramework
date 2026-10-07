@@ -23,6 +23,10 @@ final class PanelCommand extends PindaCommand {
 
     @Override
     protected void run(CommandSender sender, String[] args) {
+        if (args.length > 0 && args[0].equalsIgnoreCase("2fa")) {
+            resetTwoFactor(sender, args);
+            return;
+        }
         Player player = asPlayer(sender);
         if (player == null) {
             return;
@@ -52,8 +56,42 @@ final class PanelCommand extends PindaCommand {
         plugin.theme().play(player, "success");
     }
 
+    /** /panel 2fa reset &lt;speler&gt;: de authenticator van iemand ontkoppelen (telefoon kwijt). */
+    private void resetTwoFactor(CommandSender sender, String[] args) {
+        if (!checkPermission(sender, PanelUser.SECURITY)) {
+            return;
+        }
+        if (args.length < 3 || !args[1].equalsIgnoreCase("reset")) {
+            plugin.lang().send(sender, "panel.2fa-usage");
+            return;
+        }
+        String name = args[2];
+        plugin.players().findKnown(name).thenCompose(known -> {
+            if (known == null) {
+                plugin.getServer().getScheduler().runTask(plugin, () ->
+                        plugin.lang().send(sender, "general.player-unknown", Text.p("player", name)));
+                return java.util.concurrent.CompletableFuture.<Void>completedFuture(null);
+            }
+            return module.resetTwoFactor(known.uuid()).thenAccept(removed -> plugin.getServer().getScheduler().runTask(plugin, () -> {
+                plugin.lang().send(sender, removed ? "panel.2fa-reset" : "panel.2fa-none", Text.p("player", known.name()));
+                plugin.getLogger().info("[Paneel] 2FA van " + known.name() + " gereset door " + sender.getName()
+                        + (removed ? "" : " (er was niets gekoppeld)"));
+            }));
+        }).exceptionally(error -> {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "Kon 2FA niet resetten", error);
+            return null;
+        });
+    }
+
     @Override
     protected List<String> complete(CommandSender sender, String[] args) {
-        return argIndex(args) == 0 ? List.of("logout") : List.of();
+        int index = argIndex(args);
+        if (index == 0) {
+            return sender.hasPermission(PanelUser.SECURITY) ? List.of("logout", "2fa") : List.of("logout");
+        }
+        if (args[0].equalsIgnoreCase("2fa") && sender.hasPermission(PanelUser.SECURITY)) {
+            return index == 1 ? List.of("reset") : index == 2 ? visiblePlayers(sender) : List.of();
+        }
+        return List.of();
     }
 }

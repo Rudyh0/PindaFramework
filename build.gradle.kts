@@ -18,6 +18,8 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.2.build.129-stable")
+    // QR-codes voor de 2FA van het webpaneel (Paper downloadt deze bij het opstarten, zie plugin.yml)
+    compileOnly("com.google.zxing:core:3.5.3")
 }
 
 java {

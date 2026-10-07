@@ -26,6 +26,8 @@ import nl.pinda.framework.modules.settings.SettingsModule;
 import nl.pinda.framework.modules.shop.ShopModule;
 import nl.pinda.framework.modules.skills.SkillsModule;
 import nl.pinda.framework.modules.sleep.SleepModule;
+import nl.pinda.framework.modules.motd.MotdModule;
+import nl.pinda.framework.modules.discord.DiscordModule;
 import nl.pinda.framework.modules.spawn.SpawnModule;
 import nl.pinda.framework.modules.staff.StaffModule;
 import nl.pinda.framework.modules.tips.TipsModule;
@@ -112,6 +114,8 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new ModerationModule(this));
             modules.register(new SkillsModule(this));
             modules.register(new SleepModule(this));
+            modules.register(new MotdModule(this));
+            modules.register(new DiscordModule(this));
             modules.register(new PanelModule(this));
             modules.enableAll();
 

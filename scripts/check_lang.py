@@ -15,7 +15,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 LANG = ROOT / "src/main/resources/lang"
 JAVA = ROOT / "src/main/java"
 SECTIONS = ("general", "settings", "tips", "admin", "menu", "teleport", "homes", "tpa", "spawn",
-            "back", "msg", "gamemode", "afk", "utility", "vanish", "invsee", "economy", "shop", "lock", "partner", "rank", "moderation", "skills", "sleep", "panel")
+            "back", "msg", "gamemode", "afk", "utility", "vanish", "invsee", "economy", "shop", "lock", "partner", "rank", "moderation", "skills", "sleep", "discord", "panel")
 
 
 def flatten(data, prefix=""):

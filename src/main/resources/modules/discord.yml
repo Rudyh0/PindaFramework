@@ -1,0 +1,41 @@
+# ┌──────────────────────────────────────────────┐
+# │            PindaFramework - Discord          │
+# └──────────────────────────────────────────────┘
+# Koppeling met Discord via webhooks. Een webhook maak je in Discord bij
+# Kanaal bewerken > Integraties > Webhooks > Nieuwe webhook > Webhook-URL kopiëren.
+# Het makkelijkst stel je dit in via het webpaneel (Discord), daar kun je ook testen.
+
+status:
+  # Een bericht dat steeds wordt bijgewerkt met de status van de server
+  enabled: false
+  webhook: ""
+  # Hoe vaak het bericht wordt bijgewerkt (seconden, minimaal 30)
+  interval: 60
+  # De namen van de spelers die online zijn tonen
+  show-players: true
+  # Het adres waarmee spelers verbinden (leeg = niet tonen)
+  address: ""
+  # Kleur van het bericht als de server aan of uit staat
+  color-online: "#7BE495"
+  color-offline: "#FF6B6B"
+
+staff:
+  # Meldingen voor staff in een (besloten) kanaal
+  enabled: false
+  webhook: ""
+  events:
+    # Bans, mutes, kicks en waarschuwingen
+    punishments: true
+    # Unbans en unmutes
+    revokes: true
+    # Iemand krijgt een andere rang
+    rank-changes: true
+    # Iemand logt in op het webpaneel
+    panel-logins: true
+    # Alle andere acties in het webpaneel
+    panel-actions: false
+    # De server start of stopt
+    server-start-stop: true
+
+# De naam waarmee berichten in Discord verschijnen (leeg = de naam van de webhook)
+username: ""

@@ -834,6 +834,39 @@ sleep:
   skipping-storm: "<prefix><success>Enough players are sleeping. <text>Skipping the thunderstorm..."
   morning: "<prefix><primary>Good morning!</primary> <text>It's day <highlight><day></highlight> on <server>."
 
+discord:
+  status:
+    online: "🟢 **Online**"
+    offline: "🔴 **Offline**"
+    address: "Connect: `<address>`"
+    players: "Players"
+    tps: "TPS"
+    version: "Version"
+    since: "Online since"
+    player-list: "Who's online?"
+    nobody: "Nobody"
+    footer: "Updates automatically"
+  staff:
+    started: "✅ <server> has started"
+    stopped: "⛔ <server> has stopped"
+    test: "Test from the <server> panel"
+    test-body: "If you can see this, the webhook works! Sent by <player>."
+    by: "By"
+    reason: "Reason"
+    until: "Until"
+    ip: "IP"
+    target: "Target"
+    details: "Details"
+    punishment-ban: "🔨 <player> was banned"
+    punishment-mute: "🔇 <player> was muted"
+    punishment-kick: "👢 <player> was kicked"
+    punishment-warn: "⚠️ <player> was warned"
+    revoke-ban: "✅ <player>'s ban was lifted"
+    revoke-mute: "✅ <player>'s mute was lifted"
+    rank: "👑 <player> is now <rank>"
+    panel-login: "🔐 <player> logged in to the panel"
+    panel-action: "🛠️ <player>: <action>"
+
 panel:
   usage: "<prefix><text>Usage: <primary>/panel</primary> <muted>(login link)</muted> <text>or <primary>/panel logout</primary> <muted>(log out everywhere)"
   offline: "<prefix><error>The web panel isn't running. <text>Check the console to see if the port is free (modules/panel.yml)."
@@ -846,6 +879,10 @@ panel:
   broadcast: "<prefix><primary><bold>Announcement</bold></primary> <muted>» <highlight><message>"
   broadcast-title: "<gradient:#FFC857:#E9724C><bold>Announcement"
   broadcast-subtitle: "<text><message>"
+  message: "<prefix><primary>[Panel] <actor></primary> <muted>» <text><message>"
+  2fa-usage: "<prefix><text>Usage: <primary>/panel 2fa reset <player></primary> <muted>(unlinks the authenticator app, e.g. when someone lost their phone)"
+  2fa-reset: "<prefix><success><player>'s 2FA has been reset. <text>They'll link it again the next time they log in."
+  2fa-none: "<prefix><text><player> didn't have 2FA linked."
   shop-closed: "<prefix><warning>Your shop was closed by <highlight><actor></highlight> <muted>(via the web panel)<warning>."
 
 admin:
