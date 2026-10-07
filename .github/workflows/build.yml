@@ -22,6 +22,11 @@ jobs:
           java-version: '25'
           cache: gradle
 
+      - name: Taalbestanden controleren
+        run: |
+          python3 -c "import yaml" 2>/dev/null || pip install --quiet --break-system-packages pyyaml
+          python3 scripts/check_lang.py
+
       - name: Plugin bouwen
         run: |
           chmod +x gradlew

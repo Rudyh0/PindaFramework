@@ -11,14 +11,17 @@ import nl.pinda.framework.lang.LanguageManager;
 import nl.pinda.framework.menu.Menu;
 import nl.pinda.framework.menu.MenuListener;
 import nl.pinda.framework.module.ModuleManager;
+import nl.pinda.framework.modules.afk.AfkModule;
 import nl.pinda.framework.modules.back.BackModule;
 import nl.pinda.framework.modules.gamemode.GamemodeModule;
 import nl.pinda.framework.modules.homes.HomesModule;
 import nl.pinda.framework.modules.msg.MsgModule;
 import nl.pinda.framework.modules.settings.SettingsModule;
 import nl.pinda.framework.modules.spawn.SpawnModule;
+import nl.pinda.framework.modules.staff.StaffModule;
 import nl.pinda.framework.modules.tips.TipsModule;
 import nl.pinda.framework.modules.tpa.TpaModule;
+import nl.pinda.framework.modules.utility.UtilityModule;
 import nl.pinda.framework.player.PlayerManager;
 import nl.pinda.framework.player.SettingsService;
 import nl.pinda.framework.storage.CoreSchema;
@@ -80,6 +83,9 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new BackModule(this));
             modules.register(new MsgModule(this));
             modules.register(new GamemodeModule(this));
+            modules.register(new AfkModule(this));
+            modules.register(new UtilityModule(this));
+            modules.register(new StaffModule(this));
             modules.enableAll();
 
             commands.register(new AdminCommand(this));

@@ -97,6 +97,7 @@ tips:
     - "Wil je naar een vriend toe? Gebruik <primary>/tpa [speler]</primary>."
     - "Doodgegaan? Met <primary>/back</primary> ga je terug naar die plek."
     - "Stuur iemand een privébericht met <primary>/msg [speler] [bericht]</primary> en antwoord snel met <primary>/r</primary>."
+    - "Even weg? Typ <primary>/afk</primary>, dan weten anderen dat je niet meteen reageert."
 
 menu:
   previous: "<primary>« Vorige pagina"
@@ -240,6 +241,50 @@ gamemode:
   unknown-mode: "<prefix><error>Onbekende spelmodus <highlight><mode></highlight>. <text>Kies uit: <primary>survival, creative, adventure, spectator</primary>"
   usage: "<prefix><text>Gebruik: <primary>/gm <modus> [speler]</primary> <muted>of /gmc, /gms, /gma, /gmsp"
   usage-console: "<prefix><text>Geef vanaf de console een speler op: <primary>/<command> ... <speler>"
+
+afk:
+  now-afk: "<prefix><muted><player> is nu AFK."
+  now-afk-reason: "<prefix><muted><player> is nu AFK: <reason>"
+  no-longer-afk: "<prefix><muted><player> is weer terug."
+  target-afk: "<prefix><muted><player> is AFK en reageert misschien niet meteen."
+  kick: "<error>Je bent van <server> gekickt omdat je te lang AFK was."
+  tab-suffix: " <gray>[AFK]"
+
+utility:
+  fly-on: "<prefix><text>Vliegen staat <success>aan</success>."
+  fly-off: "<prefix><text>Vliegen staat <error>uit</error>."
+  fly-on-other: "<prefix><text>Vliegen staat <success>aan</success> voor <primary><player></primary>."
+  fly-off-other: "<prefix><text>Vliegen staat <error>uit</error> voor <primary><player></primary>."
+  healed: "<prefix><success>Je bent volledig genezen."
+  healed-other: "<prefix><success><player> is volledig genezen."
+  fed: "<prefix><success>Je hebt geen honger meer."
+  fed-other: "<prefix><success><player> heeft geen honger meer."
+  god-on: "<prefix><text>God mode staat <success>aan</success>. Je bent onkwetsbaar."
+  god-off: "<prefix><text>God mode staat <error>uit</error>."
+  god-on-other: "<prefix><text>God mode staat <success>aan</success> voor <primary><player></primary>."
+  god-off-other: "<prefix><text>God mode staat <error>uit</error> voor <primary><player></primary>."
+  speed-set: "<prefix><text>Je <type> is nu <primary><speed></primary>."
+  speed-set-other: "<prefix><text>De <type> van <primary><player></primary> is nu <primary><speed></primary>."
+  speed-usage: "<prefix><text>Gebruik: <primary>/speed [lopen|vliegen] <1-10> [speler]"
+  speed-types:
+    walk: "loopsnelheid"
+    fly: "vliegsnelheid"
+
+vanish:
+  enabled: "<prefix><text>Je bent nu <success>onzichtbaar</success>."
+  disabled: "<prefix><text>Je bent weer <primary>zichtbaar</primary>."
+  on-other: "<prefix><primary><player></primary> <text>is nu onzichtbaar."
+  off-other: "<prefix><primary><player></primary> <text>is weer zichtbaar."
+  staff-on: "<prefix><muted><player> is onzichtbaar geworden."
+  staff-off: "<prefix><muted><player> is weer zichtbaar."
+  still-vanished: "<prefix><text>Je bent nog steeds <success>onzichtbaar</success>. <muted>Niemand zag je binnenkomen."
+  actionbar: "[actionbar]<muted>Je bent onzichtbaar"
+
+invsee:
+  usage: "<prefix><text>Gebruik: <primary>/invsee <speler>"
+  self: "<prefix><error>Je eigen inventory open je gewoon met E."
+  opened: "<prefix><text>Je bekijkt de inventory van <primary><player></primary>."
+  opened-read-only: "<prefix><text>Je bekijkt de inventory van <primary><player></primary>. <muted>(alleen bekijken)"
 
 admin:
   help:

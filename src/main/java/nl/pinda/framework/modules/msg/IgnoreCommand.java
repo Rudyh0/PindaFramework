@@ -85,9 +85,8 @@ public final class IgnoreCommand extends PindaCommand {
         if (argIndex(args) != 0) {
             return List.of();
         }
-        return plugin.getServer().getOnlinePlayers().stream()
-                .filter(online -> online != sender)
-                .map(Player::getName)
+        return visiblePlayers(sender).stream()
+                .filter(name -> !name.equals(sender.getName()))
                 .toList();
     }
 }

@@ -115,3 +115,60 @@ permissions:
   pinda.gamemode.others:
     description: De spelmodus van andere spelers veranderen
     default: op
+
+  # AFK
+  pinda.afk.use:
+    description: /afk
+    default: true
+  pinda.afk.kick-exempt:
+    description: Wordt nooit gekickt voor AFK
+    default: op
+
+  # Handige commando's
+  pinda.fly:
+    description: /fly
+    default: op
+  pinda.fly.others:
+    description: /fly <speler>
+    default: op
+  pinda.heal:
+    description: /heal
+    default: op
+  pinda.heal.others:
+    description: /heal <speler>
+    default: op
+  pinda.feed:
+    description: /feed
+    default: op
+  pinda.feed.others:
+    description: /feed <speler>
+    default: op
+  pinda.god:
+    description: /god
+    default: op
+  pinda.god.others:
+    description: /god <speler>
+    default: op
+  pinda.speed:
+    description: /speed
+    default: op
+  pinda.speed.others:
+    description: /speed <snelheid> <speler>
+    default: op
+
+  # Staff
+  pinda.vanish:
+    description: /vanish
+    default: op
+  pinda.vanish.others:
+    description: /vanish <speler>
+    default: op
+  pinda.vanish.see:
+    description: Onzichtbare staff toch zien
+    default: op
+  pinda.invsee:
+    description: /invsee, inventory van anderen bekijken
+    default: op
+  pinda.invsee.modify:
+    description: Items aanpassen in de inventory van anderen
+    default: op

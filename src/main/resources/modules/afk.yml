@@ -1,0 +1,16 @@
+# ┌──────────────────────────────────────────────┐
+# │             PindaFramework - AFK             │
+# └──────────────────────────────────────────────┘
+
+# Na hoeveel minuten niets doen een speler automatisch AFK wordt (0 = uit)
+auto-afk-minutes: 5
+
+# Na hoeveel minuten AFK een speler gekickt wordt (0 = nooit).
+# Staff kan hier buiten blijven met de permissie pinda.afk.kick-exempt
+kick-after-minutes: 0
+
+# Iedereen laten zien wie AFK gaat en terugkomt (uit = alleen de speler zelf)
+broadcast: true
+
+# [AFK] achter de naam in de tablist zetten
+tab-suffix: true

@@ -58,7 +58,7 @@ public final class AdminCommand extends PindaCommand {
             return options;
         }
         if (index == 1 && args[0].equalsIgnoreCase("setup") && sender.hasPermission(SETUP)) {
-            return plugin.getServer().getOnlinePlayers().stream().map(Player::getName).toList();
+            return visiblePlayers(sender);
         }
         return List.of();
     }
@@ -98,10 +98,8 @@ public final class AdminCommand extends PindaCommand {
         }
         Player target;
         if (args.length >= 2) {
-            target = plugin.getServer().getPlayerExact(args[1]);
+            target = findPlayerOrFail(sender, args[1]);
             if (target == null) {
-                plugin.lang().send(sender, "general.player-not-found", Text.p("player", args[1]));
-                plugin.theme().play(sender, "error");
                 return;
             }
         } else {

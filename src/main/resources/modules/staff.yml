@@ -1,0 +1,17 @@
+# ┌──────────────────────────────────────────────┐
+# │            PindaFramework - staff            │
+# └──────────────────────────────────────────────┘
+# /vanish en /invsee. Spelers met pinda.vanish.see zien onzichtbare staff gewoon.
+
+vanish:
+  # Geen join- en quitberichten voor onzichtbare staff
+  hide-join-quit-messages: true
+
+  # Mobs vallen onzichtbare staff niet aan
+  prevent-mob-target: true
+
+  # Onzichtbare staff pakt geen items op
+  prevent-item-pickup: true
+
+  # Boven de hotbar laten zien dat je onzichtbaar bent
+  actionbar-reminder: true

@@ -11,6 +11,7 @@ import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.lang.LanguageManager;
 import nl.pinda.framework.lang.Text;
 import nl.pinda.framework.module.PindaModule;
+import nl.pinda.framework.modules.afk.AfkModule;
 import nl.pinda.framework.player.PindaPlayer;
 import nl.pinda.framework.player.PlayerManager;
 import nl.pinda.framework.player.PlayerSetting;
@@ -100,6 +101,11 @@ public final class MsgModule extends PindaModule implements Listener {
                 Text.p("sender", senderName), text,
                 senderPlayer != null ? replyTag(target, senderName) : Placeholder.styling("reply"));
         plugin.theme().play(target, "message");
+
+        AfkModule afk = plugin.modules().get(AfkModule.class);
+        if (afk != null && afk.isEnabled() && afk.isAfk(target) && sender != target) {
+            lang.send(sender, "afk.target-afk", Text.p("player", target.getName()));
+        }
 
         if (senderPlayer != null) {
             lastPartner.put(senderPlayer.getUniqueId(), target.getUniqueId());

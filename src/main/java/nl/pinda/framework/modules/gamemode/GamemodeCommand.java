@@ -61,10 +61,8 @@ public final class GamemodeCommand extends PindaCommand {
 
         Player target;
         if (args.length > playerArg && !args[playerArg].isBlank()) {
-            target = plugin.getServer().getPlayer(args[playerArg]);
+            target = findPlayerOrFail(sender, args[playerArg]);
             if (target == null) {
-                plugin.lang().send(sender, "general.player-not-found", Text.p("player", args[playerArg]));
-                plugin.theme().play(sender, "error");
                 return;
             }
         } else if (sender instanceof Player player) {
@@ -91,7 +89,7 @@ public final class GamemodeCommand extends PindaCommand {
             return modes;
         }
         if (index == playerIndex && sender.hasPermission(GamemodeModule.OTHERS)) {
-            return plugin.getServer().getOnlinePlayers().stream().map(Player::getName).toList();
+            return visiblePlayers(sender);
         }
         return List.of();
     }

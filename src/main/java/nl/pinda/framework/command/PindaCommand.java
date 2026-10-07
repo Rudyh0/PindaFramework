@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import nl.pinda.framework.PindaFramework;
+import nl.pinda.framework.lang.Text;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -121,6 +122,39 @@ public abstract class PindaCommand implements BasicCommand {
         plugin.lang().send(sender, "general.no-permission");
         plugin.theme().play(sender, "error");
         return false;
+    }
+
+    /**
+     * Zoekt een online speler op (ook op een deel van de naam). Onzichtbare spelers (vanish)
+     * worden niet gevonden door wie ze niet kan zien. Geeft null als er niemand is.
+     */
+    protected Player findPlayer(CommandSender sender, String name) {
+        Player target = plugin.getServer().getPlayer(name);
+        if (target == null) {
+            return null;
+        }
+        if (sender instanceof Player viewer && !viewer.canSee(target)) {
+            return null;
+        }
+        return target;
+    }
+
+    /** Zoekt een speler en stuurt een melding als die niet gevonden is. */
+    protected Player findPlayerOrFail(CommandSender sender, String name) {
+        Player target = findPlayer(sender, name);
+        if (target == null) {
+            plugin.lang().send(sender, "general.player-not-found", Text.p("player", name));
+            plugin.theme().play(sender, "error");
+        }
+        return target;
+    }
+
+    /** Namen van alle spelers die deze afzender kan zien, voor tab-aanvulling. */
+    protected List<String> visiblePlayers(CommandSender sender) {
+        return plugin.getServer().getOnlinePlayers().stream()
+                .filter(online -> !(sender instanceof Player viewer) || viewer.canSee(online))
+                .map(Player::getName)
+                .toList();
     }
 
     /** Index van het argument dat nu getypt wordt (0 = eerste argument). */

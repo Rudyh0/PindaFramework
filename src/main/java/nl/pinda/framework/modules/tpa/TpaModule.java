@@ -14,6 +14,7 @@ import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.lang.LanguageManager;
 import nl.pinda.framework.lang.Text;
 import nl.pinda.framework.module.PindaModule;
+import nl.pinda.framework.modules.afk.AfkModule;
 import nl.pinda.framework.player.PlayerManager;
 import nl.pinda.framework.player.PlayerSetting;
 import nl.pinda.framework.teleport.TeleportRequest;
@@ -135,6 +136,11 @@ public final class TpaModule extends PindaModule implements Listener {
         lang.send(target, here ? "tpa.received-here" : "tpa.received",
                 Text.p("player", requester.getName()), seconds, accept, deny);
         plugin.theme().play(target, "request");
+
+        AfkModule afk = plugin.modules().get(AfkModule.class);
+        if (afk != null && afk.isEnabled() && afk.isAfk(target) && !request.isSelf()) {
+            lang.send(requester, "afk.target-afk", Text.p("player", target.getName()));
+        }
     }
 
     public void accept(Player target, String from) {

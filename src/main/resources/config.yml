@@ -21,6 +21,9 @@ modules:
   back: true
   msg: true
   gamemode: true
+  afk: true
+  utility: true
+  staff: true
 
 # Opmaak van alle berichten, in MiniMessage-formaat.
 # Uitleg: https://docs.advntr.dev/minimessage/format

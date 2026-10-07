@@ -25,10 +25,8 @@ public final class MsgCommand extends PindaCommand {
             plugin.lang().send(sender, "msg.usage");
             return;
         }
-        Player target = plugin.getServer().getPlayer(args[0]);
+        Player target = findPlayerOrFail(sender, args[0]);
         if (target == null) {
-            plugin.lang().send(sender, "general.player-not-found", Text.p("player", args[0]));
-            plugin.theme().play(sender, "error");
             return;
         }
         String message = String.join(" ", Arrays.copyOfRange(args, 1, args.length)).trim();
@@ -40,9 +38,8 @@ public final class MsgCommand extends PindaCommand {
         if (argIndex(args) != 0) {
             return List.of();
         }
-        return plugin.getServer().getOnlinePlayers().stream()
-                .filter(online -> online != sender)
-                .map(Player::getName)
+        return visiblePlayers(sender).stream()
+                .filter(name -> !name.equals(sender.getName()))
                 .toList();
     }
 }

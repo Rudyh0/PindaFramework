@@ -22,11 +22,16 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 | Teleports: homes, TPA, spawn, back (wachttijd, cooldown, kosten) | ✅ |
 | Privéberichten: msg, reply, socialspy, ignore | ✅ |
 | Spelmodus: /gm, /gmc, /gms, /gma, /gmsp | ✅ |
-| Core: AFK, kick/ban, broadcast, scoreboard, antilag | ⏳ |
+| AFK: /afk, automatisch AFK, [AFK] in tablist | ✅ |
+| Handig: /fly, /heal, /feed, /god, /speed | ✅ |
+| Staff: /vanish, /invsee | ✅ |
+| Core: kick/ban, broadcast, scoreboard, antilag | ⏳ |
 | Economy | ⏳ |
 | Shops | ⏳ |
 | World control | ⏳ |
 | Backpack | ⏳ |
+| Skills (RuneScape-stijl, level 0-99) | ⏳ |
+| Bomen kappen (timber) | ⏳ |
 
 ## Commando's en permissies
 
@@ -55,6 +60,14 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 | `/socialspy` | `/spy` | `pinda.msg.socialspy` | op |
 | `/gm <modus> [speler]` | | per modus | op |
 | `/gmc`, `/gms`, `/gma`, `/gmsp` `[speler]` | | `pinda.gamemode.<modus>` | op |
+| `/afk [reden]` | | `pinda.afk.use` | iedereen |
+| `/fly [speler]` | | `pinda.fly` (+ `.others`) | op |
+| `/heal [speler]` | | `pinda.heal` (+ `.others`) | op |
+| `/feed [speler]` | `/eat` | `pinda.feed` (+ `.others`) | op |
+| `/god [speler]` | `/godmode` | `pinda.god` (+ `.others`) | op |
+| `/speed [lopen\|vliegen] <1-10> [speler]` | | `pinda.speed` (+ `.others`) | op |
+| `/vanish [speler]` | `/v` | `pinda.vanish` (+ `.others`) | op |
+| `/invsee <speler>` | | `pinda.invsee` | op |
 
 Extra permissies:
 
@@ -70,6 +83,9 @@ Extra permissies:
 | `pinda.ignore.exempt` | Kan niet genegeerd worden | op |
 | `pinda.gamemode.survival` / `creative` / `adventure` / `spectator` | Die spelmodus gebruiken | op |
 | `pinda.gamemode.others` | Spelmodus van anderen veranderen | op |
+| `pinda.afk.kick-exempt` | Nooit gekickt voor AFK | op |
+| `pinda.vanish.see` | Onzichtbare staff toch zien | op |
+| `pinda.invsee.modify` | Items aanpassen bij /invsee (anders alleen kijken) | op |
 
 `pinda.admin` geeft alle beheerrechten. Aliassen pas je aan in `config.yml` onder `commands`, bijvoorbeeld:
 
@@ -96,7 +112,9 @@ plugins/PindaFramework/
     ├── tpa.yml         verlooptijd, testoptie TPA naar jezelf
     ├── spawn.yml       spawnlocatie en wanneer spelers erheen gaan
     ├── back.yml        /back na doodgaan
-    └── msg.yml         privéberichten, testoptie berichten naar jezelf
+    ├── msg.yml         privéberichten, testoptie berichten naar jezelf
+    ├── afk.yml         automatisch AFK, kicken, tablist
+    └── staff.yml       vanish-instellingen
 ```
 
 - **Teksten** gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format). Gebruik de thema-kleuren als tag: `<primary>`, `<secondary>`, `<text>`, `<muted>`, `<highlight>`, `<success>`, `<error>`, `<warning>`, `<prefix>` voor de prefix en `<server>` voor de servernaam (`server-name` in `config.yml`).

@@ -31,10 +31,8 @@ public final class TpaCommand extends PindaCommand {
             plugin.lang().send(player, "tpa.usage", Text.p("command", name()));
             return;
         }
-        Player target = plugin.getServer().getPlayer(args[0]);
+        Player target = findPlayerOrFail(player, args[0]);
         if (target == null) {
-            plugin.lang().send(player, "general.player-not-found", Text.p("player", args[0]));
-            plugin.theme().play(player, "error");
             return;
         }
         module.request(player, target, here);
@@ -46,9 +44,8 @@ public final class TpaCommand extends PindaCommand {
             return List.of();
         }
         boolean allowSelf = module.allowSelf();
-        return plugin.getServer().getOnlinePlayers().stream()
-                .filter(online -> allowSelf || online != sender)
-                .map(Player::getName)
+        return visiblePlayers(sender).stream()
+                .filter(name -> allowSelf || !name.equals(sender.getName()))
                 .toList();
     }
 }

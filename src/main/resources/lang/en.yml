@@ -93,6 +93,7 @@ tips:
     - "Want to visit a friend? Use <primary>/tpa [player]</primary>."
     - "Died? Use <primary>/back</primary> to return to that spot."
     - "Send someone a private message with <primary>/msg [player] [message]</primary> and reply quickly with <primary>/r</primary>."
+    - "Stepping away? Type <primary>/afk</primary> so others know you might not respond."
 
 menu:
   previous: "<primary>« Previous page"
@@ -236,6 +237,50 @@ gamemode:
   unknown-mode: "<prefix><error>Unknown game mode <highlight><mode></highlight>. <text>Choose from: <primary>survival, creative, adventure, spectator</primary>"
   usage: "<prefix><text>Usage: <primary>/gm <mode> [player]</primary> <muted>or /gmc, /gms, /gma, /gmsp"
   usage-console: "<prefix><text>From the console, add a player: <primary>/<command> ... <player>"
+
+afk:
+  now-afk: "<prefix><muted><player> is now AFK."
+  now-afk-reason: "<prefix><muted><player> is now AFK: <reason>"
+  no-longer-afk: "<prefix><muted><player> is back."
+  target-afk: "<prefix><muted><player> is AFK and might not respond right away."
+  kick: "<error>You were kicked from <server> for being AFK too long."
+  tab-suffix: " <gray>[AFK]"
+
+utility:
+  fly-on: "<prefix><text>Flying is <success>on</success>."
+  fly-off: "<prefix><text>Flying is <error>off</error>."
+  fly-on-other: "<prefix><text>Flying is <success>on</success> for <primary><player></primary>."
+  fly-off-other: "<prefix><text>Flying is <error>off</error> for <primary><player></primary>."
+  healed: "<prefix><success>You have been fully healed."
+  healed-other: "<prefix><success><player> has been fully healed."
+  fed: "<prefix><success>You're no longer hungry."
+  fed-other: "<prefix><success><player> is no longer hungry."
+  god-on: "<prefix><text>God mode is <success>on</success>. You're invulnerable."
+  god-off: "<prefix><text>God mode is <error>off</error>."
+  god-on-other: "<prefix><text>God mode is <success>on</success> for <primary><player></primary>."
+  god-off-other: "<prefix><text>God mode is <error>off</error> for <primary><player></primary>."
+  speed-set: "<prefix><text>Your <type> is now <primary><speed></primary>."
+  speed-set-other: "<prefix><text><primary><player></primary>'s <type> is now <primary><speed></primary>."
+  speed-usage: "<prefix><text>Usage: <primary>/speed [walk|fly] <1-10> [player]"
+  speed-types:
+    walk: "walking speed"
+    fly: "flying speed"
+
+vanish:
+  enabled: "<prefix><text>You are now <success>invisible</success>."
+  disabled: "<prefix><text>You are <primary>visible</primary> again."
+  on-other: "<prefix><primary><player></primary> <text>is now invisible."
+  off-other: "<prefix><primary><player></primary> <text>is visible again."
+  staff-on: "<prefix><muted><player> turned invisible."
+  staff-off: "<prefix><muted><player> is visible again."
+  still-vanished: "<prefix><text>You are still <success>invisible</success>. <muted>Nobody saw you join."
+  actionbar: "[actionbar]<muted>You are invisible"
+
+invsee:
+  usage: "<prefix><text>Usage: <primary>/invsee <player>"
+  self: "<prefix><error>Just press E to open your own inventory."
+  opened: "<prefix><text>You're viewing <primary><player></primary>'s inventory."
+  opened-read-only: "<prefix><text>You're viewing <primary><player></primary>'s inventory. <muted>(view only)"
 
 admin:
   help:

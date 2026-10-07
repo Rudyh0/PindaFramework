@@ -41,7 +41,7 @@ public final class HomesCommand extends PindaCommand {
     @Override
     protected List<String> complete(CommandSender sender, String[] args) {
         if (argIndex(args) == 0 && sender.hasPermission(HomesModule.OTHERS)) {
-            return plugin.getServer().getOnlinePlayers().stream().map(Player::getName).toList();
+            return visiblePlayers(sender);
         }
         return List.of();
     }
