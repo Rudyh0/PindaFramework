@@ -51,10 +51,10 @@ plugins/PindaFramework/
     └── tips.yml        interval en instellingen voor tips
 ```
 
-- **Teksten** gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format). Gebruik de thema-kleuren als tag: `<primary>`, `<secondary>`, `<text>`, `<muted>`, `<highlight>`, `<success>`, `<error>`, `<warning>`, en `<prefix>` voor de prefix.
+- **Teksten** gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format). Gebruik de thema-kleuren als tag: `<primary>`, `<secondary>`, `<text>`, `<muted>`, `<highlight>`, `<success>`, `<error>`, `<warning>`, `<prefix>` voor de prefix en `<server>` voor de servernaam (`server-name` in `config.yml`).
 - Een bericht leegmaken (`""`) zet het uit. Begin een bericht met `[actionbar]` om het boven de hotbar te tonen.
 - **Nieuwe taal toevoegen:** kopieer `lang/en.yml` naar bijvoorbeeld `lang/de.yml`, vertaal de teksten en doe `/pinda reload`. De taal verschijnt automatisch in het menu.
-- Komen er in een update nieuwe teksten of instellingen bij, dan worden die automatisch aan je bestaande bestanden toegevoegd. Jouw aanpassingen blijven staan.
+- **Updates:** nieuwe teksten en instellingen worden automatisch aan je bestanden toegevoegd. Teksten die je nooit hebt aangepast, krijgen bij een update ook de nieuwe standaardtekst. Teksten die je wél hebt aangepast, blijven altijd staan. Het framework houdt dat bij in de verborgen map `.defaults/`; laat die staan.
 
 ## Zelf bouwen
 

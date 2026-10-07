@@ -18,7 +18,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * De huisstijl: kleuren als MiniMessage-tags ({@code <primary>}, {@code <error>}, ...),
- * de {@code <prefix>} en de geluiden die bij acties horen.
+ * de {@code <prefix>}, de servernaam als {@code <server>} en de geluiden die bij acties horen.
  */
 public final class Theme {
 
@@ -51,8 +51,12 @@ public final class Theme {
         }
         TagResolver colorResolver = colors.build();
 
-        Component prefix = MiniMessage.miniMessage().deserialize(root.getString("theme.prefix", ""), colorResolver);
-        resolver = TagResolver.resolver(colorResolver, Placeholder.component("prefix", prefix));
+        MiniMessage miniMessage = MiniMessage.miniMessage();
+        Component server = miniMessage.deserialize(root.getString("server-name", "PindaCraft"), colorResolver);
+        TagResolver serverResolver = Placeholder.component("server", server);
+        Component prefix = miniMessage.deserialize(root.getString("theme.prefix", ""),
+                TagResolver.resolver(colorResolver, serverResolver));
+        resolver = TagResolver.resolver(colorResolver, serverResolver, Placeholder.component("prefix", prefix));
 
         sounds.clear();
         ConfigurationSection soundSection = root.getConfigurationSection("theme.sounds");

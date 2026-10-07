@@ -158,7 +158,8 @@ public final class SettingsMenu extends Menu {
         finished = true;
         completeSetup();
         closeLater();
-        plugin.lang().sendTitle(viewer, "settings.setup.done-title", "settings.setup.done-subtitle");
+        plugin.lang().sendTitle(viewer, "settings.setup.done-title", "settings.setup.done-subtitle",
+                Text.p("player", viewer.getName()));
         plugin.lang().send(viewer, "settings.setup.done");
         plugin.theme().play(viewer, "success");
     }

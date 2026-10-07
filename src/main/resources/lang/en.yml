@@ -2,7 +2,8 @@
 # │           PindaFramework - English           │
 # └──────────────────────────────────────────────┘
 # Format: MiniMessage (https://docs.advntr.dev/minimessage/format)
-# Theme tags from config.yml: <primary> <secondary> <text> <muted> <highlight> <success> <error> <warning> and <prefix>.
+# Theme tags from config.yml: <primary> <secondary> <text> <muted> <highlight> <success> <error> <warning>,
+# <prefix> and <server> (the server name).
 # Leave a message empty ("") to disable it.
 # Start a message with [actionbar] to show it above the hotbar instead of in chat.
 
@@ -23,12 +24,12 @@ general:
 settings:
   menu:
     title: "<dark_gray>Settings"
-    title-setup: "<dark_gray>Welcome! Choose your preferences"
+    title-setup: "<dark_gray>Welcome to <server>!"
     head:
       name: "<primary><bold><player>"
       lore-setup:
-        - "<text>Welcome to the server!"
-        - "<text>Choose your language and preferences below."
+        - "<text>Great to have you here!"
+        - "<text>Pick your language and preferences."
         - ""
         - "<muted>You can always change this later"
         - "<muted>with <primary>/settings</primary>."
@@ -59,13 +60,13 @@ settings:
     tips:
       name: "<primary>Tips"
       description:
-        - "<text>A useful tip about the"
-        - "<text>server in chat every now and then."
+        - "<text>A useful tip about <server>"
+        - "<text>in chat every now and then."
 
   setup:
-    done: "<prefix><success>Your preferences have been saved! <text>Have fun on the server."
-    done-title: "<gradient:#FFC857:#E9724C><bold>Welcome!"
-    done-subtitle: "<text>Have fun on the server"
+    done: "<prefix><success>Your preferences have been saved! <text>Have fun on <primary><server></primary>."
+    done-title: "<gradient:#FFC857:#E9724C><bold><server>"
+    done-subtitle: "<text>Welcome, <primary><player></primary>!"
     skipped: "<prefix><text>You can always change your preferences with <click:run_command:/settings><hover:show_text:'<text>Click to open'><primary>/settings</primary></hover></click>."
 
   language-changed: "<prefix><text>Your language has been set to <primary><language></primary>."

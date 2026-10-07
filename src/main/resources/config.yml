@@ -4,6 +4,10 @@
 # Na het aanpassen: /pinda reload
 # (modules aan/uit en commando-aliassen vragen een herstart)
 
+# Naam van de server. Te gebruiken in alle berichten met de tag <server>.
+# Opmaak mag, bijvoorbeeld "<gradient:#FFC857:#E9724C>PindaCraft</gradient>".
+server-name: "PindaCraft"
+
 # Standaardtaal voor spelers die (nog) niets gekozen hebben, en voor de console.
 # Moet overeenkomen met een bestand in de map lang/ (nl -> lang/nl.yml).
 default-language: nl

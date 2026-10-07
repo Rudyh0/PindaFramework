@@ -2,7 +2,8 @@
 # │         PindaFramework - Nederlands          │
 # └──────────────────────────────────────────────┘
 # Opmaak: MiniMessage (https://docs.advntr.dev/minimessage/format)
-# Thema-tags uit config.yml: <primary> <secondary> <text> <muted> <highlight> <success> <error> <warning> en <prefix>.
+# Thema-tags uit config.yml: <primary> <secondary> <text> <muted> <highlight> <success> <error> <warning>,
+# <prefix> en <server> (de servernaam).
 # Een bericht leegmaken ("") zet het uit.
 # Begin een bericht met [actionbar] om het boven de hotbar te tonen in plaats van in de chat.
 
@@ -26,11 +27,11 @@ general:
 settings:
   menu:
     title: "<dark_gray>Instellingen"
-    title-setup: "<dark_gray>Welkom! Kies je voorkeuren"
+    title-setup: "<dark_gray>Welkom op <server>!"
     head:
       name: "<primary><bold><player>"
       lore-setup:
-        - "<text>Welkom op de server!"
+        - "<text>Leuk dat je er bent!"
         - "<text>Kies hieronder je taal en voorkeuren."
         - ""
         - "<muted>Je kunt dit later altijd aanpassen"
@@ -64,12 +65,12 @@ settings:
       name: "<primary>Tips"
       description:
         - "<text>Af en toe een handige tip"
-        - "<text>over de server in de chat."
+        - "<text>over <server> in de chat."
 
   setup:
-    done: "<prefix><success>Je voorkeuren zijn opgeslagen! <text>Veel plezier op de server."
-    done-title: "<gradient:#FFC857:#E9724C><bold>Welkom!"
-    done-subtitle: "<text>Veel plezier op de server"
+    done: "<prefix><success>Je voorkeuren zijn opgeslagen! <text>Veel plezier op <primary><server></primary>."
+    done-title: "<gradient:#FFC857:#E9724C><bold><server>"
+    done-subtitle: "<text>Welkom, <primary><player></primary>!"
     skipped: "<prefix><text>Je kunt je voorkeuren altijd aanpassen met <click:run_command:/instellingen><hover:show_text:'<text>Klik om te openen'><primary>/instellingen</primary></hover></click>."
 
   language-changed: "<prefix><text>Je taal is ingesteld op <primary><language></primary>."
