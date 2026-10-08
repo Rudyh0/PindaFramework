@@ -64,7 +64,7 @@ func deviceHash(token string) string {
 // knownDevice: de hash van het apparaat-token als deze browser eerder volledig als deze
 // gebruiker inlogde, anders "".
 func knownDevice(r *http.Request, user User) string {
-	cookie, err := r.Cookie(deviceCookie)
+	cookie, err := r.Cookie(cookieName(r, deviceCookie))
 	if err != nil || len(cookie.Value) != 64 {
 		return ""
 	}
@@ -85,15 +85,25 @@ func (a *App) registerAuth(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/account/logout-everywhere", a.api(member, a.handleLogoutEverywhere))
 }
 
+// cookieName: via HTTPS met het voorvoegsel __Host-. Zo'n cookie hoort alleen bij precies dit
+// domein: een script op een ander (sub)domein, zoals de website, kan hem niet zetten of
+// overschrijven.
+func cookieName(r *http.Request, name string) string {
+	if secureRequest(r) {
+		return "__Host-" + name
+	}
+	return name
+}
+
 func (a *App) setCookie(w http.ResponseWriter, r *http.Request, name, value string, maxAge int) {
 	http.SetCookie(w, &http.Cookie{
-		Name: name, Value: value, Path: "/", MaxAge: maxAge,
+		Name: cookieName(r, name), Value: value, Path: "/", MaxAge: maxAge,
 		HttpOnly: true, Secure: secureRequest(r), SameSite: http.SameSiteStrictMode,
 	})
 }
 
 func (a *App) currentSession(r *http.Request) (*Session, User, bool) {
-	cookie, err := r.Cookie(sessionCookie)
+	cookie, err := r.Cookie(cookieName(r, sessionCookie))
 	if err != nil {
 		return nil, User{}, false
 	}
@@ -221,7 +231,7 @@ func (a *App) handleLogin(q *Request) (any, error) {
 }
 
 func (a *App) loginChallenge(q *Request) (*Challenge, error) {
-	cookie, err := q.r.Cookie(loginCookie)
+	cookie, err := q.r.Cookie(cookieName(q.r, loginCookie))
 	if err != nil {
 		return nil, &apiError{http.StatusUnauthorized, "Je inlogpoging is verlopen. Begin opnieuw."}
 	}

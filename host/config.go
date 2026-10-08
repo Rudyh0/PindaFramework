@@ -45,6 +45,10 @@ func (c Config) serverDir() string {
 	return filepath.Join(c.BaseDir, "server")
 }
 
+func (c Config) websiteDir() string {
+	return filepath.Join(c.BaseDir, "website")
+}
+
 // ConfigStore leest en bewaart config.json.
 type ConfigStore struct {
 	mu     sync.RWMutex

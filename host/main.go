@@ -12,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"sync/atomic"
 )
 
 // Version wordt bij het bouwen ingevuld (zie de GitHub-workflow).
@@ -37,6 +39,12 @@ func main() {
 	if command == "version" {
 		fmt.Println("pinda-host", Version)
 		return
+	}
+	// Voor tests: andere adressen voor Purpur, Modrinth en GitHub (een nepserver op 127.0.0.1).
+	for env, target := range map[string]*string{"PINDA_HOST_PURPUR_API": &purpurAPI, "PINDA_HOST_MODRINTH_API": &modrinthAPI, "PINDA_HOST_GITHUB_API": &githubAPI} {
+		if value := os.Getenv(env); value != "" {
+			*target = value
+		}
 	}
 
 	app, err := openApp(*configPath)
@@ -112,6 +120,12 @@ type App struct {
 	limiter    *RateLimiter
 	mariadb    *MariaDB
 	jobs       *Jobs
+	uploads    *Uploads
+	server     *ServerStore
+	process    ServerProcess
+	// Eén installatie of plugin-update tegelijk.
+	serverJob     sync.Mutex
+	serverRunning atomic.Bool
 }
 
 func openApp(configPath string) (*App, error) {
@@ -138,5 +152,10 @@ func openApp(configPath string) (*App, error) {
 		mariadb:    newMariaDB(),
 		jobs:       newJobs(),
 	}
+	app.uploads = newUploads(app)
+	if app.server, err = openServerStore(filepath.Join(dataDir, "server.json")); err != nil {
+		return nil, err
+	}
+	app.process = newServerProcess()
 	return app, nil
 }

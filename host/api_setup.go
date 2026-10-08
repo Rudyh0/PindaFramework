@@ -119,6 +119,9 @@ func (a *App) handleSetupServer(q *Request) (any, error) {
 	if site != "" && !hostnamePattern.MatchString(site) {
 		return nil, badRequest("%q is geen geldige domeinnaam.", site)
 	}
+	if site != "" && site == a.config.get().Domain {
+		return nil, badRequest("De website kan niet op hetzelfde domein als het dev-paneel (%s). Gebruik bijv. %s voor de website.", site, strings.TrimPrefix(site, "dev."))
+	}
 	if !hostnamePattern.MatchString(game) {
 		return nil, badRequest("Vul het adres voor spelers in, bijvoorbeeld play.%s", fallback(site, "jouwdomein.nl"))
 	}

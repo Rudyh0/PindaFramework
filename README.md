@@ -31,10 +31,10 @@ Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/inst
 10. ~~Database: MySQL/MariaDB naast SQLite, omzetten van SQLite naar MySQL~~ ✅
 11. Dev-paneel (PindaHost) voor een eigen VPS:
     - ~~installer, gebruikers met 2FA, setup, dashboard, databasebeheer~~ ✅
-    - Minecraft-server installeren, starten/stoppen, console
-    - bestanden bewerken en uploaden
-    - backups en geplande taken (visuele cron-editor)
-    - website beheren
+    - ~~Minecraft-server installeren (Purpur, ook oudere versies), EULA, standaardplugins, starten/stoppen, console~~ ✅
+    - ~~bestanden bewerken en uploaden (server en website)~~ ✅
+    - ~~website op het eigen domein, met HTTPS~~ ✅
+    - backups (inplannen, terugzetten, downloaden) en dagelijkse herstart
     - poorten en firewall (UFW)
     - updates vanuit GitHub
     - inloggen op het staff-paneel via Discord (nooit zonder 2FA)
@@ -172,6 +172,13 @@ De installer controleert de download van het dev-paneel met een controlegetal (S
 Wat er nu in zit:
 
 - **Dashboard**: draait de Minecraft-server, database, webserver, firewall? Plus processor, geheugen, schijf en hoe lang de VPS al aan staat.
+- **Server**: installeert **Purpur** (standaard de nieuwste stabiele versie; een oudere of nieuwere versie en build kiezen kan ook). De download wordt gecontroleerd met het controlegetal van Purpur. De server draait als eigen dienst (`pinda-minecraft`) onder de gebruiker `minecraft`, nooit als root, en start na een crash vanzelf opnieuw.
+  - Bij de **eerste start** accepteer je de **Minecraft EULA** in een venster. Daarna zet het paneel **PindaFramework** (van GitHub) en de nieuwste versies van **ViaVersion, PlaceholderAPI, CoreProtect en WorldEdit** (van Modrinth, voor jouw Minecraft-versie) in `plugins/`, en start de server. De rangen van PindaFramework regelen de rechten: PindaAdmin is operator en mag alles (ook WorldEdit), PindaMod mag met CoreProtect inspecteren, opzoeken en teleporteren.
+  - **Console**: alles uit `logs/latest.log` live, en opdrachten sturen (via RCON, alleen vanaf de VPS zelf). Spelers online, geheugen en uptime staan erboven.
+  - **Plugins**: alle plugins met versie, aan/uit zetten, verwijderen, en de standaardplugins met één knop bijwerken.
+  - **Instellingen**: hoeveel geheugen de server krijgt (met de vlaggen van Aikar), en overstappen naar een andere versie of build (alleen `server.jar` wordt vervangen).
+- **Bestanden**: een bestandsbrowser zoals in Pterodactyl voor de hele servermap. Bladeren, bestanden bewerken in een editor met kleuren (YAML, properties, JSON, …; Ctrl+S om op te slaan), uploaden met slepen (ook hele mappen, in stukken van 16 MB zodat het via Cloudflare werkt), downloaden (mappen als zip), hernoemen, verplaatsen, inpakken als zip en uitpakken (.zip, .tar, .tar.gz), verwijderen. Het paneel blijft altijd binnen de map: symlinks of trucs van een plugin brengen het nooit naar andere bestanden op de VPS.
+- **Website**: een eigen bestandsbrowser voor de website (`/opt/pinda/website`). Alles wat je daar uploadt, staat meteen online op het domein van de website; `index.html` is de voorpagina. Via Cloudflare werkt HTTPS meteen; zonder Cloudflare vraag je met één knop een certificaat aan bij Let's Encrypt.
 - **Databases** (MariaDB): databases en gebruikers aanmaken en verwijderen, wachtwoorden en toegang, downloaden als `.sql` en `.sql` inladen. PindaFramework met één knop **omzetten naar MySQL** (de server wordt herstart en zet alles over). Krijgt de plugin geen verbinding meer, dan geeft de sleutel bij zijn gebruiker een nieuw wachtwoord dat meteen in `database.yml` komt. MariaDB is alleen vanaf de VPS zelf bereikbaar. Een `.sql` inladen gebeurt met een tijdelijke gebruiker die alleen bij die ene database kan, dus een bestand kan nooit bij andere databases of bij de server zelf.
 - **Gebruikers**: beheerders en developers, met een tijdelijk wachtwoord en verplichte 2FA bij de eerste keer inloggen. Uitzetten, 2FA of wachtwoord resetten. Bij 2FA resetten krijgt de gebruiker ook een nieuw tijdelijk wachtwoord, zodat iemand met alleen het oude wachtwoord nooit 2FA kan omzeilen.
 
@@ -182,7 +189,13 @@ Wat er nu in zit:
 | Databases verwijderen of `.sql` inladen | ✓ | |
 | Databasegebruikers, wachtwoorden en toegang | ✓ | |
 | PindaFramework omzetten naar MySQL | ✓ | |
+| Server starten, stoppen, console, plugins, geheugen | ✓ | ✓ |
+| Bestanden van de server en de website | ✓ | ✓ |
+| Server installeren of van versie wisselen | ✓ | |
+| HTTPS-certificaat voor de website aanvragen | ✓ | |
 | Gebruikers van het dev-paneel beheren | ✓ | |
+
+Een developer kan dus alles wat de server zelf kan: plugins en bestanden neerzetten en aanpassen. Geef die rol alleen aan mensen die je daarmee vertrouwt.
 - **Logboek**: wie deed wat en vanaf welk IP.
 
 Op de server zelf (als root):

@@ -60,7 +60,12 @@ type Request struct {
 }
 
 func (q *Request) body(target any) error {
-	reader := http.MaxBytesReader(q.w, q.r.Body, 1<<20)
+	return q.bodyMax(target, 1<<20)
+}
+
+// bodyMax: zoals body, maar met een eigen grens (bijv. voor een bestand uit de editor).
+func (q *Request) bodyMax(target any, max int64) error {
+	reader := http.MaxBytesReader(q.w, q.r.Body, max)
 	decoder := json.NewDecoder(reader)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(target); err != nil && !errors.Is(err, io.EOF) {
@@ -200,6 +205,9 @@ func (a *App) routes() http.Handler {
 	a.registerUsers(mux)
 	a.registerDashboard(mux)
 	a.registerDatabase(mux)
+	a.registerFiles(mux)
+	a.registerServer(mux)
+	a.registerWebsite(mux)
 
 	static, err := fs.Sub(webFiles, "web")
 	if err != nil {
@@ -208,7 +216,7 @@ func (a *App) routes() http.Handler {
 	files := http.FileServer(http.FS(static))
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/", "/app.js", "/app.css", "/favicon.svg":
+		case "/", "/app.js", "/files.js", "/server.js", "/app.css", "/favicon.svg":
 			w.Header().Set("Cache-Control", "no-cache")
 			files.ServeHTTP(w, r)
 		default:

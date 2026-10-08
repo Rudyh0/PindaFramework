@@ -54,7 +54,28 @@
     copy: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
     warn: '<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
-    swap: '<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>'
+    swap: '<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    folderPlus: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v5M9.5 13.5h5"/>',
+    file: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>',
+    filePlus: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15h6"/>',
+    code: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M10 13l-2 2 2 2M14 13l2 2-2 2"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/>',
+    archive: '<rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>',
+    link: '<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    more: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+    move: '<path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/>',
+    play: '<path d="M7 4l13 8-13 8z"/>',
+    stop: '<rect x="5" y="5" width="14" height="14" rx="2"/>',
+    restart: '<path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/>',
+    bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+    terminal: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/>',
+    plug: '<path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/>',
+    sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+    players: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.4-3.6 3.2-6 6.5-6s6.1 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3.3 2.6 3.5 6"/>',
+    external: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    save: '<path d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v6h8V3M7 21v-7h10v7"/>'
   };
   const icon = (name, cls = '') => raw(`<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`);
 
@@ -403,8 +424,13 @@
 
   // =============================================================== opbouw en navigatie
 
+  // Pagina's uit de andere bestanden (server.js, files.js) staan in PH.pages.
+  const external = name => (main, alive, rest) => window.PH.pages[name](main, alive, rest);
   const ROUTES = [
     { path: 'dashboard', title: 'Dashboard', icon: 'dashboard', page: pageDashboard },
+    { path: 'server', title: 'Server', icon: 'cube', page: external('server') },
+    { path: 'bestanden', title: 'Bestanden', icon: 'folder', page: external('files') },
+    { path: 'website', title: 'Website', icon: 'web', page: external('website') },
     { path: 'databases', title: 'Databases', icon: 'database', page: pageDatabases },
     { path: 'gebruikers', title: 'Gebruikers', icon: 'users', page: pageUsers, admin: true, group: 'Beheer' },
     { path: 'logboek', title: 'Logboek', icon: 'log', page: pageAudit, admin: true, group: 'Beheer' },
@@ -443,10 +469,24 @@
 
   async function navigate() {
     if (!state.user || !$('#main')) return;
+    // Niet-opgeslagen werk (de editor): eerst vragen.
+    if (state.leaveGuard && location.hash !== state.currentHash) {
+      const leave = await state.leaveGuard();
+      if (!leave) {
+        history.replaceState(null, '', state.currentHash);
+        return;
+      }
+    }
+    state.leaveGuard = null;
+    state.currentHash = location.hash;
     clearTimers();
-    closeModal();
+    if (!state.keepModal) closeModal();
+    state.keepModal = false;
     document.body.classList.remove('nav-open');
-    const path = location.hash.replace(/^#\/?/, '').split('/')[0];
+    const full = location.hash.replace(/^#\/?/, '');
+    const slash = full.indexOf('/');
+    const path = slash < 0 ? full : full.slice(0, slash);
+    const rest = slash < 0 ? '' : full.slice(slash + 1);
     const routes = visibleRoutes();
     const route = routes.find(r => r.path === path) || routes[0];
     if (route.path !== path) {
@@ -463,13 +503,19 @@
     render(main, html`<div class="page-loading"><div class="spinner"></div></div>`);
     window.scrollTo(0, 0);
     try {
-      await route.page(main, alive);
+      await route.page(main, alive, rest);
     } catch (error) {
       if (!alive() || error.status === 401) return;
       render(main, html`<div class="alert error">${error.message}</div>`);
     }
   }
-  window.addEventListener('hashchange', navigate);
+  window.addEventListener('hashchange', () => navigate());
+
+  /** De pagina opnieuw laden, maar een open venster (bijv. het verslag van een taak) laten staan. */
+  function reloadPage() {
+    state.keepModal = true;
+    return navigate();
+  }
 
   function pageHead(title, subtitle, actions = '') {
     return html`<div class="page-head"><div><h1>${title}</h1>${subtitle ? html`<p>${subtitle}</p>` : ''}</div>
@@ -651,27 +697,32 @@
     }
   }
 
+  /** Volgt een taak op de achtergrond in een venster. Ook als het venster dicht gaat, loopt het door. */
   async function watchJob(job, onDone) {
     openModal(html`<div class="modal-head"><h3>${job.title}</h3></div>
       <div class="modal-body"><pre class="job-log" id="job-log">Bezig…</pre></div>
-      <div class="modal-foot"><button class="btn" data-action="close" id="job-close" disabled>Sluiten</button></div>`);
+      <div class="modal-foot"><button class="btn" data-action="close" id="job-close" disabled>Sluiten</button></div>`, 'wide');
     for (;;) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 800));
       let current;
       try {
         current = await api(`/jobs/${job.id}`);
       } catch (error) {
         toast(error.message, 'error');
-        break;
+        return null;
       }
       const log = $('#job-log');
-      if (!log) return;
-      log.textContent = current.lines.join('\n') + (current.status === 'failed' ? `\n\nMislukt: ${current.error}` : '');
+      if (log) {
+        const atEnd = log.scrollTop + log.clientHeight >= log.scrollHeight - 8;
+        log.textContent = current.lines.join('\n') + (current.status === 'failed' ? `\n\nMislukt: ${current.error}` : '');
+        if (atEnd) log.scrollTop = log.scrollHeight;
+      }
       if (current.status !== 'running') {
-        $('#job-close').disabled = false;
+        const close = $('#job-close');
+        if (close) close.disabled = false;
         toast(current.status === 'done' ? `${current.title}: klaar.` : `${current.title}: mislukt.`, current.status === 'done' ? 'success' : 'error');
         if (onDone) onDone(current);
-        break;
+        return current;
       }
     }
   }
@@ -1002,6 +1053,10 @@
     afterLogin();
   }
 
+  window.addEventListener('beforeunload', event => {
+    if (state.dirty) { event.preventDefault(); event.returnValue = ''; }
+  });
+
   document.addEventListener('click', event => {
     const target = event.target.closest('[data-action]');
     if (!target || target.disabled) return;
@@ -1021,5 +1076,14 @@
     handler(form, new FormData(form), button);
   });
 
-  boot();
+  // Voor de andere bestanden (server.js, files.js): de hulpmiddelen en de plek voor pagina's.
+  window.PH = {
+    $, $$, esc, html, raw, render, icon, num, fixed, bytes, ago, uptime, dateTime, pct,
+    state, ApiError, request, api, post, every, clearTimers, toast, openModal, closeModal, confirmDialog, busy,
+    pageHead, card, emptyRow, watchJob, navigate, reloadPage, refreshInfo, actions, forms, pages: {}
+  };
+
+  // Pas starten als alle scripts er zijn.
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();

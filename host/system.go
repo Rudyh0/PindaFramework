@@ -58,10 +58,13 @@ func (a *App) services() []Service {
 	config := a.config.get()
 	list := []Service{}
 
-	installed, state := unitState(minecraftUnit)
-	game := Service{ID: "game", Name: "Minecraft-server", Unit: minecraftUnit, Installed: installed, State: state, Active: state == "active"}
-	if !installed {
+	server := a.server.get()
+	process := a.process.Status()
+	game := Service{ID: "game", Name: "Minecraft-server", Unit: minecraftUnit, Installed: server.Installed, State: process.State, Active: process.State == "active"}
+	if !server.Installed {
 		game.Detail = "Nog niet geïnstalleerd"
+	} else {
+		game.Detail = "Purpur " + server.Version
 	}
 	list = append(list, game)
 
@@ -78,7 +81,7 @@ func (a *App) services() []Service {
 	}
 	list = append(list, dbService)
 
-	installed, state = unitState("nginx")
+	installed, state := unitState("nginx")
 	web := Service{ID: "web", Name: "Webserver (nginx)", Unit: "nginx", Installed: installed, State: state, Active: state == "active"}
 	if !installed {
 		web.Detail = "Niet geïnstalleerd"

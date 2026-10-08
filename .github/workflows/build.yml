@@ -75,8 +75,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           JAR=$(ls build/libs/*.jar | head -n 1)
+          # Controlegetal van de plugin: het dev-paneel controleert de download hiermee.
+          (cd "$(dirname "$JAR")" && sha256sum "$(basename "$JAR")" > "$(basename "$JAR").sha256")
           git log -1 --pretty=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.txt
-          gh release create "build-${{ github.run_number }}" "$JAR" build/host/pinda-host-linux-amd64 build/host/pinda-host-linux-arm64 \
+          gh release create "build-${{ github.run_number }}" "$JAR" "$JAR.sha256" build/host/pinda-host-linux-amd64 build/host/pinda-host-linux-arm64 \
             build/host/pinda-host-linux-amd64.sha256 build/host/pinda-host-linux-arm64.sha256 build/host/install.sh \
             --title "PindaFramework build #${{ github.run_number }}" \
             --notes-file notes.txt \

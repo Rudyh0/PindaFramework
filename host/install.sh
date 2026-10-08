@@ -402,6 +402,10 @@ $HTTP2_LINE
 	location /.well-known/acme-challenge/ {
 		root $BASE/acme;
 	}
+	# Verborgen bestanden (zoals .env of de tijdelijke bestanden van een upload) nooit laten zien.
+	location ~ /\.(?!well-known/) {
+		deny all;
+	}
 	location / {
 		try_files \$uri \$uri/ =404;
 	}

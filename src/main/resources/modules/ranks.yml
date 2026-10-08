@@ -97,9 +97,13 @@ ranks:
       # Vanilla /tp naar spelers
       - minecraft.command.teleport
       - minecraft.command.tp
-      # CoreProtect: blokken inspecteren en opzoeken
+      # CoreProtect: blokken inspecteren, opzoeken en naar een resultaat teleporteren.
+      # Terugdraaien (coreprotect.rollback / coreprotect.restore) is voor PindaAdmin;
+      # wil je dat mods dat ook mogen, zet die twee er dan hier bij.
       - coreprotect.inspect
       - coreprotect.lookup
+      - coreprotect.teleport
+      # WorldEdit, ViaVersion en PlaceholderAPI: alleen PindaAdmin (die is operator en mag alles).
 
   pinda:
     display-name: "Pinda"
