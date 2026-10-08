@@ -101,6 +101,13 @@ settings:
         - "<text>De toplijsten rechts"
         - "<text>in beeld."
 
+    timber:
+      name: "<primary>Bomen omhakken"
+      description:
+        - "<text>Hak het onderste blok van"
+        - "<text>een boom om met een bijl,"
+        - "<text>en de hele boom valt om."
+
   setup:
     done: "<prefix><success>Je voorkeuren zijn opgeslagen! <text>Veel plezier op <primary><server></primary>."
     done-title: "<gradient:#FFC857:#E9724C><bold><server>"
@@ -864,6 +871,9 @@ top:
     deaths:
       name: "Vaakst doodgegaan"
       description: "Hoe vaak iemand doodging."
+    trees:
+      name: "Meeste bomen gekapt"
+      description: "Hoeveel bomen iemand in één keer omhakte."
   units: "d,u,m"
   values:
     skills: "<value> levels"
@@ -951,6 +961,13 @@ antilag:
     - " <primary>/lag</primary> <muted>» <text>TPS, entities en items"
     - " <primary>/lag chunks</primary> <muted>» <text>De drukste chunks"
     - " <primary>/lag clear [seconden|nu]</primary> <muted>» <text>Losse items opruimen"
+
+timber:
+  enabled: "<prefix><success>Bomen in één keer omhakken staat aan. <muted>Hak met een bijl het onderste blok van een boom om."
+  disabled: "<prefix><text>Bomen in één keer omhakken staat uit. <muted>(/timber zet het weer aan)"
+  tool-protect: "[actionbar]<warning>Je bijl is bijna kapot: de boom valt niet in één keer om."
+  cooldown: "[actionbar]<muted>Nog <seconds> s wachten voor de volgende boom."
+  sapling-protected: "[actionbar]<muted>Deze sapling is net geplant."
 
 discord:
   status:

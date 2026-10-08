@@ -12,10 +12,9 @@ import nl.pinda.framework.modules.skills.SkillsModule;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
-/** /top: bovenin de toplijsten om uit te kiezen, in het midden de top 10. */
+/** /top: bovenin je eigen hoofd, daaronder de toplijsten om uit te kiezen, in het midden de top 10. */
 final class TopMenu extends Menu {
 
-    private static final int[] TABS = {1, 2, 3, 5, 6, 7};
     private static final int[] SLOTS = {20, 21, 22, 23, 24, 29, 30, 31, 32, 33};
 
     private final LeaderboardsModule module;
@@ -47,8 +46,9 @@ final class TopMenu extends Menu {
         LeaderboardService service = module.service();
         List<Board> boards = service.boards();
 
-        // Bovenin: de toplijsten om uit te kiezen, met in het midden je eigen hoofd
-        for (int index = 0; index < boards.size() && index < TABS.length; index++) {
+        // De toplijsten om uit te kiezen (tweede rij)
+        int[] tabs = centered(1, boards.size());
+        for (int index = 0; index < boards.size() && index < tabs.length; index++) {
             Board tab = boards.get(index);
             LeaderboardService.Ranking ranking = service.ranking(tab);
             LeaderboardService.Entry own = ranking.entry(viewer.getUniqueId());
@@ -56,7 +56,7 @@ final class TopMenu extends Menu {
                     ? lang.component(code, "top.menu.board.position-none")
                     : lang.component(code, "top.menu.board.position", Text.p("position", ranking.position(viewer.getUniqueId())),
                     Text.p("value", service.format(tab, own.value(), code)));
-            set(TABS[index], ItemBuilder.of(tab.icon())
+            set(tabs[index], ItemBuilder.of(tab.icon())
                     .name(lang.component(code, "top.menu.board.name", Text.p("board", service.name(tab, code))))
                     .lore(lang.components(code, "top.menu.board.lore",
                             Text.c("description", lang.component(code, "top.boards." + tab.id() + ".description")),

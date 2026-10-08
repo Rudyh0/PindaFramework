@@ -7,7 +7,8 @@
 
 # Welke toplijsten er zijn, in deze volgorde.
 # money = rijkste spelers, skills = totaal level, playtime = speeltijd,
-# kills = spelers verslagen, mobkills = mobs verslagen, deaths = vaakst doodgegaan
+# kills = spelers verslagen, mobkills = mobs verslagen, deaths = vaakst doodgegaan,
+# trees = bomen omgehakt (met de module timber)
 boards:
   - money
   - skills
@@ -15,6 +16,7 @@ boards:
   - kills
   - mobkills
   - deaths
+  - trees
 
 # Hoe vaak de toplijsten opnieuw worden berekend (seconden, minimaal 15)
 refresh-seconds: 60

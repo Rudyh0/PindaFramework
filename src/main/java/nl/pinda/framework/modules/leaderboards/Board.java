@@ -12,7 +12,8 @@ public enum Board {
     PLAYTIME("playtime", Material.CLOCK, "speeltijd", "tijd", "online"),
     KILLS("kills", Material.IRON_SWORD, "spelerkills", "pvp", "kill"),
     MOB_KILLS("mobkills", Material.ZOMBIE_HEAD, "mobs", "monsters", "mobkill"),
-    DEATHS("deaths", Material.SKELETON_SKULL, "doden", "dood", "death");
+    DEATHS("deaths", Material.SKELETON_SKULL, "doden", "dood", "death"),
+    TREES("trees", Material.OAK_SAPLING, "bomen", "boom", "timber", "tree");
 
     private final String id;
     private final Material icon;

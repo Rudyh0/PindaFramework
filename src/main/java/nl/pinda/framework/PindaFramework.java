@@ -34,6 +34,7 @@ import nl.pinda.framework.modules.sleep.SleepModule;
 import nl.pinda.framework.modules.motd.MotdModule;
 import nl.pinda.framework.modules.discord.DiscordModule;
 import nl.pinda.framework.modules.spawn.SpawnModule;
+import nl.pinda.framework.modules.timber.TimberModule;
 import nl.pinda.framework.modules.staff.StaffModule;
 import nl.pinda.framework.modules.tips.TipsModule;
 import nl.pinda.framework.modules.tpa.TpaModule;
@@ -119,6 +120,7 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new ModerationModule(this));
             modules.register(new SkillsModule(this));
             modules.register(new SleepModule(this));
+            modules.register(new TimberModule(this));
             modules.register(new MotdModule(this));
             modules.register(new LeaderboardsModule(this));
             modules.register(new ScoreboardModule(this));

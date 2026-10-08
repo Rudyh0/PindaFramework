@@ -78,6 +78,7 @@
     trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
     sword: '<path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/>',
     ghost: '<path d="M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/>',
+    tree: '<path d="M12 22v-6M9 22h6"/><path d="M12 2l5 7h-2.5l3.5 5h-3l3 4H6l3-4H6l3.5-5H7z"/>',
     skull: '<circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2M12.5 17l-.5-1-.5 1z"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/>'
   };
   const icon = (name, cls = '') => raw(`<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`);
@@ -665,7 +666,7 @@
     'modules/moderation.yml': 'Moderatie', 'modules/skills.yml': 'Skills', 'modules/sleep.yml': 'Slapen',
     'modules/motd.yml': 'MOTD', 'modules/discord.yml': 'Discord', 'modules/panel.yml': 'Webpaneel',
     'modules/leaderboards.yml': 'Toplijsten', 'modules/scoreboard.yml': 'Scoreboard', 'modules/broadcasts.yml': 'Aankondigingen',
-    'modules/antilag.yml': 'Antilag'
+    'modules/antilag.yml': 'Antilag', 'modules/timber.yml': 'Bomen kappen'
   };
   const fileName = path => FILE_NAMES[path] || path.replace(/^modules\//, '').replace(/\.yml$/, '');
   const prettyKey = key => {
@@ -813,7 +814,7 @@
     tpa: 'TPA', spawn: 'Spawn', back: 'Terug', msg: 'Privéberichten', gamemode: 'Spelmodus', afk: 'AFK', utility: 'Handige commando’s',
     vanish: 'Vanish', invsee: 'Invsee', economy: 'Economie', shop: 'Shops', lock: 'Sloten', partner: 'Partners', rank: 'Rangen',
     moderation: 'Moderatie', skills: 'Skills', sleep: 'Slapen', discord: 'Discord', panel: 'Webpaneel', admin: 'Beheer',
-    top: 'Toplijsten', scoreboard: 'Scoreboard', broadcasts: 'Aankondigingen', antilag: 'Antilag'
+    top: 'Toplijsten', scoreboard: 'Scoreboard', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen'
   };
 
   async function pageTexts(main, tab, alive) {
@@ -1798,7 +1799,7 @@
 
   // =============================================================== toplijsten en scoreboard
 
-  const BOARD_ICONS = { money: 'coin', skills: 'award', playtime: 'clock', kills: 'sword', mobkills: 'ghost', deaths: 'skull' };
+  const BOARD_ICONS = { money: 'coin', skills: 'award', playtime: 'clock', kills: 'sword', mobkills: 'ghost', deaths: 'skull', trees: 'tree' };
 
   async function pageLeaderboards(main, _, alive) {
     const data = await api('/leaderboards');

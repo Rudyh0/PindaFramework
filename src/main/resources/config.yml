@@ -31,6 +31,7 @@ modules:
   moderation: true
   skills: true
   sleep: true
+  timber: true
   motd: true
   leaderboards: true
   scoreboard: true

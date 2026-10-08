@@ -286,6 +286,14 @@ permissions:
     description: Een melding krijgen als de server laggt
     default: op
 
+  # Bomen kappen
+  pinda.timber.use:
+    description: Bomen in één keer omhakken, en /timber om het aan of uit te zetten
+    default: true
+  pinda.timber.bypass-cooldown:
+    description: Geen wachttijd tussen twee bomen
+    default: op
+
   # Slapen
   pinda.sleep.exempt:
     description: Telt niet mee bij het aantal spelers dat moet slapen

@@ -13,7 +13,7 @@ show-in-setup: true
 # Om de hoeveel seconden het naar de volgende toplijst wisselt (minimaal 3)
 switch-seconds: 10
 
-# Welke toplijsten erop komen, in deze volgorde (money, skills, playtime, kills, mobkills, deaths)
+# Welke toplijsten erop komen, in deze volgorde (money, skills, playtime, kills, mobkills, deaths, trees)
 boards:
   - money
   - skills
@@ -21,6 +21,7 @@ boards:
   - kills
   - mobkills
   - deaths
+  - trees
 
 # Hoeveel plekken per toplijst (1-10)
 places: 10

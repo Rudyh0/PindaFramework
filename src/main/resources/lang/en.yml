@@ -97,6 +97,13 @@ settings:
         - "<text>The leaderboards on"
         - "<text>the right of your screen."
 
+    timber:
+      name: "<primary>Tree felling"
+      description:
+        - "<text>Chop the bottom block of"
+        - "<text>a tree with an axe and"
+        - "<text>the whole tree falls."
+
   setup:
     done: "<prefix><success>Your preferences have been saved! <text>Have fun on <primary><server></primary>."
     done-title: "<gradient:#FFC857:#E9724C><bold><server>"
@@ -860,6 +867,9 @@ top:
     deaths:
       name: "Most deaths"
       description: "How often someone died."
+    trees:
+      name: "Most trees felled"
+      description: "How many trees someone felled."
   units: "d,h,m"
   values:
     skills: "<value> levels"
@@ -947,6 +957,13 @@ antilag:
     - " <primary>/lag</primary> <muted>» <text>TPS, entities and items"
     - " <primary>/lag chunks</primary> <muted>» <text>The busiest chunks"
     - " <primary>/lag clear [seconds|now]</primary> <muted>» <text>Clear loose items"
+
+timber:
+  enabled: "<prefix><success>Felling whole trees is on. <muted>Chop the bottom block of a tree with an axe."
+  disabled: "<prefix><text>Felling whole trees is off. <muted>(/timber turns it back on)"
+  tool-protect: "[actionbar]<warning>Your axe is almost broken: the tree will not fall at once."
+  cooldown: "[actionbar]<muted>Wait <seconds> s before the next tree."
+  sapling-protected: "[actionbar]<muted>This sapling was just planted."
 
 discord:
   status:

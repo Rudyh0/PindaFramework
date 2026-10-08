@@ -14,7 +14,7 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 
 ## Wat zit erin
 
-Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, toplijsten met een scoreboard, automatische aankondigingen, antilag, een eigen MOTD, Discord-webhooks, PlaceholderAPI-placeholders en een webpaneel waarin je alles kunt instellen.
+Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, bomen in één keer omhakken, toplijsten met een scoreboard, automatische aankondigingen, antilag, een eigen MOTD, Discord-webhooks, PlaceholderAPI-placeholders en een webpaneel waarin je alles kunt instellen.
 
 ## To-do
 
@@ -25,7 +25,7 @@ Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/inst
 5. World control: creepers en TNT zonder blokschade, phantoms uit, spawnrates, ender dragon respawn
 6. Backpack: tweede inventory die bij doodgaan blijft liggen
 7. ~~Skills: level 0-99 (RuneScape-curve), geld bij level-up, menu met voortgang~~ ✅
-8. Bomen kappen (timber), naar het voorbeeld van UltimateTimber: hele boom om, valanimatie, sapling terugplanten, geen random loot
+8. ~~Bomen kappen (timber), naar het voorbeeld van UltimateTimber: hele boom om, valanimatie, sapling terugplanten, geen random loot~~ ✅
 9. Live gaan: testopties uit, installatiehandleiding Ubuntu-VPS, automatische back-ups
 
 ## Rangen
@@ -67,9 +67,21 @@ Acht skills zoals in RuneScape: **Mijnbouw, Houthakken, Vissen, Vechten, Koken, 
 
 Als genoeg spelers in een wereld slapen (standaard **50%**), wordt de nacht of het onweer overgeslagen: de tijd spoelt in een paar seconden door en het weer klaart op. Iedereen in de wereld ziet wie er slaapt en hoeveel er nog nodig zijn. AFK-spelers, staff in vanish en spelers in creative/spectator tellen niet mee. Instellen in het paneel onder **Instellingen › Slapen**, of in `modules/sleep.yml`.
 
+## Bomen kappen
+
+Naar het voorbeeld van UltimateTimber: hak met een **bijl** het onderste blok van een boom om en de **hele boom valt om**, weg van je. Hij kantelt echt om zijn voet en komt met een klap neer; het hout ligt waar de boom neerkwam.
+
+- **Sapling terugplanten:** waar de boom stond komt meteen een nieuwe sapling (bij 2x2-bomen zoals dark oak vier stuks), die je de eerste seconden niet per ongeluk kapot kunt slaan.
+- **Geen extra loot:** je krijgt alleen wat de blokken in Minecraft zelf opleveren (hout, en uit bladeren af en toe een sapling, stokje of appel).
+- **Bouwwerken zijn veilig:** een boom heeft natuurlijke bladeren nodig (zelf geplaatste bladeren tellen niet), zelf geplaatst hout gaat nooit mee, en de bladeren van een boom ernaast blijven staan.
+- **De bijl slijt** per blok hout (unbreaking telt mee). Gaat je bijl daardoor kapot, dan valt de boom niet om.
+- Elk blok hout geeft **Houthakken-XP**, claims worden gerespecteerd en CoreProtect logt alles.
+- Alle boomsoorten: eik, berk, spar, jungle, acacia, dark oak, mangrove, kers, azalea en pale oak. Aan/uit per speler in `/instellingen` of met **`/timber`**. Alles instelbaar in het paneel onder **Instellingen › Bomen kappen** (gebukt of niet, creative, wachttijd, animatie, drops in je inventory, ...).
+- Nieuwe toplijst: **meeste bomen gekapt**.
+
 ## Toplijsten en scoreboard
 
-Zes toplijsten: **rijkste spelers** (contant + bank), **hoogste skills** (totaal level), **langst online**, **meeste spelerkills**, **meeste mobkills** en **vaakst doodgegaan**. Speeltijd, kills en doden komen uit de statistieken van Minecraft zelf, dus ook wat spelers deden voordat PindaFramework erop stond telt mee.
+Zeven toplijsten: **rijkste spelers** (contant + bank), **hoogste skills** (totaal level), **langst online**, **meeste spelerkills**, **meeste mobkills**, **vaakst doodgegaan** en **meeste bomen gekapt**. Speeltijd, kills en doden komen uit de statistieken van Minecraft zelf, dus ook wat spelers deden voordat PindaFramework erop stond telt mee.
 
 - **`/top`** opent een menu met alle toplijsten en je eigen plek op elke lijst. **`/top geld`** (of `skills`, `speeltijd`, `kills`, `mobkills`, `doden`) zet een toplijst in de chat.
 - **Scoreboard** rechts in beeld: wisselt elke 10 seconden naar de volgende toplijst, met de top 10 en onderaan je eigen plek. Spelers zetten het zelf uit in `/instellingen`. Teams van het gewone scoreboard (kleuren van `/team`, teams van andere plugins) worden overgenomen.
@@ -97,7 +109,7 @@ Optioneel. Staat [PlaceholderAPI](https://www.spigotmc.org/resources/placeholder
 | `%pinda_money%`, `%pinda_cash%`, `%pinda_bank%` | Geld (totaal, contant, bank); met `_raw` alleen het getal |
 | `%pinda_skills_total%`, `%pinda_skill_<skill>%` | Totaal level, of het level in één skill (bijv. `%pinda_skill_mining%`) |
 | `%pinda_playtime%`, `%pinda_kills%`, `%pinda_mobkills%`, `%pinda_deaths%` | Speeltijd, kills en doden |
-| `%pinda_position_<lijst>%`, `%pinda_value_<lijst>%` | Je plek en waarde op een toplijst (`money`, `skills`, `playtime`, `kills`, `mobkills`, `deaths`) |
+| `%pinda_position_<lijst>%`, `%pinda_value_<lijst>%` | Je plek en waarde op een toplijst (`money`, `skills`, `playtime`, `kills`, `mobkills`, `deaths`, `trees`) |
 | `%pinda_top_<lijst>_<plek>_name%`, `%pinda_top_<lijst>_<plek>_value%` | Wie er op een plek staat, bijv. `%pinda_top_money_1_name%` |
 | `%pinda_afk%`, `%pinda_name_colored%`, `%pinda_tps%`, `%pinda_online%` | AFK (true/false), naam in de rangkleur, TPS, aantal online |
 
@@ -219,6 +231,7 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | `/skills [speler]`, `/skills top [skill]` | `/skill`, `/vaardigheden`, `/levels` | `pinda.skills.use` (+ `.others`) | iedereen |
 | `/skills set\|addxp\|reset <speler> ...`, `/skills boost <x> <duur>\|stop` | | `pinda.skills.admin` | op |
 | `/top [lijst]` | `/toplijst`, `/leaderboard`, `/lb` | `pinda.top.use` | iedereen |
+| `/timber` | `/bomenkappen`, `/treefeller` | `pinda.timber.use` | iedereen |
 | `/lag`, `/lag chunks` | `/antilag` | `pinda.antilag.use` | Mod |
 | `/lag clear [seconden\|nu]`, `/lag tp <wereld> <x> <z>` | | `pinda.antilag.admin` | op |
 
@@ -245,6 +258,7 @@ Extra permissies:
 | `pinda.lock.bypass` | Bij alle afgesloten kisten en deuren kunnen | op |
 | `pinda.sleep.exempt` | Telt niet mee bij het aantal spelers dat moet slapen | niemand |
 | `pinda.antilag.notify` | Een melding krijgen als de server laggt | Mod |
+| `pinda.timber.bypass-cooldown` | Geen wachttijd tussen twee bomen | op |
 
 `pinda.admin` geeft alle beheerrechten. Aliassen pas je aan in `config.yml` onder `commands`, bijvoorbeeld:
 
@@ -281,6 +295,7 @@ plugins/PindaFramework/
     ├── moderation.yml  max tempban voor mods, straffen openbaar of alleen staff
     ├── skills.yml      XP per blok/mob/item, levelcurve, geld per level-up, meldingen
     ├── sleep.yml       percentage slapers, doorspoelen, meldingen
+    ├── timber.yml      bomen kappen: wanneer, bijl, terugplanten, drops, animatie, boomsoorten
     ├── motd.yml        de MOTD in de serverlijst (meerdere varianten)
     ├── leaderboards.yml welke toplijsten, hoe vaak bijwerken, verborgen spelers
     ├── scoreboard.yml  het scoreboard: wisselen, plekken, eigen plek, werelden

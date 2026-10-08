@@ -103,6 +103,11 @@ public final class SkillsModule extends PindaModule implements Listener {
         return service;
     }
 
+    /** Heeft een speler dit blok neergezet? (Alleen bekend voor blokken die skills bijhoudt, zoals hout en erts.) */
+    public boolean isPlaced(org.bukkit.block.Block block) {
+        return placed != null && placed.isPlaced(block);
+    }
+
     /** Opent de skills-ranglijst (totaal level) voor een speler, bijv. vanuit /top. */
     public void openTop(Player viewer) {
         SkillsTopMenu.open(plugin, this, viewer, null);

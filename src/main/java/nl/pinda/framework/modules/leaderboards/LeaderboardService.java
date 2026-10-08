@@ -25,6 +25,7 @@ import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.economy.EconomyService;
 import nl.pinda.framework.modules.skills.SkillService;
 import nl.pinda.framework.modules.skills.SkillsModule;
+import nl.pinda.framework.modules.timber.TimberModule;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
@@ -100,6 +101,10 @@ public final class LeaderboardService {
         return switch (board) {
             case MONEY -> economy() != null;
             case SKILLS -> skills() != null;
+            case TREES -> {
+                PindaModule timber = plugin.modules().get(TimberModule.class);
+                yield timber != null && timber.isEnabled();
+            }
             default -> true;
         };
     }
@@ -156,6 +161,7 @@ public final class LeaderboardService {
                             case KILLS -> stat(connection, "player_kills");
                             case MOB_KILLS -> stat(connection, "mob_kills");
                             case DEATHS -> stat(connection, "deaths");
+                            case TREES -> trees(connection);
                         };
                         if (!hidden.isEmpty()) {
                             entries.removeIf(entry -> entry.name() != null && hidden.contains(entry.name().toLowerCase(Locale.ROOT)));
@@ -218,6 +224,24 @@ public final class LeaderboardService {
                 "SELECT s.uuid, COALESCE(p.name, s.name, s.uuid) AS name, s." + column + " AS value "
                         + "FROM pinda_stats s LEFT JOIN pinda_players p ON p.uuid = s.uuid "
                         + "WHERE s." + column + " > 0 ORDER BY s." + column + " DESC, name COLLATE NOCASE");
+             ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                UUID uuid = uuid(result.getString("uuid"));
+                if (uuid != null) {
+                    list.add(new Entry(uuid, result.getString("name"), result.getLong("value")));
+                }
+            }
+        }
+        return list;
+    }
+
+    /** Hoeveel bomen iemand in één keer omhakte (timber). */
+    private static List<Entry> trees(Connection connection) throws SQLException {
+        List<Entry> list = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT t.uuid, COALESCE(p.name, s.name, t.uuid) AS name, t.trees AS value
+                FROM pinda_timber t LEFT JOIN pinda_players p ON p.uuid = t.uuid LEFT JOIN pinda_stats s ON s.uuid = t.uuid
+                WHERE t.trees > 0 ORDER BY t.trees DESC, name COLLATE NOCASE""");
              ResultSet result = statement.executeQuery()) {
             while (result.next()) {
                 UUID uuid = uuid(result.getString("uuid"));
