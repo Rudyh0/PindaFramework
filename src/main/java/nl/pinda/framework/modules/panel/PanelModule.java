@@ -284,9 +284,15 @@ public final class PanelModule extends PindaModule {
     /** Het IP van de bezoeker (achter een proxy: het IP dat de proxy doorgeeft). */
     String clientIp(HttpExchange exchange) {
         if (config().getBoolean("behind-proxy", false)) {
-            String forwarded = exchange.getRequestHeaders().getFirst("X-Forwarded-For");
+            // Alleen het laatste adres in X-Forwarded-For is te vertrouwen: dat zette onze eigen proxy erbij.
+            java.util.List<String> headers = exchange.getRequestHeaders().get("X-Forwarded-For");
+            String forwarded = headers == null || headers.isEmpty() ? null : headers.get(headers.size() - 1);
             if (forwarded != null && !forwarded.isBlank()) {
-                return forwarded.split(",")[0].trim();
+                String[] parts = forwarded.split(",");
+                String last = parts[parts.length - 1].trim();
+                if (!last.isEmpty()) {
+                    return last;
+                }
             }
             String real = exchange.getRequestHeaders().getFirst("X-Real-IP");
             if (real != null && !real.isBlank()) {

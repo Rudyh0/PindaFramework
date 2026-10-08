@@ -74,6 +74,25 @@ abstract class PanelApi {
         return found;
     }
 
+    // ============================================================ rangen
+
+    /** Het gewicht van een speler (operator = hoogst mogelijk). */
+    protected int weightOf(java.util.UUID uuid) throws Exception {
+        RankModule ranks = ranks();
+        if (ranks == null) {
+            return sync(() -> plugin.getServer().getOfflinePlayer(uuid).isOp() ? Integer.MAX_VALUE : 0);
+        }
+        Rank rank = syncAwait(() -> ranks.service().rankOf(uuid));
+        return rank.operator() ? Integer.MAX_VALUE : rank.weight();
+    }
+
+    /** Niet-operators mogen alleen iets doen bij zichzelf of bij spelers met een lagere rang (niet bij collega's of hoger). */
+    protected void requireLower(PanelUser user, java.util.UUID target, String message) throws Exception {
+        if (!user.operator() && !target.equals(user.uuid()) && weightOf(target) >= user.weight()) {
+            throw ApiException.forbidden(message);
+        }
+    }
+
     // ============================================================ JSON
 
     /** Een JSON-object in een vaste volgorde: map("a", 1, "b", 2). */

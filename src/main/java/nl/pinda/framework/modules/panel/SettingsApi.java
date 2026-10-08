@@ -38,8 +38,8 @@ final class SettingsApi extends PanelApi {
     private Object files(PanelRequest request) throws Exception {
         List<Map<String, Object>> files = new ArrayList<>();
         for (String path : editor.settingsFiles()) {
-            if (path.equals("modules/ranks.yml")) {
-                continue; // heeft een eigen pagina: Rangen
+            if (path.equals("modules/ranks.yml") || (path.equals("modules/panel.yml") && !request.user().operator())) {
+                continue; // Rangen hebben een eigen pagina; het paneel zelf alleen voor operators
             }
             PindaModule owner = editor.moduleFor(path);
             files.add(map("path", path,
@@ -50,8 +50,21 @@ final class SettingsApi extends PanelApi {
         return map("files", files);
     }
 
+    /**
+     * ranks.yml heeft een eigen pagina met controles (Rangen); panel.yml (o.a. 2FA) mag alleen een operator aanpassen.
+     */
+    private static void guard(String path, PanelUser user) throws ApiException {
+        if ("modules/ranks.yml".equals(path)) {
+            throw ApiException.forbidden("Rangen pas je aan op de pagina Rangen.");
+        }
+        if ("modules/panel.yml".equals(path) && !user.operator()) {
+            throw ApiException.forbidden("De instellingen van het webpaneel kan alleen een operator aanpassen.");
+        }
+    }
+
     private Object file(PanelRequest request) throws Exception {
         String path = request.query("path");
+        guard(path, request.user());
         YamlConfiguration yaml = editor.read(path);
         return map("path", path, "description", clean(yaml.options().getHeader()), "fields", fields(yaml, yaml, ""));
     }
@@ -147,6 +160,7 @@ final class SettingsApi extends PanelApi {
 
     private Object save(PanelRequest request) throws Exception {
         String path = request.string("path", "Geen bestand gekozen.");
+        guard(path, request.user());
         JsonElement valuesElement = request.body().get("values");
         if (valuesElement == null || !valuesElement.isJsonObject()) {
             throw ApiException.badRequest("Geen wijzigingen meegestuurd.");

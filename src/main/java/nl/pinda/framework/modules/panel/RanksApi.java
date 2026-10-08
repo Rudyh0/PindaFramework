@@ -150,6 +150,10 @@ final class RanksApi extends PanelApi {
             if (inherits.equals(id) || !yaml.isConfigurationSection("ranks." + inherits)) {
                 throw ApiException.badRequest("De rang om van te erven bestaat niet.");
             }
+            if (!user.operator() && (yaml.getInt("ranks." + inherits + ".weight", 0) >= user.weight()
+                    || yaml.getBoolean("ranks." + inherits + ".operator", false))) {
+                throw ApiException.forbidden("Je kunt alleen laten erven van een rang die lager is dan je eigen rang.");
+            }
             // Geen rondje: A erft van B die erft van A
             Set<String> seen = new HashSet<>(List.of(id));
             String current = inherits;
@@ -179,6 +183,13 @@ final class RanksApi extends PanelApi {
             }
             if (unique.size() > 1000) {
                 throw ApiException.badRequest("Te veel permissies.");
+            }
+            if (!user.operator()) {
+                for (String node : unique) {
+                    if (!node.startsWith("-") && !user.has(node)) {
+                        throw ApiException.forbidden("Je kunt alleen permissies geven die je zelf ook hebt (" + node + ").");
+                    }
+                }
             }
             permissions.addAll(unique);
         }
@@ -241,6 +252,9 @@ final class RanksApi extends PanelApi {
         require(RankModule.class, "ranks");
         YamlConfiguration yaml = editor.read(FILE);
         JsonObject body = request.body();
+        if (!request.user().operator() && changesSecurity(yaml, body)) {
+            throw ApiException.forbidden("Alleen een operator kan de standaardrang, de rang voor operators of de operator-instelling aanpassen.");
+        }
         String defaultRank = request.optString("defaultRank");
         if (defaultRank != null) {
             if (!yaml.isConfigurationSection("ranks." + defaultRank.toLowerCase(Locale.ROOT))) {
@@ -272,6 +286,17 @@ final class RanksApi extends PanelApi {
         reloadRanks();
         module.log().add(request, "rangen-instellingen", null, null);
         return list(request);
+    }
+
+    /** Verandert dit verzoek de standaardrang, de rang voor operators of het gelijkhouden van operator? */
+    private static boolean changesSecurity(YamlConfiguration yaml, JsonObject body) {
+        return differs(body, "defaultRank", yaml.getString("default-rank", ""))
+                || differs(body, "operatorsGetRank", yaml.getString("operators-get-rank", ""))
+                || (body.has("syncOperator") && body.get("syncOperator").getAsBoolean() != yaml.getBoolean("sync-operator", true));
+    }
+
+    private static boolean differs(JsonObject body, String key, String current) {
+        return body.has(key) && !body.get(key).isJsonNull() && !body.get(key).getAsString().equalsIgnoreCase(current);
     }
 
     private void reloadRanks() throws Exception {

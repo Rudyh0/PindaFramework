@@ -124,7 +124,7 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 - **VPS:** zet `public-url: "http://<ip-van-je-vps>:8085"` en open de poort: `sudo ufw allow 8085/tcp`.
 - **Eigen adres met https (aanrader als je live gaat):** zet nginx of Caddy ervoor, zet `public-url: "https://panel.jouwdomein.nl"`, `bind: "127.0.0.1"` en `behind-proxy: true`. Met Caddy is dat één regel: `panel.jouwdomein.nl { reverse_proxy 127.0.0.1:8085 }`.
 
-**Veiligheid:** inloglinks zijn lang en willekeurig en werken maar één keer; ze verdwijnen direct uit je adresbalk. Het paneel controleert bij elke actie opnieuw je rang, dus wie een lagere rang krijgt, verliest meteen zijn rechten. Elke actie komt in het logboek én in de serverconsole. Zonder https gaat het verkeer onversleuteld over het netwerk: prima thuis, maar gebruik https zodra het paneel via internet bereikbaar is.
+**Veiligheid:** inloglinks zijn lang en willekeurig en werken maar één keer; ze verdwijnen direct uit je adresbalk. Het paneel controleert bij elke actie opnieuw je rang, dus wie een lagere rang krijgt, verliest meteen zijn rechten. Wie geen operator is, kan alleen iets doen bij zichzelf of bij spelers met een lagere rang, alleen rangen onder zijn eigen rang beheren, en alleen permissies weggeven die hij zelf heeft. De standaardrang, de operator-instellingen en de instellingen van het paneel zelf kan alleen een operator aanpassen. Elke actie komt in het logboek én in de serverconsole. Zonder https gaat het verkeer onversleuteld over het netwerk: prima thuis, maar gebruik https zodra het paneel via internet bereikbaar is.
 
 ## Commando's en permissies
 

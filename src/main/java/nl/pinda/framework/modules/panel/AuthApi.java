@@ -117,20 +117,29 @@ final class AuthApi extends PanelApi {
             }
             step = TwoFactor.verify(entry.secret(), code, entry.lastStep());
         }
+        if (step >= 0) {
+            boolean stored = setup != null
+                    ? await(module.twoFactor().save(session.uuid, setup, step))
+                    : await(module.twoFactor().used(session.uuid, step));
+            if (!stored && setup != null) {
+                sessions.remove(session.id);
+                throw new ApiException(401, "Er is intussen al een authenticator gekoppeld. Typ /panel in-game voor een nieuwe link.");
+            }
+            if (!stored) {
+                step = -1; // deze code is net al gebruikt
+            }
+        }
         if (step < 0) {
-            session.attempts++;
+            int attempts;
+            synchronized (session) {
+                attempts = ++session.attempts;
+            }
             sessions.failed(request.ip());
-            if (session.attempts >= MAX_ATTEMPTS) {
+            if (attempts >= MAX_ATTEMPTS) {
                 sessions.remove(session.id);
                 throw new ApiException(401, "Te vaak een verkeerde code. Typ /panel in-game voor een nieuwe link.");
             }
-            int left = MAX_ATTEMPTS - session.attempts;
-            throw ApiException.badRequest("Deze code klopt niet. Je kunt het nog " + left + " keer proberen.");
-        }
-        if (setup != null) {
-            await(module.twoFactor().save(session.uuid, setup, step));
-        } else {
-            await(module.twoFactor().used(session.uuid, step));
+            throw ApiException.badRequest("Deze code klopt niet. Je kunt het nog " + (MAX_ATTEMPTS - attempts) + " keer proberen.");
         }
         PanelUser user = await(module.loadUser(session.uuid, session.name));
         if (!user.has(PanelUser.USE)) {
@@ -232,6 +241,7 @@ final class AuthApi extends PanelApi {
     private Object resetOther(PanelRequest request) throws Exception {
         UUID uuid = request.uuidParam("uuid");
         String name = new PlayersApi(module).known(uuid).name();
+        requireLower(request.user(), uuid, "Je kunt alleen de 2FA resetten van spelers met een lagere rang dan jij.");
         boolean removed = await(module.resetTwoFactor(uuid));
         if (!removed) {
             throw ApiException.badRequest(name + " heeft geen 2FA gekoppeld.");

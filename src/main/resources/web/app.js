@@ -1062,6 +1062,9 @@
     if (!alive()) return;
     state.ranksData = data;
     const s = data.settings;
+    const isOp = !!state.me.rank?.operator;
+    const lock = isOp ? '' : 'disabled';
+    const opOnly = isOp ? '' : ' Alleen een operator kan dit aanpassen.';
     const rankOptions = selected => data.ranks.map(r => html`<option value="${r.id}" ${r.id === selected ? 'selected' : ''}>${r.displayName}</option>`);
     render(main, html`${pageHead('Rangen', 'Maak rangen, kies hun kleuren, prefix en permissies. Wijzigingen werken meteen.',
         html`<button class="btn primary" data-action="rank-new">${icon('plus')} Nieuwe rang</button>`)}
@@ -1073,9 +1076,9 @@
         <div class="btn-row">${r.isDefault ? html`<span class="badge success">standaard</span>` : ''}${r.operator ? html`<span class="badge warning">operator</span>` : ''}${r.inherits ? html`<span class="badge plain">erft van ${r.inherits}</span>` : ''}</div>
       </article>`)}</div>
       <form class="card" data-form="rank-settings" style="margin-top:16px"><div class="card-head"><h2>${icon('server')}Algemeen</h2></div><div class="card-body">
-        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Standaardrang</span><span class="cfg-help">Wat nieuwe spelers krijgen.</span></div><select class="input cfg-number" name="defaultRank">${rankOptions(s.defaultRank)}</select></div>
-        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Rang voor operators</span><span class="cfg-help">Operators zonder rang krijgen deze bij hun eerste join.</span></div><select class="input cfg-number" name="operatorsGetRank">${rankOptions(s.operatorsGetRank)}</select></div>
-        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Operator gelijk houden aan de rang</span><span class="cfg-help">Wie geen operator-rang heeft, verliest zijn operator-status.</span></div><label class="switch"><input type="checkbox" name="syncOperator" ${s.syncOperator ? 'checked' : ''}><span></span></label></div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Standaardrang</span><span class="cfg-help">Wat nieuwe spelers krijgen.${opOnly}</span></div><select class="input cfg-number" name="defaultRank" ${lock}>${rankOptions(s.defaultRank)}</select></div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Rang voor operators</span><span class="cfg-help">Operators zonder rang krijgen deze bij hun eerste join.${opOnly}</span></div><select class="input cfg-number" name="operatorsGetRank" ${lock}>${rankOptions(s.operatorsGetRank)}</select></div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Operator gelijk houden aan de rang</span><span class="cfg-help">Wie geen operator-rang heeft, verliest zijn operator-status.${opOnly}</span></div><label class="switch"><input type="checkbox" name="syncOperator" ${s.syncOperator ? 'checked' : ''} ${lock}><span></span></label></div>
         <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Chatopmaak aan</span></div><label class="switch"><input type="checkbox" name="chatEnabled" ${s.chatEnabled ? 'checked' : ''}><span></span></label></div>
         <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Chatopmaak</span><span class="cfg-help">&lt;rank_prefix&gt; = prefix, &lt;name&gt; = naam in de rangkleur, &lt;message&gt; = het bericht.</span></div>
           <div class="cfg-string"><input class="input mono" name="chatFormat" value="${s.chatFormat}"><button type="button" class="btn sm" data-chat-edit>Visueel bewerken</button></div>
@@ -2143,7 +2146,8 @@
 
     async 'rank-settings'(form, data, button) {
       const result = await busy(button, () => post('/ranks/settings', {
-        defaultRank: data.get('defaultRank'), operatorsGetRank: data.get('operatorsGetRank'), syncOperator: form.syncOperator.checked,
+        defaultRank: data.get('defaultRank'), operatorsGetRank: data.get('operatorsGetRank'),
+        syncOperator: form.syncOperator.disabled ? undefined : form.syncOperator.checked,
         chatEnabled: form.chatEnabled.checked, chatFormat: data.get('chatFormat')
       }));
       if (result) { toast('Opgeslagen.'); navigate(); }

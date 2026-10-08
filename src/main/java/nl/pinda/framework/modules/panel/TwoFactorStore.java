@@ -31,29 +31,30 @@ final class TwoFactorStore {
         });
     }
 
-    CompletableFuture<Void> save(UUID uuid, String secret, long step) {
-        return plugin.database().execute(connection -> {
+    /** Koppelt een nieuwe authenticator. False als er intussen al een gekoppeld is (dan wordt niets overschreven). */
+    CompletableFuture<Boolean> save(UUID uuid, String secret, long step) {
+        return plugin.database().query(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
                     "INSERT INTO pinda_panel_2fa (uuid, secret, created, last_step) VALUES (?, ?, ?, ?) "
-                            + "ON CONFLICT(uuid) DO UPDATE SET secret = excluded.secret, created = excluded.created, "
-                            + "last_step = excluded.last_step")) {
+                            + "ON CONFLICT(uuid) DO NOTHING")) {
                 statement.setString(1, uuid.toString());
                 statement.setString(2, secret);
                 statement.setLong(3, System.currentTimeMillis());
                 statement.setLong(4, step);
-                statement.executeUpdate();
+                return statement.executeUpdate() > 0;
             }
         });
     }
 
-    CompletableFuture<Void> used(UUID uuid, long step) {
-        return plugin.database().execute(connection -> {
+    /** Markeert een code als gebruikt. False als die code (of een latere) al eerder gebruikt is. */
+    CompletableFuture<Boolean> used(UUID uuid, long step) {
+        return plugin.database().query(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
                     "UPDATE pinda_panel_2fa SET last_step = ? WHERE uuid = ? AND last_step < ?")) {
                 statement.setLong(1, step);
                 statement.setString(2, uuid.toString());
                 statement.setLong(3, step);
-                statement.executeUpdate();
+                return statement.executeUpdate() > 0;
             }
         });
     }

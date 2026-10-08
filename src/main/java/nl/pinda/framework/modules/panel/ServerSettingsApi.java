@@ -154,6 +154,11 @@ final class ServerSettingsApi extends PanelApi {
             throw ApiException.badRequest("Ongeldige waarde voor " + property.key() + ".");
         }
         String text = value.getAsString().trim();
+        for (char c : text.toCharArray()) {
+            if (c < 0x20 || c == 0x7F) {
+                throw ApiException.badRequest(property.key() + " bevat ongeldige tekens.");
+            }
+        }
         switch (property.type()) {
             case "boolean" -> {
                 if (!text.equals("true") && !text.equals("false")) {
@@ -254,7 +259,7 @@ final class ServerSettingsApi extends PanelApi {
                 out.append("\\\\");
             } else if (c == '=' || c == ':') {
                 out.append('\\').append(c);
-            } else if (c > 126) {
+            } else if (c < 0x20 || c > 126) {
                 out.append(String.format("\\u%04x", (int) c));
             } else {
                 out.append(c);

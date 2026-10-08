@@ -55,6 +55,7 @@ final class PlayerActionsApi extends PanelApi {
         UUID uuid = request.uuidParam("uuid");
         String action = request.string("action", "Kies een actie.").toLowerCase(Locale.ROOT);
         String value = request.optString("value");
+        requireLower(request.user(), uuid, "Je kunt dit alleen doen bij spelers met een lagere rang dan jij.");
         String actor = request.user().name();
         int amount = request.body().has("amount") ? request.body().get("amount").getAsInt() : 1;
         String result = sync(() -> {
@@ -178,6 +179,7 @@ final class PlayerActionsApi extends PanelApi {
         } catch (NumberFormatException e) {
             throw ApiException.badRequest("Ongeldig vak.");
         }
+        requireLower(request.user(), uuid, "Je kunt dit alleen doen bij spelers met een lagere rang dan jij.");
         boolean ender = request.body().has("enderchest") && request.body().get("enderchest").getAsBoolean();
         int target = slot;
         String removed = sync(() -> {
@@ -215,6 +217,7 @@ final class PlayerActionsApi extends PanelApi {
         HomesModule homes = require(HomesModule.class, "homes");
         UUID uuid = request.uuidParam("uuid");
         String name = request.string("name", "Kies een home.");
+        requireLower(request.user(), uuid, "Je kunt dit alleen doen bij spelers met een lagere rang dan jij.");
         Map<String, Home> map = await(homes.homesOf(uuid));
         if (!map.containsKey(name)) {
             throw ApiException.notFound("Deze home bestaat niet.");
