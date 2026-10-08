@@ -39,6 +39,25 @@ jobs:
             exit 1
           fi
 
+      - name: Go installeren (dev-paneel)
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: host/go.mod
+          cache-dependency-path: host/go.sum
+
+      - name: Dev-paneel testen en bouwen
+        working-directory: host
+        run: |
+          node --check web/app.js
+          bash -n install.sh
+          go vet ./...
+          go test ./...
+          VERSION="0.1.0-b${{ github.run_number }}"
+          for arch in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -trimpath -ldflags "-s -w -X main.Version=$VERSION" -o ../build/host/pinda-host-linux-$arch .
+          done
+          cp install.sh ../build/host/install.sh
+
       - name: Jar bewaren als artifact
         uses: actions/upload-artifact@v4
         with:
@@ -52,7 +71,7 @@ jobs:
         run: |
           JAR=$(ls build/libs/*.jar | head -n 1)
           git log -1 --pretty=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.txt
-          gh release create "build-${{ github.run_number }}" "$JAR" \
+          gh release create "build-${{ github.run_number }}" "$JAR" build/host/pinda-host-linux-amd64 build/host/pinda-host-linux-arm64 build/host/install.sh \
             --title "PindaFramework build #${{ github.run_number }}" \
             --notes-file notes.txt \
             --target "${{ github.sha }}"

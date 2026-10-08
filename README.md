@@ -8,9 +8,10 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 
 ## Installeren
 
-- Server: **Paper of Purpur 26.1 of nieuwer** (Java 25)
-- Zet de jar in de map `plugins/` en start de server
-- Bij de eerste start downloadt Paper eenmalig de SQLite-driver
+Er zijn twee manieren:
+
+- **Bij een Minecraft-host** (kant-en-klare server): zet de jar in de map `plugins/` en start de server. Paper of Purpur 26.1 of nieuwer (Java 25). Bij de eerste start downloadt Paper eenmalig de database-drivers. Wil je MySQL van je host gebruiken, zie [Database](#database-sqlite-of-mysql).
+- **Op een eigen, kale VPS** (Ubuntu): één installer zet alles neer, inclusief het dev-paneel. Zie [Dev-paneel (PindaHost)](#dev-paneel-pindahost).
 
 ## Wat zit erin
 
@@ -27,6 +28,16 @@ Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/inst
 7. ~~Skills: level 0-99 (RuneScape-curve), geld bij level-up, menu met voortgang~~ ✅
 8. ~~Bomen kappen (timber), naar het voorbeeld van UltimateTimber: hele boom om, valanimatie, sapling terugplanten, geen random loot~~ ✅
 9. Live gaan: testopties uit, installatiehandleiding Ubuntu-VPS, automatische back-ups
+10. ~~Database: MySQL/MariaDB naast SQLite, omzetten van SQLite naar MySQL~~ ✅
+11. Dev-paneel (PindaHost) voor een eigen VPS:
+    - ~~installer, gebruikers met 2FA, setup, dashboard, databasebeheer~~ ✅
+    - Minecraft-server installeren, starten/stoppen, console
+    - bestanden bewerken en uploaden
+    - backups en geplande taken (visuele cron-editor)
+    - website beheren
+    - poorten en firewall (UFW)
+    - updates vanuit GitHub
+    - inloggen op het staff-paneel via Discord (nooit zonder 2FA)
 
 ## Rangen
 
@@ -120,6 +131,62 @@ Alles hieronder stel je in het paneel in onder **Wereld** (of in `modules/world.
 - **Mobs spawnen:** hoeveel mobs er tegelijk vanzelf rondlopen, per groep in procenten van normaal (monsters, dieren, waterdieren, vissen, gloei-inktvissen, vleermuizen, axolotls). Daarnaast een kans per mob, bijv. creepers 50% of vleermuizen 0%. Spawners, eieren en fokken gaan gewoon door.
 - **Ender dragon:** komt na het verslaan vanzelf terug (standaard na 2 uur). Minecraft laat de draak alleen terugkomen als er iemand bij het eiland in de End is; is daar niemand, dan gebeurt het zodra er iemand komt. Elke keer ligt er een drakenei, en iedereen hoort wie hem heeft verslagen. Met **`/dragon`** zie je hoe het met de draak gaat; **`/dragon respawn`** of de knop in het paneel laat hem meteen terugkomen.
 - **Spelregels** (gamerules) per wereld, zoals keepInventory of vuur dat zich verspreidt, staan in het paneel bij **Server › Spelregels**.
+
+## Database (SQLite of MySQL)
+
+Standaard bewaart PindaFramework alles in één bestand: `plugins/PindaFramework/data.db` (SQLite). Daar hoef je niets voor te doen. Liever een MySQL- of MariaDB-database, bijvoorbeeld van je host? Pas dan `plugins/PindaFramework/database.yml` aan:
+
+```yaml
+type: mysql
+mysql:
+  host: 127.0.0.1
+  port: 3306
+  database: pindacraft
+  user: pindacraft
+  password: "je-wachtwoord"
+  ssl: false          # true als de database op een andere server staat
+convert-from-sqlite: true
+```
+
+- Met `convert-from-sqlite: true` zet de plugin bij de volgende start **alles** uit `data.db` over naar MySQL en controleert per tabel of alles er is. Daarna wordt het vanzelf weer `false` en blijft het oude bestand bewaard als `data.db.omgezet-<datum>`. Gaat er iets mis, dan draait de server gewoon op SQLite verder en staat de fout in de console.
+- `database.yml` staat bewust **niet** in het webpaneel voor staff (er staat een wachtwoord in). Met het dev-paneel hoef je dit bestand nooit zelf aan te passen.
+- De plugin gebruikt eigen tabellen (`pinda_...`) en kan dus prima een database delen met andere plugins.
+
+## Dev-paneel (PindaHost)
+
+Voor een eigen VPS: een los webpaneel voor developers, naast het webpaneel voor staff. Het draait als eigen dienst, dus het blijft bereikbaar als de Minecraft-server crasht.
+
+**Installeren** op een kale Ubuntu-server (als root):
+
+```bash
+curl -fsSL https://github.com/Rudyh0/PindaFramework/releases/latest/download/install.sh | sudo bash
+```
+
+De installer zet alle software neer (Java 25, MariaDB, Caddy, UFW en het dev-paneel) en vraagt één ding: hoe je het paneel wilt bereiken.
+
+- **Met een domein**, bijv. `dev.jouwdomein.nl`: HTTPS via Caddy. Loopt het via **Cloudflare** met de proxy aan (oranje wolk), zet dan bij SSL/TLS de modus op **Full**; de echte IP van bezoekers wordt dan gewoon herkend.
+- **Alleen IP:poort**, bijv. `https://1.2.3.4:8443`: met een eigen certificaat (je browser waarschuwt één keer; de installer toont de vingerafdruk om te controleren).
+
+Aan het eind krijg je een **setupcode**. Open het paneel, vul de code in en maak de eerste beheerder, met verplichte **2FA** (authenticator-app). Daarna loop je de setup door: servernaam, adres voor spelers, **SQLite of MySQL**, en precies welke **DNS-records** je moet maken (A-records en het **SRV-record** voor `play.jouwdomein.nl`). Het adres voor spelers moet in Cloudflare op *DNS only* (grijze wolk): Minecraft-verkeer kan niet door de proxy.
+
+Wat er nu in zit:
+
+- **Dashboard**: draait de Minecraft-server, database, webserver, firewall? Plus processor, geheugen, schijf en hoe lang de VPS al aan staat.
+- **Databases** (MariaDB): databases en gebruikers aanmaken en verwijderen, wachtwoorden en toegang, downloaden als `.sql` en `.sql` inladen. PindaFramework met één knop **omzetten naar MySQL** (de server wordt herstart en zet alles over). MariaDB is alleen vanaf de VPS zelf bereikbaar.
+- **Gebruikers**: beheerders en developers, met een tijdelijk wachtwoord en verplichte 2FA bij de eerste keer inloggen. Uitzetten, 2FA of wachtwoord resetten.
+- **Logboek**: wie deed wat en vanaf welk IP.
+
+Op de server zelf (als root):
+
+| Opdracht | Wat |
+|---|---|
+| `pinda-host setup-code` | De setupcode voor de eerste beheerder |
+| `pinda-host reset-2fa <naam>` | 2FA van een gebruiker resetten (telefoon kwijt) |
+| `pinda-host reset-password <naam>` | Tijdelijk wachtwoord geven |
+| `pinda-host fingerprint` | Vingerafdruk van het eigen certificaat (zonder domein) |
+| `journalctl -u pinda-host -f` | Meekijken wat het dev-paneel doet |
+
+Alles staat in `/opt/pinda`: `server/` (Minecraft), `website/`, `backups/` en `panel/` (instellingen, gebruikers, logboek). Opnieuw installeren of bijwerken: draai de installer nog een keer, je instellingen en gebruikers blijven staan.
 
 ## PlaceholderAPI
 
@@ -301,6 +368,7 @@ commands:
 plugins/PindaFramework/
 ├── config.yml          servernaam, standaardtaal, modules aan/uit, kleuren, prefix, geluiden
 ├── teleport.yml        wachttijd, cooldown en kosten voor alle teleports
+├── database.yml        SQLite of MySQL (niet in het staff-paneel; beheerd door het dev-paneel)
 ├── data.db             database (SQLite)
 ├── lang/
 │   ├── nl.yml          alle Nederlandse teksten

@@ -1,0 +1,360 @@
+#!/usr/bin/env bash
+# ┌──────────────────────────────────────────────────────────────┐
+# │  PindaHost - installer voor een kale Ubuntu-server (VPS)      │
+# └──────────────────────────────────────────────────────────────┘
+# Installeert alles wat nodig is: Java, MariaDB, Caddy (webserver), UFW (firewall) en het
+# dev-paneel (pinda-host). De rest (Minecraft-server, database, DNS) doe je daarna in het
+# dev-paneel zelf.
+#
+# Gebruik:
+#   curl -fsSL https://github.com/Rudyh0/PindaFramework/releases/latest/download/install.sh | sudo bash
+# of met opties (zonder vragen):
+#   sudo bash install.sh --domain dev.jouwdomein.nl [--no-cloudflare]
+#   sudo bash install.sh --ip [--port 8443]
+# Opnieuw draaien mag altijd: het werkt alles bij en laat je instellingen staan.
+
+set -euo pipefail
+
+REPO="Rudyh0/PindaFramework"
+BASE="/opt/pinda"
+PANEL_DIR="$BASE/panel"
+CONFIG="$PANEL_DIR/config.json"
+SERVICE_USER="minecraft"
+PANEL_PORT_LOCAL=8484
+
+MODE=""
+DOMAIN=""
+CLOUDFLARE=""
+PORT=""
+ASSUME_YES=0
+LOCAL_BINARY=""
+
+# ------------------------------------------------------------------ uitvoer
+
+if [ -t 1 ]; then
+  BOLD=$'\e[1m'; DIM=$'\e[2m'; YELLOW=$'\e[33m'; GREEN=$'\e[32m'; RED=$'\e[31m'; RESET=$'\e[0m'
+else
+  BOLD=""; DIM=""; YELLOW=""; GREEN=""; RED=""; RESET=""
+fi
+step() { echo; echo "${BOLD}${YELLOW}▸ $*${RESET}"; }
+ok()   { echo "  ${GREEN}✓${RESET} $*"; }
+info() { echo "  ${DIM}$*${RESET}"; }
+fail() { echo; echo "${RED}✗ $*${RESET}" >&2; exit 1; }
+
+# Vragen lezen we van de terminal, ook als het script via "curl | bash" binnenkomt.
+ask() {
+  local prompt="$1" default="${2:-}" answer=""
+  if [ "$ASSUME_YES" = 1 ] || ! { : < /dev/tty; } 2>/dev/null; then
+    echo "$default"
+    return
+  fi
+  if [ -n "$default" ]; then
+    read -r -p "$prompt [$default]: " answer < /dev/tty || true
+  else
+    read -r -p "$prompt: " answer < /dev/tty || true
+  fi
+  echo "${answer:-$default}"
+}
+
+# ------------------------------------------------------------------ opties
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --domain) MODE="domain"; DOMAIN="${2:-}"; shift 2 ;;
+    --ip) MODE="ip"; shift ;;
+    --port) PORT="${2:-}"; shift 2 ;;
+    --cloudflare) CLOUDFLARE="true"; shift ;;
+    --no-cloudflare) CLOUDFLARE="false"; shift ;;
+    --yes|-y) ASSUME_YES=1; shift ;;
+    --binary) LOCAL_BINARY="${2:-}"; shift 2 ;;  # voor testen: een eigen gebouwde pinda-host
+    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
+    *) fail "Onbekende optie: $1 (zie --help)" ;;
+  esac
+done
+
+[ "$(id -u)" = 0 ] || fail "Draai de installer als root, bijvoorbeeld met: sudo bash install.sh"
+[ -r /etc/os-release ] || fail "Dit lijkt geen Ubuntu te zijn."
+. /etc/os-release
+if [ "${ID:-}" != "ubuntu" ]; then
+  echo "${YELLOW}Let op: gemaakt voor Ubuntu; dit is ${PRETTY_NAME:-onbekend}. Het kan werken, maar zonder garantie.${RESET}"
+fi
+CODENAME="${VERSION_CODENAME:-${UBUNTU_CODENAME:-}}"
+
+case "$(uname -m)" in
+  x86_64|amd64) ARCH="amd64" ;;
+  aarch64|arm64) ARCH="arm64" ;;
+  *) fail "Processor $(uname -m) wordt niet ondersteund (alleen amd64 en arm64)." ;;
+esac
+
+echo "${BOLD}PindaHost installer${RESET} ${DIM}(${PRETTY_NAME:-Linux}, $ARCH)${RESET}"
+
+# ------------------------------------------------------------------ keuzes
+
+EXISTING=0
+if [ -f "$CONFIG" ]; then
+  EXISTING=1
+  info "Er staat al een dev-paneel. Het wordt bijgewerkt; je instellingen en gebruikers blijven staan."
+  if command -v python3 >/dev/null 2>&1; then
+    [ -n "$MODE" ] || MODE="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("mode",""))' "$CONFIG" 2>/dev/null || true)"
+    [ -n "$DOMAIN" ] || DOMAIN="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("domain",""))' "$CONFIG" 2>/dev/null || true)"
+  fi
+fi
+
+if [ -z "$MODE" ]; then
+  echo
+  echo "Hoe wil je het dev-paneel bereiken?"
+  echo "  1) Via een domeinnaam, bijv. dev.jouwdomein.nl ${DIM}(aanbevolen; HTTPS, ook via Cloudflare)${RESET}"
+  echo "  2) Alleen via IP-adres en poort, bijv. https://1.2.3.4:8443 ${DIM}(eigen certificaat)${RESET}"
+  choice="$(ask "Keuze" "1")"
+  case "$choice" in
+    2) MODE="ip" ;;
+    *) MODE="domain" ;;
+  esac
+fi
+
+if [ "$MODE" = "domain" ]; then
+  while [ -z "$DOMAIN" ]; do
+    DOMAIN="$(ask "Domeinnaam voor het dev-paneel (bijv. dev.jouwdomein.nl)" "")"
+    [ -n "$DOMAIN" ] || [ "$ASSUME_YES" = 0 ] || fail "Geef een domein op met --domain."
+  done
+  DOMAIN="$(echo "$DOMAIN" | tr 'A-Z' 'a-z' | sed -e 's#^https\?://##' -e 's#/.*##')"
+  echo "$DOMAIN" | grep -Eq '^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$' || fail "\"$DOMAIN\" is geen geldige domeinnaam."
+  if [ -z "$CLOUDFLARE" ]; then
+    answer="$(ask "Loopt dit domein via Cloudflare met de proxy aan (oranje wolk)? (j/n)" "j")"
+    case "$answer" in n|N|nee|no) CLOUDFLARE="false" ;; *) CLOUDFLARE="true" ;; esac
+  fi
+else
+  CLOUDFLARE="false"
+  [ -n "$PORT" ] || PORT="$(ask "Poort voor het dev-paneel" "8443")"
+  echo "$PORT" | grep -Eq '^[0-9]+$' && [ "$PORT" -ge 1024 ] && [ "$PORT" -le 65535 ] || fail "Kies een poort tussen 1024 en 65535."
+fi
+
+# ------------------------------------------------------------------ software
+
+export DEBIAN_FRONTEND=noninteractive
+APT_OPTS=(-y -q -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
+
+step "Systeem bijwerken en basispakketten installeren"
+apt-get update -q
+apt-get install "${APT_OPTS[@]}" ca-certificates curl gnupg ufw tar unzip python3 >/dev/null
+ok "Basispakketten"
+
+step "Java 25 installeren (voor Minecraft)"
+if java -version 2>&1 | grep -Eq 'version "(2[5-9]|[3-9][0-9])'; then
+  ok "Java is er al: $(java -version 2>&1 | head -n 1)"
+elif apt-get install "${APT_OPTS[@]}" openjdk-25-jre-headless >/dev/null 2>&1; then
+  ok "OpenJDK 25 uit Ubuntu"
+else
+  info "Niet in Ubuntu zelf; via Adoptium (Eclipse Temurin)."
+  install -d -m 0755 /etc/apt/keyrings
+  curl -fsSL https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor --yes -o /etc/apt/keyrings/adoptium.gpg
+  echo "deb [signed-by=/etc/apt/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb $CODENAME main" > /etc/apt/sources.list.d/adoptium.list
+  apt-get update -q
+  apt-get install "${APT_OPTS[@]}" temurin-25-jre >/dev/null 2>&1 || apt-get install "${APT_OPTS[@]}" temurin-25-jdk >/dev/null
+  ok "Temurin 25"
+fi
+
+step "MariaDB installeren (database)"
+apt-get install "${APT_OPTS[@]}" mariadb-server mariadb-client >/dev/null
+systemctl enable --now mariadb >/dev/null 2>&1 || true
+# Zelfde als mariadb-secure-installation: geen anonieme gebruikers en geen testdatabase.
+# root logt alleen in via de socket (als root op deze server), dus zonder wachtwoord van buitenaf onbereikbaar.
+mariadb -uroot <<'SQL' || true
+DELETE FROM mysql.global_priv WHERE User = '';
+DELETE FROM mysql.global_priv WHERE User = 'root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+DROP DATABASE IF EXISTS test;
+DELETE FROM mysql.db WHERE Db = 'test' OR Db = 'test\_%';
+FLUSH PRIVILEGES;
+SQL
+ok "MariaDB $(mariadb -uroot -N -e 'SELECT VERSION()' 2>/dev/null | cut -d- -f1) (alleen bereikbaar vanaf deze server)"
+
+step "Caddy installeren (webserver met automatische HTTPS)"
+if ! command -v caddy >/dev/null 2>&1; then
+  install -d -m 0755 /etc/apt/keyrings
+  curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor --yes -o /etc/apt/keyrings/caddy-stable.gpg
+  curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt \
+    | sed 's#deb https#deb [signed-by=/etc/apt/keyrings/caddy-stable.gpg] https#; s#deb-src https#deb-src [signed-by=/etc/apt/keyrings/caddy-stable.gpg] https#' \
+    > /etc/apt/sources.list.d/caddy-stable.list
+  apt-get update -q
+  apt-get install "${APT_OPTS[@]}" caddy >/dev/null
+fi
+ok "Caddy $(caddy version 2>/dev/null | cut -d' ' -f1)"
+
+# ------------------------------------------------------------------ mappen en gebruiker
+
+step "Mappen en de gebruiker '$SERVICE_USER' maken"
+if ! id "$SERVICE_USER" >/dev/null 2>&1; then
+  useradd --system --home-dir "$BASE/server" --shell /usr/sbin/nologin "$SERVICE_USER"
+fi
+install -d -m 0755 "$BASE"
+install -d -m 0700 "$PANEL_DIR"
+install -d -m 0750 -o "$SERVICE_USER" -g "$SERVICE_USER" "$BASE/server" "$BASE/server/plugins"
+install -d -m 0755 -o caddy -g caddy "$BASE/website" 2>/dev/null || install -d -m 0755 "$BASE/website"
+install -d -m 0700 "$BASE/backups"
+if [ ! -f "$BASE/website/index.html" ]; then
+  cat > "$BASE/website/index.html" <<'HTML'
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Binnenkort</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0e0c0a;color:#f0eadf;font-family:system-ui,sans-serif}h1{font-size:28px}</style></head>
+<body><h1>Hier komt de website van de server.</h1></body></html>
+HTML
+fi
+ok "$BASE (server, website, backups, panel)"
+
+# ------------------------------------------------------------------ dev-paneel
+
+step "Dev-paneel (pinda-host) installeren"
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+if [ -n "$LOCAL_BINARY" ]; then
+  cp "$LOCAL_BINARY" "$TMP/pinda-host"
+else
+  curl -fsSL -o "$TMP/pinda-host" "https://github.com/$REPO/releases/latest/download/pinda-host-linux-$ARCH" \
+    || fail "Downloaden van het dev-paneel mislukt. Is GitHub bereikbaar?"
+fi
+chmod 0755 "$TMP/pinda-host"
+"$TMP/pinda-host" version >/dev/null || fail "Het gedownloade dev-paneel werkt niet op deze server."
+install -m 0755 "$TMP/pinda-host" "$BASE/pinda-host"
+ln -sf "$BASE/pinda-host" /usr/local/bin/pinda-host
+ok "$("$BASE/pinda-host" version)"
+
+if [ "$MODE" = "domain" ]; then
+  LISTEN="127.0.0.1:$PANEL_PORT_LOCAL"
+else
+  LISTEN="0.0.0.0:$PORT"
+fi
+python3 - "$CONFIG" "$MODE" "$LISTEN" "$DOMAIN" "$CLOUDFLARE" "$BASE" "$SERVICE_USER" <<'PY'
+import json, os, sys
+path, mode, listen, domain, cloudflare, base, user = sys.argv[1:]
+config = {}
+if os.path.exists(path):
+    with open(path) as f:
+        config = json.load(f)
+config.update({"mode": mode, "listen": listen, "domain": domain if mode == "domain" else "",
+               "cloudflare": cloudflare == "true", "baseDir": base, "serviceUser": user})
+config.setdefault("gamePort", 25565)
+config.setdefault("sessionHours", 12)
+config.setdefault("idleMinutes", 60)
+tmp = path + ".tmp"
+with open(tmp, "w") as f:
+    json.dump(config, f, indent=2)
+os.chmod(tmp, 0o600)
+os.replace(tmp, path)
+PY
+ok "Instellingen in $CONFIG"
+
+cat > /etc/systemd/system/pinda-host.service <<UNIT
+[Unit]
+Description=PindaHost dev-paneel
+After=network-online.target mariadb.service
+Wants=network-online.target
+
+[Service]
+ExecStart=$BASE/pinda-host serve --config $CONFIG
+Restart=always
+RestartSec=3
+# Het dev-paneel beheert de server, MariaDB, Caddy en de firewall, en draait daarom als root.
+User=root
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload
+systemctl enable pinda-host >/dev/null 2>&1
+systemctl restart pinda-host
+ok "Draait als dienst (pinda-host)"
+
+# ------------------------------------------------------------------ webserver
+
+step "Webserver instellen"
+CF_RANGES="173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32"
+if [ -f /etc/caddy/Caddyfile ] && ! grep -q "PindaHost" /etc/caddy/Caddyfile; then
+  cp /etc/caddy/Caddyfile "/etc/caddy/Caddyfile.voor-pindahost"
+fi
+{
+  echo "# Beheerd door PindaHost. Eigen aanpassingen kunnen worden overschreven."
+  if [ "$MODE" = "domain" ] && [ "$CLOUDFLARE" = "true" ]; then
+    echo "{"
+    echo "	servers {"
+    echo "		trusted_proxies static $CF_RANGES"
+    echo "		client_ip_headers CF-Connecting-IP"
+    echo "	}"
+    echo "}"
+    echo
+  fi
+  if [ "$MODE" = "domain" ]; then
+    echo "$DOMAIN {"
+    if [ "$CLOUDFLARE" = "true" ]; then
+      echo "	# Achter de Cloudflare-proxy: Cloudflare (SSL/TLS-modus 'Full') praat versleuteld met dit certificaat."
+      echo "	tls internal"
+    fi
+    echo "	encode gzip"
+    echo "	reverse_proxy 127.0.0.1:$PANEL_PORT_LOCAL"
+    echo "}"
+    echo
+  fi
+  echo "# De website (later te beheren in het dev-paneel)"
+  echo ":80 {"
+  echo "	root * $BASE/website"
+  echo "	file_server"
+  echo "}"
+} > /etc/caddy/Caddyfile
+caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1 || fail "De Caddy-configuratie klopt niet (zie /etc/caddy/Caddyfile)."
+systemctl enable caddy >/dev/null 2>&1 || true
+systemctl reload caddy 2>/dev/null || systemctl restart caddy
+ok "Caddy"
+
+# ------------------------------------------------------------------ firewall
+
+step "Firewall (UFW) instellen"
+SSH_PORTS="$( (sshd -T 2>/dev/null | awk '/^port /{print $2}') || true)"
+[ -n "$SSH_PORTS" ] || SSH_PORTS="22"
+for port in $SSH_PORTS; do
+  ufw allow "$port/tcp" comment "SSH" >/dev/null
+done
+ufw allow 80/tcp comment "Website" >/dev/null
+ufw allow 443/tcp comment "HTTPS" >/dev/null
+ufw allow 25565/tcp comment "Minecraft" >/dev/null
+if [ "$MODE" = "ip" ]; then
+  ufw allow "$PORT/tcp" comment "PindaHost dev-paneel" >/dev/null
+fi
+ufw default deny incoming >/dev/null
+ufw default allow outgoing >/dev/null
+ufw --force enable >/dev/null
+ok "Open: SSH ($SSH_PORTS), 80, 443, 25565$([ "$MODE" = "ip" ] && echo ", $PORT") — de rest is dicht"
+
+# ------------------------------------------------------------------ klaar
+
+sleep 2
+systemctl is-active --quiet pinda-host || fail "Het dev-paneel start niet. Kijk met: journalctl -u pinda-host -n 50"
+CODE="$("$BASE/pinda-host" setup-code --config "$CONFIG" 2>/dev/null || true)"
+IP="$(curl -fsS4 --max-time 5 https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')"
+
+echo
+echo "${BOLD}${GREEN}Klaar!${RESET}"
+echo
+if [ "$MODE" = "domain" ]; then
+  echo "  Dev-paneel:  ${BOLD}https://$DOMAIN${RESET}"
+  echo
+  echo "  Zorg dat ${BOLD}$DOMAIN${RESET} naar ${BOLD}$IP${RESET} wijst (A-record)."
+  if [ "$CLOUDFLARE" = "true" ]; then
+    echo "  In Cloudflare: proxy aan (oranje wolk) en bij SSL/TLS de modus ${BOLD}Full${RESET}."
+  else
+    echo "  Het HTTPS-certificaat wordt automatisch aangevraagd zodra het domein naar deze server wijst."
+  fi
+else
+  echo "  Dev-paneel:  ${BOLD}https://$IP:$PORT${RESET}"
+  echo
+  echo "  Het paneel gebruikt een eigen certificaat; je browser waarschuwt daar één keer voor."
+  FINGERPRINT="$("$BASE/pinda-host" fingerprint --config "$CONFIG" 2>/dev/null || true)"
+  [ -n "$FINGERPRINT" ] && echo "  Vingerafdruk (SHA-256): ${DIM}$FINGERPRINT${RESET}"
+fi
+echo
+if [ -n "$CODE" ] && ! echo "$CODE" | grep -q "al gedaan"; then
+  echo "  Setupcode:   ${BOLD}${YELLOW}$CODE${RESET}"
+  echo "  ${DIM}Hiermee maak je in het dev-paneel de eerste beheerder. Kwijt? sudo pinda-host setup-code${RESET}"
+else
+  echo "  ${DIM}Log in met je bestaande account.${RESET}"
+fi
+echo
