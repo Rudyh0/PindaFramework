@@ -6,14 +6,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import nl.pinda.framework.modules.world.DragonControl;
 import nl.pinda.framework.modules.world.ExplosionSource;
 import nl.pinda.framework.modules.world.WorldControlModule;
-import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -22,8 +20,6 @@ final class WorldApi extends PanelApi {
 
     private static final String FILE = "modules/world.yml";
     private static final Pattern WORLD_NAME = Pattern.compile("[A-Za-z0-9_./-]{1,64}");
-    private static final List<String> LIMITS = List.of("monsters", "animals", "water-animals", "water-ambient",
-            "underground-water", "ambient", "axolotls");
 
     private final ConfigEditor editor;
 
@@ -47,15 +43,11 @@ final class WorldApi extends PanelApi {
         WorldControlModule world = world();
         YamlConfiguration yaml = editor.read(FILE);
         Map<String, Object> live = sync(() -> {
-            List<String> worlds = new ArrayList<>();
-            for (World loaded : plugin.getServer().getWorlds()) {
-                worlds.add(loaded.getName());
-            }
             List<Map<String, Object>> limits = new ArrayList<>();
             for (WorldControlModule.SpawnLimit limit : world.spawnLimits()) {
                 limits.add(map("id", limit.id(), "percent", limit.percent(), "base", limit.base(), "current", limit.current()));
             }
-            return map("worlds", worlds, "limits", limits, "dragon", dragon(world.dragonStatus()));
+            return map("limits", limits, "dragon", dragon(world.dragonStatus()));
         });
 
         List<Map<String, Object>> sources = new ArrayList<>();
@@ -66,7 +58,10 @@ final class WorldApi extends PanelApi {
         ConfigurationSection section = yaml.getConfigurationSection("spawning.mobs");
         if (section != null) {
             for (String key : section.getKeys(false)) {
-                mobs.add(map("type", key.toLowerCase(Locale.ROOT), "chance", Math.max(0, Math.min(100, section.getInt(key, 100)))));
+                String type = WorldControlModule.mobKey(key);
+                if (type != null) {
+                    mobs.add(map("type", type, "chance", Math.max(0, Math.min(100, section.getInt(key, 100)))));
+                }
             }
         }
         @SuppressWarnings("unchecked")
@@ -78,7 +73,6 @@ final class WorldApi extends PanelApi {
                 "announceKill", yaml.getBoolean("dragon.announce-kill", true),
                 "announceRespawn", yaml.getBoolean("dragon.announce-respawn", true)));
         return map(
-                "worlds", live.get("worlds"),
                 "explosions", map(
                         "sources", sources,
                         "tntChain", yaml.getBoolean("explosions.tnt-chain", true),
@@ -144,7 +138,7 @@ final class WorldApi extends PanelApi {
         JsonElement limits = body.get("limits");
         if (limits != null && limits.isJsonObject()) {
             for (Map.Entry<String, JsonElement> entry : limits.getAsJsonObject().entrySet()) {
-                if (!LIMITS.contains(entry.getKey())) {
+                if (!WorldControlModule.limitIds().contains(entry.getKey())) {
                     throw ApiException.badRequest("Onbekende groep mobs: " + entry.getKey());
                 }
                 int percent = integer(entry.getValue(), "percentage");
@@ -158,8 +152,8 @@ final class WorldApi extends PanelApi {
         if (mobs != null && mobs.isJsonObject()) {
             Map<String, Integer> chances = new LinkedHashMap<>();
             for (Map.Entry<String, JsonElement> entry : mobs.getAsJsonObject().entrySet()) {
-                String type = entry.getKey().trim().toLowerCase(Locale.ROOT);
-                if (!WorldControlModule.isMobType(type)) {
+                String type = WorldControlModule.mobKey(entry.getKey());
+                if (type == null) {
                     throw ApiException.badRequest("Onbekende mob: " + entry.getKey());
                 }
                 int chance = integer(entry.getValue(), "kans");
@@ -171,8 +165,14 @@ final class WorldApi extends PanelApi {
             if (chances.size() > 200) {
                 throw ApiException.badRequest("Te veel mobs.");
             }
-            yaml.set("spawning.mobs", null);
-            ConfigurationSection section = yaml.createSection("spawning.mobs");
+            // De oude regels weghalen, maar de sectie (met de uitleg erboven) laten staan.
+            ConfigurationSection section = yaml.getConfigurationSection("spawning.mobs");
+            if (section == null) {
+                section = yaml.createSection("spawning.mobs");
+            }
+            for (String key : section.getKeys(false)) {
+                section.set(key, null);
+            }
             for (Map.Entry<String, Integer> entry : chances.entrySet()) {
                 section.set(entry.getKey(), entry.getValue());
             }
@@ -182,8 +182,8 @@ final class WorldApi extends PanelApi {
         setBool(body, "dragonRespawn", yaml, "dragon.respawn");
         if (body.has("respawnMinutes")) {
             int minutes = integer(body.get("respawnMinutes"), "minuten");
-            if (minutes < 1 || minutes > 43_200) {
-                throw ApiException.badRequest("De draak kan na 1 minuut tot 30 dagen terugkomen.");
+            if (minutes < 0 || minutes > 43_200) {
+                throw ApiException.badRequest("De draak kan na 0 minuten tot 30 dagen terugkomen.");
             }
             yaml.set("dragon.respawn-minutes", minutes);
         }
@@ -206,12 +206,13 @@ final class WorldApi extends PanelApi {
         String message = switch (result) {
             case STARTED -> "De ender dragon komt terug.";
             case WAITING -> "De ender dragon komt terug zodra er iemand in de End is.";
+            case QUEUED -> "De ender dragon komt terug zodra de vorige helemaal weg is.";
             case ALIVE -> throw ApiException.badRequest("De ender dragon leeft nog.");
             case BUSY -> throw ApiException.badRequest("De ender dragon komt al terug.");
             case NO_END -> throw ApiException.badRequest("Er is geen End op deze server.");
             case FAILED -> throw new ApiException(500, "Het lukte niet om de ender dragon terug te laten komen. Kijk in de console.");
         };
-        module.log().add(request, "ender dragon terug", null, result == DragonControl.Result.WAITING ? "zodra er iemand in de End is" : null);
+        module.log().add(request, "ender dragon terug", null, result == DragonControl.Result.STARTED ? null : "zodra het kan");
         Map<String, Object> overview = new LinkedHashMap<>(castMap(overview()));
         overview.put("message", message);
         return overview;

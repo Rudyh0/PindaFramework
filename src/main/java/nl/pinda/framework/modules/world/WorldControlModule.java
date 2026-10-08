@@ -1,10 +1,8 @@
 package nl.pinda.framework.modules.world;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.module.PindaModule;
 import nl.pinda.framework.player.PlayerSetting;
@@ -52,9 +50,6 @@ public final class WorldControlModule extends PindaModule {
     protected void onDisable() {
         if (spawning != null) {
             spawning.restore();
-        }
-        if (dragon != null) {
-            dragon.stop();
         }
         plugin.settings().unregister(PHANTOM_SETTING);
     }
@@ -104,20 +99,20 @@ public final class WorldControlModule extends PindaModule {
         return list;
     }
 
-    /** De kans per mob (0-100) uit de config. */
-    public Map<String, Integer> mobChances() {
-        Map<String, Integer> map = new LinkedHashMap<>();
-        for (Map.Entry<EntityType, Integer> entry : spawning.chances().entrySet()) {
-            map.put(entry.getKey().name().toLowerCase(Locale.ROOT), entry.getValue());
+    /** De namen van de groepen mobs (monsters, animals, ...), zoals in de config. */
+    public static List<String> limitIds() {
+        List<String> ids = new ArrayList<>();
+        for (SpawnControl.Group group : SpawnControl.Group.values()) {
+            ids.add(group.id);
         }
-        return map;
+        return ids;
     }
 
     /** Alle mobs waarvoor je een kans kunt instellen, op naam. */
     public static List<String> mobTypes() {
         List<String> list = new ArrayList<>();
         for (EntityType type : EntityType.values()) {
-            if (SpawnControl.spawnableMob(type) && type != EntityType.ENDER_DRAGON && type != EntityType.WITHER) {
+            if (SpawnControl.chanceAllowed(type)) {
                 list.add(type.name().toLowerCase(Locale.ROOT));
             }
         }
@@ -125,9 +120,10 @@ public final class WorldControlModule extends PindaModule {
         return list;
     }
 
-    public static boolean isMobType(String name) {
+    /** De nette naam van een mob ("Zombie Villager" wordt "zombie_villager"), of null als het geen mob is. */
+    public static String mobKey(String name) {
         EntityType type = SpawnControl.mobType(name);
-        return type != null && type != EntityType.ENDER_DRAGON && type != EntityType.WITHER;
+        return type == null || !SpawnControl.chanceAllowed(type) ? null : type.name().toLowerCase(Locale.ROOT);
     }
 
     public static int maxPercent() {

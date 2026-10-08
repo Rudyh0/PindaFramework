@@ -86,7 +86,7 @@ final class SpawnControl implements Listener {
         if (mobs != null) {
             for (String key : mobs.getKeys(false)) {
                 EntityType type = mobType(key);
-                if (type == null) {
+                if (type == null || !chanceAllowed(type)) {
                     plugin.getLogger().warning("world.yml: onbekende mob '" + key + "' bij spawning.mobs");
                     continue;
                 }
@@ -111,6 +111,14 @@ final class SpawnControl implements Listener {
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    /**
+     * Mobs waarvoor een kans per mob werkt. Phantoms hebben hun eigen instelling, en de draak
+     * en de wither spawnen nooit vanzelf.
+     */
+    static boolean chanceAllowed(EntityType type) {
+        return spawnableMob(type) && type != EntityType.PHANTOM && type != EntityType.ENDER_DRAGON && type != EntityType.WITHER;
     }
 
     /** Echte mobs (geen spelers, harnasstandaarden of mannequins). */
@@ -146,11 +154,19 @@ final class SpawnControl implements Listener {
             }
             int base = originals.computeIfAbsent(world.getName(), name -> new EnumMap<>(SpawnCategory.class))
                     .computeIfAbsent(group.category, world::getSpawnLimit);
-            world.setSpawnLimit(group.category, percent == 100 ? base : (int) Math.round(base * percent / 100.0));
+            world.setSpawnLimit(group.category, percent == 100 ? original(group.category, base) : (int) Math.round(base * percent / 100.0));
         }
     }
 
-    /** Zet alle maximums terug zoals ze waren. */
+    /** Het oorspronkelijke maximum terugzetten: -1 ("volg bukkit.yml") als het daaraan gelijk was. */
+    private int original(SpawnCategory category, int base) {
+        return base == plugin.getServer().getSpawnLimit(category) ? -1 : base;
+    }
+
+    /**
+     * Zet alle maximums terug zoals ze waren. Was het gelijk aan dat van de server (bukkit.yml),
+     * dan zetten we de wereld weer op "volg de server" (-1).
+     */
     void restore() {
         for (Map.Entry<String, EnumMap<SpawnCategory, Integer>> entry : originals.entrySet()) {
             World world = plugin.getServer().getWorld(entry.getKey());
@@ -158,7 +174,7 @@ final class SpawnControl implements Listener {
                 continue;
             }
             for (Map.Entry<SpawnCategory, Integer> limit : entry.getValue().entrySet()) {
-                world.setSpawnLimit(limit.getKey(), limit.getValue());
+                world.setSpawnLimit(limit.getKey(), original(limit.getKey(), limit.getValue()));
             }
         }
         originals.clear();
@@ -173,16 +189,12 @@ final class SpawnControl implements Listener {
         return world.getSpawnLimit(group.category);
     }
 
-    Map<EntityType, Integer> chances() {
-        return chances;
-    }
-
     @EventHandler
     public void onWorldLoad(WorldLoadEvent event) {
         apply(event.getWorld());
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onWorldUnload(WorldUnloadEvent event) {
         originals.remove(event.getWorld().getName());
     }
@@ -212,17 +224,16 @@ final class SpawnControl implements Listener {
             }
             return;
         }
+        // Alleen deze mob niet; afbreken (abort) zou ook andere mobs in dezelfde poging tegenhouden.
         Integer chance = chances.get(event.getType());
         if (chance != null && chance <= 0 && managed(event.getSpawnLocation().getWorld())) {
             event.setCancelled(true);
-            event.setShouldAbortSpawn(true);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onSpawn(CreatureSpawnEvent event) {
-        CreatureSpawnEvent.SpawnReason reason = event.getSpawnReason();
-        if (reason != CreatureSpawnEvent.SpawnReason.NATURAL && reason != CreatureSpawnEvent.SpawnReason.CHUNK_GEN) {
+        if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.NATURAL) {
             return;
         }
         if (event.getEntity() instanceof Phantom phantom) {

@@ -57,6 +57,7 @@ spawning:
     axolotls: 100
   # De kans (in procenten) dat een mob vanzelf spawnt: 0 = nooit, 100 = normaal.
   # Geldt alleen voor mobs die vanzelf verschijnen; spawners, eieren en fokken gaan gewoon door.
+  # Dieren die al in een nieuw stuk wereld staan (bij het maken ervan), blijven gewoon staan.
   mobs: {}
   #   creeper: 50
   #   bat: 0
@@ -66,7 +67,7 @@ spawning:
 dragon:
   # De ender dragon komt vanzelf terug nadat hij verslagen is
   respawn: true
-  # Na zoveel minuten. Is er dan niemand in de End, dan komt hij zodra er iemand komt.
+  # Na zoveel minuten (0 = meteen). Is er dan niemand in de End, dan komt hij zodra er iemand komt.
   respawn-minutes: 120
   # Elke keer een drakenei (Minecraft legt er normaal alleen de eerste keer een)
   egg-every-kill: true

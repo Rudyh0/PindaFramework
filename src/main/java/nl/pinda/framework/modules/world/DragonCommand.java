@@ -48,7 +48,7 @@ final class DragonCommand extends PindaCommand {
         if (status.alive()) {
             if (status.loaded()) {
                 plugin.lang().send(sender, "world.dragon.status-alive",
-                        Text.p("health", Math.round(status.health())), Text.p("max", Math.round(status.maxHealth())));
+                        Text.p("health", Math.round(status.health())), Text.p("max_health", Math.round(status.maxHealth())));
             } else {
                 plugin.lang().send(sender, "world.dragon.status-alive-unloaded");
             }
@@ -56,7 +56,9 @@ final class DragonCommand extends PindaCommand {
             plugin.lang().send(sender, "world.dragon.status-respawning");
         } else {
             String ago = module.duration(now - status.killedAt(), code);
-            if (status.killer() != null) {
+            if (status.killedAt() <= 0) {
+                plugin.lang().send(sender, "world.dragon.status-dead-plain");
+            } else if (status.killer() != null) {
                 plugin.lang().send(sender, "world.dragon.status-dead", Text.p("time", ago), Text.p("player", status.killer()));
             } else {
                 plugin.lang().send(sender, "world.dragon.status-dead-unknown", Text.p("time", ago));
@@ -78,6 +80,7 @@ final class DragonCommand extends PindaCommand {
         String key = switch (module.respawnDragon()) {
             case STARTED -> "world.dragon.respawn-started";
             case WAITING -> "world.dragon.respawn-waiting";
+            case QUEUED -> "world.dragon.respawn-queued";
             case ALIVE -> "world.dragon.respawn-alive";
             case BUSY -> "world.dragon.respawn-busy";
             case NO_END -> "world.dragon.no-end";

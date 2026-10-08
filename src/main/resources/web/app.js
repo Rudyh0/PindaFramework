@@ -2117,9 +2117,33 @@
     renderWorld(main, data);
   }
 
-  async function saveWorld(button, body, message) {
+  /**
+   * Slaat één kaart op en ververst alleen die kaart, zodat wat je in de andere kaarten hebt
+   * veranderd (maar nog niet opgeslagen) blijft staan.
+   */
+  async function saveWorld(button, body, message, part) {
     const result = await busy(button, () => post('/world/settings', body));
-    if (result) { toast(message); renderWorld($('#main'), result); }
+    if (!result) return;
+    toast(message);
+    refreshWorldCard(part, result);
+  }
+
+  function refreshWorldCard(part, data) {
+    const main = $('#main');
+    if (!main || !location.hash.startsWith('#/wereld')) return;
+    const edit = can(P.config);
+    const cards = {
+      dragon: ['#world-dragon', () => dragonCard(data.dragon, edit)],
+      explosions: ['form[data-form=world-explosions]', () => explosionsCard(data.explosions, edit)],
+      spawning: ['form[data-form=world-spawning]', () => spawningCard(data.spawning, edit)],
+      grief: ['form[data-form=world-grief]', () => griefCard(data, edit)]
+    };
+    const [selector, make] = cards[part];
+    const old = $(selector, main);
+    if (!old) { renderWorld(main, data); return; }
+    const holder = document.createElement('div');
+    render(holder, make());
+    old.replaceWith(holder.firstElementChild);
   }
 
   function renderWorld(main, d) {
@@ -2169,7 +2193,7 @@
           : `Over ${human(g.respawnAt - now)} (${dateTime(g.respawnAt)})`;
     const near = g.playersNear === 1 ? '1 speler' : `${num(g.playersNear)} spelers`;
     const disabled = edit ? '' : 'disabled';
-    return html`<section class="card"><div class="card-head"><h2>${icon('egg')}Ender dragon</h2><span class="badge ${cls}">${label}</span></div>
+    return html`<section class="card" id="world-dragon"><div class="card-head"><h2>${icon('egg')}Ender dragon</h2><span class="badge ${cls}">${label}</span></div>
       <div class="card-body">
         <dl class="kv">
           ${health ? html`<dt>Gezondheid</dt><dd>${health}</dd>` : ''}
@@ -2182,7 +2206,7 @@
         <p class="muted small" style="margin-top:12px">Minecraft laat de draak alleen terugkomen als er iemand bij het eiland in de End is. Is daar niemand, dan gebeurt het zodra er iemand komt. In-game: /dragon.</p>
         <form data-form="world-dragon" class="world-form">
           ${cfgRow('Vanzelf terugkomen', 'De draak komt een tijdje na het verslaan weer terug.', cfgToggle('dragonRespawn', s.respawn, !edit))}
-          ${cfgRow('Na hoeveel minuten', '120 = 2 uur, 1440 = een dag.', html`<input class="input cfg-number" type="number" min="1" max="43200" required name="respawnMinutes" value="${s.respawnMinutes}" ${disabled}>`)}
+          ${cfgRow('Na hoeveel minuten', '120 = 2 uur, 1440 = een dag, 0 = meteen.', html`<input class="input cfg-number" type="number" min="0" max="43200" step="1" required name="respawnMinutes" value="${s.respawnMinutes}" ${disabled}>`)}
           ${cfgRow('Elke keer een drakenei', 'Normaal krijg je alleen de eerste keer een ei.', cfgToggle('eggEveryKill', s.eggEveryKill, !edit))}
           ${cfgRow('Melden wie hem versloeg', 'Een bericht aan iedereen die online is.', cfgToggle('announceKill', s.announceKill, !edit))}
           ${cfgRow('Melden dat hij terug is', null, cfgToggle('announceRespawn', s.announceRespawn, !edit))}
@@ -2208,7 +2232,7 @@
 
   function mobRow(type, chance, edit) {
     return html`<div class="mob-row"><span class="mob-name">${mobLabel(type)}</span>
-      <span class="pct-input"><input class="input" type="number" min="0" max="100" step="5" required name="mob-${type}" value="${chance}" aria-label="Kans voor ${mobLabel(type)}" ${edit ? '' : 'disabled'}><span>%</span></span>
+      <span class="pct-input"><input class="input" type="number" min="0" max="100" step="1" required name="mob-${type}" value="${chance}" aria-label="Kans voor ${mobLabel(type)}" ${edit ? '' : 'disabled'}><span>%</span></span>
       ${edit ? html`<button type="button" class="btn sm ghost icon-only" data-mob-remove="${type}" aria-label="${mobLabel(type)} weghalen" title="Weghalen">${icon('x')}</button>` : ''}</div>`;
   }
 
@@ -2218,14 +2242,14 @@
       const [title, help] = SPAWN_GROUPS[l.id] || [l.id, null];
       const info = `Normaal maximaal ${num(l.base)} tegelijk${l.current !== l.base ? `, nu ${num(l.current)}` : ''}.`;
       return cfgRow(title, help ? `${help} ${info}` : info,
-        html`<span class="pct-input"><input class="input" type="number" min="0" max="${s.maxPercent}" step="5" required name="limit-${l.id}" value="${l.percent}" aria-label="${title} in procenten" ${disabled}><span>%</span></span>`);
+        html`<span class="pct-input"><input class="input" type="number" min="0" max="${s.maxPercent}" step="1" required name="limit-${l.id}" value="${l.percent}" aria-label="${title} in procenten" ${disabled}><span>%</span></span>`);
     });
     const chosen = new Set(s.mobs.map(m => m.type));
     const options = s.mobTypes.filter(t => !chosen.has(t)).map(t => [t, mobLabel(t)]).sort((a, b) => a[1].localeCompare(b[1], 'nl'));
     return html`<form class="card" data-form="world-spawning"><div class="card-head"><h2>${icon('paw')}Mobs spawnen</h2><span class="count">100% = normaal</span></div><div class="card-body">
       <p class="muted small card-intro">Hoeveel mobs er tegelijk vanzelf rondlopen, in procenten van normaal. Minder mobs betekent ook minder lag; 0% = geen enkele.</p>
       ${limits}
-      <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Kans per mob</span><span class="cfg-help">0% = spawnt nooit vanzelf, 100% = normaal. Spawners, eieren en fokken gaan gewoon door.</span></div>
+      <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Kans per mob</span><span class="cfg-help">0% = spawnt nooit vanzelf, 100% = normaal. Spawners, eieren en fokken gaan gewoon door, en dieren die al in een nieuw stuk wereld staan blijven.</span></div>
         <div class="mob-list" id="mob-list">${s.mobs.map(m => mobRow(m.type, m.chance, edit))}</div>
         ${edit ? html`<div class="mob-add"><select class="input" id="mob-add-type" aria-label="Mob kiezen"><option value="">Mob kiezen…</option>${options.map(([t, label]) => html`<option value="${t}">${label}</option>`)}</select>
           <button type="button" class="btn" data-mob-add>${icon('plus')} Toevoegen</button></div>` : (s.mobs.length ? '' : html`<span class="muted small">Geen: alle mobs spawnen normaal.</span>`)}
@@ -2472,7 +2496,7 @@
 
     async 'dragon-respawn'(button) {
       const result = await busy(button, () => post('/world/dragon/respawn', {}));
-      if (result) { toast(result.message); renderWorld($('#main'), result); }
+      if (result) { toast(result.message); refreshWorldCard('dragon', result); }
     },
 
     'world-texts'() {
@@ -2623,7 +2647,7 @@
       const blockDamage = {};
       $$('input[name^="damage-"]', form).forEach(input => { blockDamage[input.name.slice('damage-'.length)] = input.checked; });
       await saveWorld(button, { blockDamage, tntChain: form.tntChain.checked, protectEntities: form.protectEntities.checked,
-        worldsWithDamage: worldList(data.get('worldsWithDamage')) }, 'Explosies opgeslagen.');
+        worldsWithDamage: worldList(data.get('worldsWithDamage')) }, 'Explosies opgeslagen.', 'explosions');
     },
 
     async 'world-spawning'(form, data, button) {
@@ -2631,18 +2655,18 @@
       $$('input[name^="limit-"]', form).forEach(input => { limits[input.name.slice('limit-'.length)] = Number(input.value); });
       const mobs = {};
       $$('input[name^="mob-"]', form).forEach(input => { mobs[input.name.slice('mob-'.length)] = Number(input.value); });
-      await saveWorld(button, { limits, mobs, spawnDisabledWorlds: worldList(data.get('spawnDisabledWorlds')) }, 'Spawninstellingen opgeslagen.');
+      await saveWorld(button, { limits, mobs, spawnDisabledWorlds: worldList(data.get('spawnDisabledWorlds')) }, 'Spawninstellingen opgeslagen.', 'spawning');
     },
 
     async 'world-grief'(form, data, button) {
       await saveWorld(button, { phantoms: form.phantoms.checked, phantomChoice: form.phantomChoice.checked,
-        endermanPickup: form.endermanPickup.checked, trampleFarmland: form.trampleFarmland.checked }, 'Opgeslagen.');
+        endermanPickup: form.endermanPickup.checked, trampleFarmland: form.trampleFarmland.checked }, 'Opgeslagen.', 'grief');
     },
 
     async 'world-dragon'(form, data, button) {
       await saveWorld(button, { dragonRespawn: form.dragonRespawn.checked, respawnMinutes: Number(data.get('respawnMinutes')),
         eggEveryKill: form.eggEveryKill.checked, announceKill: form.announceKill.checked, announceRespawn: form.announceRespawn.checked },
-      'Instellingen voor de ender dragon opgeslagen.');
+      'Instellingen voor de ender dragon opgeslagen.', 'dragon');
     },
 
     async 'perf-settings'(form, data, button) {
