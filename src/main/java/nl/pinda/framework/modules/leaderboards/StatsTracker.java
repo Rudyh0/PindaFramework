@@ -1,17 +1,25 @@
 package nl.pinda.framework.modules.leaderboards;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.sql.PreparedStatement;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.storage.Database;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -125,48 +133,110 @@ public final class StatsTracker implements Listener {
 
     /**
      * De eerste keer: de statistieken van alle spelers die hier ooit speelden in de database zetten,
-     * zodat de toplijsten meteen kloppen. In kleine stukjes, zodat de server niet hapert.
+     * zodat de toplijsten meteen kloppen. De bestanden worden op de achtergrond gelezen, zodat de
+     * server niet hapert (ook niet met duizenden oude spelers).
      */
     void seed() {
-        if (plugin.serverData().getLong(SEEDED, 0) > 0) {
+        if (plugin.serverData().getLong(SEEDED, 0) > 0 || plugin.getServer().getWorlds().isEmpty()) {
             return;
         }
-        Deque<OfflinePlayer> queue = new ArrayDeque<>();
-        for (OfflinePlayer player : plugin.getServer().getOfflinePlayers()) {
-            if (player.getName() != null && !player.isOnline()) {
-                queue.add(player);
+        File world = plugin.getServer().getWorlds().get(0).getWorldFolder();
+        File root = plugin.getServer().getWorldContainer();
+        Set<UUID> online = new HashSet<>();
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            online.add(player.getUniqueId());
+        }
+        seeding = plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            Map<UUID, Stats> batch = readAll(world, root, online);
+            save(batch, false).thenRun(() -> {
+                if (plugin.isEnabled()) {
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        plugin.serverData().set(SEEDED, System.currentTimeMillis());
+                        if (!batch.isEmpty()) {
+                            plugin.getLogger().info("Toplijsten: statistieken van " + batch.size() + " eerdere spelers ingelezen.");
+                        }
+                    });
+                }
+            });
+        });
+    }
+
+    /** Leest world/stats/*.json (de statistieken van Minecraft zelf), met de namen uit usercache.json. */
+    private Map<UUID, Stats> readAll(File world, File root, Set<UUID> skip) {
+        Map<UUID, Stats> result = new LinkedHashMap<>();
+        File folder = null;
+        for (File candidate : new File[]{new File(world, "stats"), new File(new File(world, "players"), "stats")}) {
+            if (candidate.isDirectory()) {
+                folder = candidate;
+                break;
             }
         }
-        if (queue.isEmpty()) {
-            plugin.serverData().set(SEEDED, System.currentTimeMillis());
-            return;
+        File[] files = folder == null ? null : folder.listFiles((dir, name) -> name.endsWith(".json"));
+        if (files == null) {
+            return result;
         }
-        plugin.getLogger().info("Toplijsten: statistieken van " + queue.size() + " spelers inlezen...");
-        int total = queue.size();
-        seeding = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
-            Map<UUID, Stats> batch = new LinkedHashMap<>();
-            for (int index = 0; index < 10 && !queue.isEmpty(); index++) {
-                OfflinePlayer player = queue.poll();
-                try {
-                    Stats stats = new Stats(player.getName(),
-                            player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20L,
-                            player.getStatistic(Statistic.PLAYER_KILLS),
-                            player.getStatistic(Statistic.MOB_KILLS),
-                            player.getStatistic(Statistic.DEATHS));
-                    if (stats.playtime() > 0) {
-                        batch.put(player.getUniqueId(), stats);
+        Map<UUID, String> names = names(new File(root, "usercache.json"));
+        for (File file : files) {
+            UUID uuid;
+            try {
+                uuid = UUID.fromString(file.getName().substring(0, file.getName().length() - 5));
+            } catch (IllegalArgumentException e) {
+                continue;
+            }
+            if (skip.contains(uuid)) {
+                continue;
+            }
+            try (Reader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
+                JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+                JsonObject stats = json.has("stats") ? json.getAsJsonObject("stats") : null;
+                JsonObject custom = stats != null && stats.has("minecraft:custom") ? stats.getAsJsonObject("minecraft:custom") : null;
+                if (custom == null) {
+                    continue;
+                }
+                long ticks = value(custom, "minecraft:play_time");
+                if (ticks == 0) {
+                    ticks = value(custom, "minecraft:play_one_minute"); // oude naam
+                }
+                if (ticks <= 0) {
+                    continue;
+                }
+                result.put(uuid, new Stats(names.get(uuid), ticks / 20L, value(custom, "minecraft:player_kills"),
+                        value(custom, "minecraft:mob_kills"), value(custom, "minecraft:deaths")));
+            } catch (IOException | RuntimeException e) {
+                // Kapot of onleesbaar bestand: overslaan
+            }
+        }
+        return result;
+    }
+
+    private static long value(JsonObject object, String key) {
+        try {
+            return object.has(key) ? object.get(key).getAsLong() : 0;
+        } catch (RuntimeException e) {
+            return 0;
+        }
+    }
+
+    private static Map<UUID, String> names(File cache) {
+        Map<UUID, String> names = new HashMap<>();
+        if (!cache.isFile()) {
+            return names;
+        }
+        try (Reader reader = Files.newBufferedReader(cache.toPath(), StandardCharsets.UTF_8)) {
+            JsonElement root = JsonParser.parseReader(reader);
+            if (root.isJsonArray()) {
+                for (JsonElement element : root.getAsJsonArray()) {
+                    JsonObject entry = element.getAsJsonObject();
+                    try {
+                        names.put(UUID.fromString(entry.get("uuid").getAsString()), entry.get("name").getAsString());
+                    } catch (RuntimeException ignored) {
+                        // regel overslaan
                     }
-                } catch (RuntimeException ignored) {
-                    // Geen (leesbaar) statistiekenbestand: overslaan
                 }
             }
-            save(batch, false);
-            if (queue.isEmpty()) {
-                seeding.cancel();
-                seeding = null;
-                plugin.serverData().set(SEEDED, System.currentTimeMillis());
-                plugin.getLogger().info("Toplijsten: statistieken van " + total + " spelers ingelezen.");
-            }
-        }, 40L, 2L);
+        } catch (IOException | RuntimeException ignored) {
+            // zonder namen gaat het ook
+        }
+        return names;
     }
 }

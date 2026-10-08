@@ -72,12 +72,12 @@ Als genoeg spelers in een wereld slapen (standaard **50%**), wordt de nacht of h
 Zes toplijsten: **rijkste spelers** (contant + bank), **hoogste skills** (totaal level), **langst online**, **meeste spelerkills**, **meeste mobkills** en **vaakst doodgegaan**. Speeltijd, kills en doden komen uit de statistieken van Minecraft zelf, dus ook wat spelers deden voordat PindaFramework erop stond telt mee.
 
 - **`/top`** opent een menu met alle toplijsten en je eigen plek op elke lijst. **`/top geld`** (of `skills`, `speeltijd`, `kills`, `mobkills`, `doden`) zet een toplijst in de chat.
-- **Scoreboard** rechts in beeld: wisselt elke 10 seconden naar de volgende toplijst, met de top 10 en onderaan je eigen plek. Spelers zetten het zelf uit in `/instellingen`.
+- **Scoreboard** rechts in beeld: wisselt elke 10 seconden naar de volgende toplijst, met de top 10 en onderaan je eigen plek. Spelers zetten het zelf uit in `/instellingen`. Teams van het gewone scoreboard (kleuren van `/team`, teams van andere plugins) worden overgenomen.
 - In het paneel onder **Toplijsten** zie je alle lijsten en stel je het scoreboard in (met voorbeeld). Staff of testaccounts haal je van de lijsten met `hidden-players` in `modules/leaderboards.yml`.
 
 ## Aankondigingen
 
-Om de zoveel minuten (standaard 10) een bericht in de chat voor iedereen, op volgorde of willekeurig. Beheer ze in het paneel onder **Aankondigingen**: toevoegen en bewerken met de teksteditor, volgorde aanpassen, meteen versturen, of een eenmalige aankondiging sturen. In een aankondiging werken `<player>`, `<online>`, `<max>`, `<server>` en `%placeholders%` van PlaceholderAPI.
+Om de zoveel minuten (standaard 10) een bericht in de chat voor iedereen, op volgorde of willekeurig. Beheer ze in het paneel onder **Aankondigingen**: toevoegen en bewerken met de teksteditor, volgorde aanpassen, meteen versturen, of een eenmalige aankondiging sturen. In een aankondiging werken `<player>`, `<online>`, `<max>`, `<server>` en `%placeholders%` van PlaceholderAPI. Klikbare acties (een commando uitvoeren als iemand klikt) kan alleen iemand met toegang tot **Teksten** toevoegen, zodat niemand via een aankondiging een admin een commando kan laten uitvoeren.
 
 ## Antilag
 

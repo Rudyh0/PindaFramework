@@ -329,6 +329,12 @@ public final class SkillService {
         return load(uuid).thenApply(SkillProfile::snapshot);
     }
 
+    /** De XP van een speler als die al geladen is (online), anders null. Laadt nooit iets. */
+    public Map<Skill, Double> cachedXp(UUID uuid) {
+        SkillProfile cached = profiles.get(uuid);
+        return cached == null ? null : cached.snapshot();
+    }
+
     /** De plek op de ranglijst per skill (alleen skills met XP). */
     public CompletableFuture<Map<Skill, Integer>> positions(UUID uuid) {
         return flush().thenCompose(ignored -> plugin.database().query(connection -> {

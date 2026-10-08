@@ -63,6 +63,7 @@ public final class ScoreboardModule extends PindaModule implements Listener {
 
     @Override
     protected void onReload() {
+        cache.clear();
         registerSetting();
         tick();
     }
@@ -124,9 +125,38 @@ public final class ScoreboardModule extends PindaModule implements Listener {
 
     // ============================================================ bijwerken
 
+    /**
+     * Wat voor iedereen hetzelfde is (per toplijst en taal): de titel, de regels van de top en de
+     * opgemaakte waarden. Zo hoeft er per speler per seconde bijna niets opnieuw opgemaakt te worden.
+     */
+    private static final class Shared {
+        final List<SidebarLine> entries = new ArrayList<>();
+        final List<UUID> uuids = new ArrayList<>();
+        final List<String> names = new ArrayList<>();
+        final Map<Integer, Component> selfLeft = new HashMap<>();
+        final Map<Integer, SidebarLine> ownLines = new HashMap<>();
+        Component title;
+        String titleRaw;
+        Component footer;
+        String footerRaw;
+    }
+
+    private record CacheKey(Board board, String code) {
+    }
+
+    private final Map<CacheKey, Shared> cache = new HashMap<>();
+    private long cachedUpdated = -1;
+    private int ticks;
+
     private void tick() {
         LeaderboardService service = leaderboards();
         Board board = current();
+        if (service != null && service.updated() != cachedUpdated) {
+            cache.clear();
+            cachedUpdated = service.updated();
+        }
+        boolean syncTeams = config().getBoolean("sync-teams", true) && ticks++ % 5 == 0;
+        Scoreboard main = plugin.getServer().getScoreboardManager().getMainScoreboard();
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             UUID uuid = player.getUniqueId();
             if (service == null || board == null || !wants(player)) {
@@ -145,11 +175,18 @@ public final class ScoreboardModule extends PindaModule implements Listener {
             }
             List<SidebarLine> lines = new ArrayList<>();
             Component title = render(player, plugin.lang().languageOf(player), service, board, lines);
+            boolean created = false;
             if (sidebar == null) {
                 Scoreboard scoreboard = plugin.getServer().getScoreboardManager().getNewScoreboard();
                 sidebar = new Sidebar(scoreboard, title);
                 sidebars.put(uuid, sidebar);
-                player.setScoreboard(scoreboard);
+                created = true;
+            }
+            if (created || syncTeams) {
+                TeamSync.copy(main, sidebar.board());
+            }
+            if (created) {
+                player.setScoreboard(sidebar.board());
             }
             sidebar.update(title, lines);
         }
@@ -161,41 +198,81 @@ public final class ScoreboardModule extends PindaModule implements Listener {
         return service == null || board == null ? null : render(null, code, service, board, lines);
     }
 
+    private Shared shared(String code, LeaderboardService service, Board board) {
+        return cache.computeIfAbsent(new CacheKey(board, code), key -> {
+            LanguageManager lang = plugin.lang();
+            Shared shared = new Shared();
+            List<LeaderboardService.Entry> top = service.ranking(board).top(places());
+            if (top.isEmpty()) {
+                shared.entries.add(new SidebarLine(lang.component(code, "scoreboard.empty"), null));
+            }
+            for (int index = 0; index < top.size(); index++) {
+                LeaderboardService.Entry entry = top.get(index);
+                shared.uuids.add(entry.uuid());
+                shared.names.add(entry.name());
+                shared.entries.add(new SidebarLine(
+                        lang.component(code, "scoreboard.entry", Text.p("position", index + 1), Text.p("player", entry.name())),
+                        value(code, service, board, entry.value())));
+            }
+            String title = lang.raw(code, "scoreboard.title");
+            shared.titleRaw = title == null ? "<board>" : title;
+            shared.title = lang.parse(shared.titleRaw, Text.p("board", service.name(board, code)));
+            String footer = lang.raw(code, "scoreboard.footer");
+            shared.footerRaw = footer == null || footer.isBlank() ? null : footer;
+            if (shared.footerRaw != null) {
+                shared.footer = lang.parse(shared.footerRaw, Text.p("player", "Rudyh0"));
+            }
+            return shared;
+        });
+    }
+
+    private Component value(String code, LeaderboardService service, Board board, long value) {
+        return plugin.lang().component(code, "scoreboard.value", Text.p("value", service.compact(board, value, code)));
+    }
+
+    /** Staan er dingen in die per speler anders zijn (%placeholders% of &lt;player&gt;)? */
+    private static boolean personal(String raw) {
+        return raw.indexOf('%') >= 0 || raw.contains("<player>");
+    }
+
     /** Vult de regels voor deze speler (of null voor een voorbeeld) en geeft de titel terug. */
     Component render(Player player, String code, LeaderboardService service, Board board, List<SidebarLine> lines) {
         LanguageManager lang = plugin.lang();
-        String boardName = service.name(board, code);
+        Shared shared = shared(code, service, board);
         LeaderboardService.Ranking ranking = service.ranking(board);
-        List<LeaderboardService.Entry> top = ranking.top(places());
-
-        if (top.isEmpty()) {
-            lines.add(new SidebarLine(lang.component(code, "scoreboard.empty"), null));
-        }
-        for (int index = 0; index < top.size(); index++) {
-            LeaderboardService.Entry entry = top.get(index);
-            boolean self = player != null && entry.uuid().equals(player.getUniqueId());
-            lines.add(new SidebarLine(
-                    lang.component(code, self ? "scoreboard.entry-self" : "scoreboard.entry",
-                            Text.p("position", index + 1), Text.p("player", entry.name())),
-                    lang.component(code, "scoreboard.value", Text.p("value", service.compact(board, entry.value(), code)))));
+        lines.addAll(shared.entries);
+        int self = player == null ? -1 : shared.uuids.indexOf(player.getUniqueId());
+        if (self >= 0) {
+            Component left = shared.selfLeft.computeIfAbsent(self, index -> lang.component(code, "scoreboard.entry-self",
+                    Text.p("position", index + 1), Text.p("player", shared.names.get(index))));
+            lines.set(self, new SidebarLine(left, shared.entries.get(self).right()));
         }
         if (config().getBoolean("show-own", true)) {
             lines.add(new SidebarLine(Component.empty(), null));
-            LeaderboardService.Entry own = player == null ? null : ranking.entry(player.getUniqueId());
-            lines.add(own == null
-                    ? new SidebarLine(lang.component(code, "scoreboard.own-none"), null)
-                    : new SidebarLine(lang.component(code, "scoreboard.own", Text.p("position", ranking.position(player.getUniqueId()))),
-                    lang.component(code, "scoreboard.value", Text.p("value", service.compact(board, own.value(), code)))));
+            int position = player == null ? 0 : ranking.position(player.getUniqueId());
+            lines.add(shared.ownLines.computeIfAbsent(position, place -> {
+                if (place == 0) {
+                    return new SidebarLine(lang.component(code, "scoreboard.own-none"), null);
+                }
+                List<LeaderboardService.Entry> all = ranking.entries();
+                return place > all.size() ? new SidebarLine(lang.component(code, "scoreboard.own-none"), null)
+                        : new SidebarLine(lang.component(code, "scoreboard.own", Text.p("position", place)),
+                        value(code, service, board, all.get(place - 1).value()));
+            }));
         }
-        String footer = lang.raw(code, "scoreboard.footer");
-        if (footer != null && !footer.isBlank()) {
+        if (shared.footerRaw != null) {
             lines.add(new SidebarLine(Component.empty(), null));
-            String text = player == null ? footer : Placeholders.apply(player, footer);
-            lines.add(new SidebarLine(lang.parse(text, Text.p("player", player == null ? "Rudyh0" : player.getName())), null));
+            if (player != null && personal(shared.footerRaw)) {
+                lines.add(new SidebarLine(lang.parse(Placeholders.apply(player, shared.footerRaw),
+                        Text.p("player", player.getName())), null));
+            } else {
+                lines.add(new SidebarLine(shared.footer, null));
+            }
         }
-        String title = lang.raw(code, "scoreboard.title");
-        title = title == null ? "<board>" : title;
-        return lang.parse(player == null ? title : Placeholders.apply(player, title), Text.p("board", boardName));
+        if (player != null && shared.titleRaw.indexOf('%') >= 0) {
+            return lang.parse(Placeholders.apply(player, shared.titleRaw), Text.p("board", service.name(board, code)));
+        }
+        return shared.title;
     }
 
     private void remove(Player player) {

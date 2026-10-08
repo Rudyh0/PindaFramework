@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import nl.pinda.framework.integration.Placeholders;
 import nl.pinda.framework.modules.broadcasts.BroadcastsModule;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -56,6 +57,7 @@ final class BroadcastsApi extends PanelApi {
         YamlConfiguration yaml = editor.read(FILE);
         JsonElement messages = body.get("messages");
         if (messages != null && messages.isJsonArray()) {
+            List<String> existing = yaml.getStringList("messages");
             List<String> list = new ArrayList<>();
             for (JsonElement element : messages.getAsJsonArray()) {
                 String text = element.getAsString().strip();
@@ -64,6 +66,9 @@ final class BroadcastsApi extends PanelApi {
                 }
                 if (text.length() > MAX_LENGTH) {
                     throw ApiException.badRequest("Een aankondiging is te lang (maximaal " + MAX_LENGTH + " tekens).");
+                }
+                if (!existing.contains(text)) {
+                    checkActions(request, text);
                 }
                 list.add(text);
             }
@@ -101,6 +106,20 @@ final class BroadcastsApi extends PanelApi {
         return overview();
     }
 
+    /**
+     * Klikacties (bijv. een commando uitvoeren als iemand klikt) kunnen misbruikt worden: als een admin
+     * erop klikt, voert hij het commando uit. Daarom mag alleen iemand met toegang tot Teksten die toevoegen.
+     */
+    private static void checkActions(PanelRequest request, String text) throws ApiException {
+        if (request.user().has(PanelUser.TEXTS)) {
+            return;
+        }
+        String lower = text.toLowerCase(Locale.ROOT);
+        if (lower.contains("<click") || lower.contains("<insert")) {
+            throw ApiException.forbidden("Klikbare acties (click/insertion) in een aankondiging kan alleen iemand met toegang tot Teksten toevoegen.");
+        }
+    }
+
     private Object send(PanelRequest request) throws Exception {
         BroadcastsModule broadcasts = require(BroadcastsModule.class, "broadcasts");
         JsonObject body = request.body();
@@ -117,6 +136,7 @@ final class BroadcastsApi extends PanelApi {
             if (message.length() > MAX_LENGTH) {
                 throw ApiException.badRequest("De aankondiging is te lang.");
             }
+            checkActions(request, message);
         }
         String text = message;
         sync(() -> {

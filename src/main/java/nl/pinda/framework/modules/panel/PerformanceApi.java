@@ -2,6 +2,7 @@ package nl.pinda.framework.modules.panel;
 
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import nl.pinda.framework.modules.antilag.AntilagModule;
@@ -13,6 +14,9 @@ final class PerformanceApi extends PanelApi {
     private static final String FILE = "modules/antilag.yml";
 
     private final ConfigEditor editor;
+    /** De live-gegevens even bewaren: alle entities tellen is werk voor de server. */
+    private volatile Map<String, Object> cached;
+    private volatile long cachedAt;
 
     PerformanceApi(PanelModule module) {
         super(module);
@@ -33,6 +37,22 @@ final class PerformanceApi extends PanelApi {
     private Object overview() throws Exception {
         AntilagModule antilag = antilag();
         YamlConfiguration yaml = editor.read(FILE);
+        Map<String, Object> live = live(antilag);
+        live.put("settings", map(
+                "clearEnabled", yaml.getBoolean("clear-items.enabled", true),
+                "intervalMinutes", yaml.getInt("clear-items.interval-minutes", 15),
+                "mobLimitEnabled", yaml.getBoolean("mob-limit.enabled", true),
+                "perType", yaml.getInt("mob-limit.per-type", 40),
+                "guardEnabled", yaml.getBoolean("lag-guard.enabled", true),
+                "tpsBelow", yaml.getDouble("lag-guard.tps-below", 15.0)));
+        return live;
+    }
+
+    private Map<String, Object> live(AntilagModule antilag) throws Exception {
+        Map<String, Object> recent = cached;
+        if (recent != null && System.currentTimeMillis() - cachedAt < 5000) {
+            return new LinkedHashMap<>(recent);
+        }
         Map<String, Object> live = sync(() -> {
             double[] tps = plugin.getServer().getTPS();
             List<Map<String, Object>> worlds = new ArrayList<>();
@@ -56,14 +76,9 @@ final class PerformanceApi extends PanelApi {
                     "clear", map("next", antilag.nextClear(), "counting", antilag.clearCounting(),
                             "last", antilag.lastClear(), "lastCount", antilag.lastCount()));
         });
-        live.put("settings", map(
-                "clearEnabled", yaml.getBoolean("clear-items.enabled", true),
-                "intervalMinutes", yaml.getInt("clear-items.interval-minutes", 15),
-                "mobLimitEnabled", yaml.getBoolean("mob-limit.enabled", true),
-                "perType", yaml.getInt("mob-limit.per-type", 40),
-                "guardEnabled", yaml.getBoolean("lag-guard.enabled", true),
-                "tpsBelow", yaml.getDouble("lag-guard.tps-below", 15.0)));
-        return live;
+        cached = live;
+        cachedAt = System.currentTimeMillis();
+        return new LinkedHashMap<>(live);
     }
 
     private static double round(double value) {
@@ -72,6 +87,7 @@ final class PerformanceApi extends PanelApi {
 
     private Object clear(PanelRequest request) throws Exception {
         AntilagModule antilag = antilag();
+        cachedAt = 0;
         boolean now = request.body().has("now") && request.body().get("now").getAsBoolean();
         if (now) {
             int removed = sync(antilag::clearNow);
@@ -129,6 +145,7 @@ final class PerformanceApi extends PanelApi {
             editor.reload(FILE);
             return null;
         });
+        cachedAt = 0;
         module.log().add(request, "antilag-instellingen", null, null);
         return overview();
     }

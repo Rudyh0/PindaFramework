@@ -139,8 +139,14 @@ final class PindaExpansion extends PlaceholderExpansion {
             }
             case "skills_total" -> {
                 SkillService skills = skills();
-                Map<Skill, Double> xp = skills == null ? null : skills.xpOf(offline.getUniqueId()).getNow(null);
-                return xp == null ? "" : String.valueOf(skills.totalLevel(xp));
+                Map<Skill, Double> xp = skills == null ? null : skills.cachedXp(offline.getUniqueId());
+                if (xp != null) {
+                    return String.valueOf(skills.totalLevel(xp));
+                }
+                // Offline: uit de toplijst (laadt niets uit de database)
+                LeaderboardService service = leaderboards();
+                LeaderboardService.Entry entry = service == null ? null : service.ranking(Board.SKILLS).entry(offline.getUniqueId());
+                return entry == null ? "0" : String.valueOf(entry.value());
             }
             case "playtime", "playtime_raw", "kills", "mobkills", "deaths" -> {
                 return stat(offline, params, code);
@@ -161,7 +167,7 @@ final class PindaExpansion extends PlaceholderExpansion {
                 if (params.startsWith("skill_")) {
                     SkillService skills = skills();
                     Skill skill = skills == null ? null : skills.find(params.substring(6));
-                    Map<Skill, Double> xp = skill == null ? null : skills.xpOf(offline.getUniqueId()).getNow(null);
+                    Map<Skill, Double> xp = skill == null ? null : skills.cachedXp(offline.getUniqueId());
                     return xp == null ? "" : String.valueOf(skills.curve().levelOf(xp.getOrDefault(skill, 0.0)));
                 }
                 return null;

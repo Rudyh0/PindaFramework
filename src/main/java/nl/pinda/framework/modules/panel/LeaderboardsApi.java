@@ -98,7 +98,10 @@ final class LeaderboardsApi extends PanelApi {
 
     private Object refresh(PanelRequest request) throws Exception {
         LeaderboardService service = service();
-        syncAwait(service::refresh);
+        // Niet vaker dan eens per 15 seconden: opnieuw berekenen leest alle spelers uit de database
+        if (System.currentTimeMillis() - service.updated() >= 15_000) {
+            syncAwait(service::refresh);
+        }
         return overview(request);
     }
 

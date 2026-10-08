@@ -30,3 +30,7 @@ show-own: true
 
 # Werelden zonder scoreboard
 disabled-worlds: []
+
+# Teams van het gewone scoreboard overnemen (kleuren van /team, naamlabels, teams van andere plugins).
+# Laat dit aan, tenzij een andere plugin het scoreboard regelt.
+sync-teams: true

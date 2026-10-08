@@ -1,9 +1,11 @@
 package nl.pinda.framework.modules.antilag;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.lang.Text;
 import nl.pinda.framework.modules.economy.EconomyModule;
@@ -154,7 +156,7 @@ final class ItemCleaner {
         long minAge = Math.max(0, cfg.getLong("min-age-seconds", 60)) * 20L;
         boolean keepNamed = cfg.getBoolean("keep-named", true);
         boolean arrows = cfg.getBoolean("arrows", true);
-        List<String> keep = cfg.getStringList("keep");
+        List<Pattern> keep = patterns(cfg.getStringList("keep"));
         Set<String> disabled = new HashSet<>();
         for (String world : cfg.getStringList("disabled-worlds")) {
             disabled.add(world.toLowerCase(Locale.ROOT));
@@ -198,11 +200,19 @@ final class ItemCleaner {
         return removed;
     }
 
-    /** Past een naam bij een van de patronen? Een * mag overal staan (DIAMOND*, *_SHULKER_BOX). */
-    static boolean matches(List<String> patterns, String name) {
-        for (String pattern : patterns) {
-            String regex = "\\Q" + pattern.trim().toUpperCase(Locale.ROOT).replace("*", "\\E.*\\Q") + "\\E";
-            if (name.matches(regex)) {
+    /** Zet de patronen uit de config om (één keer per opruimbeurt). Een * mag overal staan: DIAMOND*, *_SHULKER_BOX. */
+    static List<Pattern> patterns(List<String> values) {
+        List<Pattern> patterns = new ArrayList<>();
+        for (String value : values) {
+            String regex = "\\Q" + value.trim().toUpperCase(Locale.ROOT).replace("*", "\\E.*\\Q") + "\\E";
+            patterns.add(Pattern.compile(regex));
+        }
+        return patterns;
+    }
+
+    static boolean matches(List<Pattern> patterns, String name) {
+        for (Pattern pattern : patterns) {
+            if (pattern.matcher(name).matches()) {
                 return true;
             }
         }

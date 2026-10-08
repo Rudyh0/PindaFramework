@@ -19,8 +19,10 @@ final class LagGuard {
 
     private final PindaFramework plugin;
     private final AntilagModule module;
-    private int low;
-    private int good;
+    /** Sinds wanneer de TPS te laag is (0 = niet). */
+    private long lowSince;
+    /** Sinds wanneer de TPS weer goed is (0 = niet). */
+    private long goodSince;
     private boolean lagging;
     private long since;
     private long lastAlert;
@@ -58,39 +60,45 @@ final class LagGuard {
         return mspt <= 50 ? 20.0 : 1000.0 / mspt;
     }
 
-    /** Elke 5 seconden. */
+    /** Elke 5 seconden. Werkt met de echte tijd, dus ook als de server zelf traag loopt. */
     void check() {
         if (!enabled()) {
             lagging = false;
-            low = 0;
-            good = 0;
+            lowSince = 0;
+            goodSince = 0;
             return;
         }
+        long now = System.currentTimeMillis();
         double tps = recentTps();
         double threshold = threshold();
         if (tps < threshold) {
-            low++;
-            good = 0;
+            lowSince = lowSince == 0 ? now : lowSince;
+            goodSince = 0;
+        } else if (tps >= Math.min(19.5, threshold + 1)) {
+            goodSince = goodSince == 0 ? now : goodSince;
+            lowSince = 0;
         } else {
-            good++;
-            low = 0;
+            // Net boven de grens: niet meer laag, maar ook nog niet echt hersteld
+            lowSince = 0;
+            goodSince = 0;
         }
-        int seconds = Math.max(5, cfg().getInt("seconds", 15));
-        if (!lagging && low * 5 >= seconds) {
-            start(tps);
-        } else if (lagging && tps >= Math.min(19.5, threshold + 1) && good * 5 >= 30) {
+        long needed = Math.max(5, cfg().getInt("seconds", 15)) * 1000L;
+        if (!lagging && lowSince > 0 && now - lowSince >= needed) {
+            lagging = true;
+            alerted = false;
+            since = now;
+        } else if (lagging && goodSince > 0 && now - goodSince >= 30_000L) {
             recover(tps);
+            return;
+        }
+        // Ook als de lag binnen de wachttijd begon: melden zodra de wachttijd voorbij is
+        long cooldown = Math.max(1, cfg().getLong("cooldown-minutes", 5)) * 60_000L;
+        if (lagging && !alerted && now - lastAlert >= cooldown) {
+            act(tps);
         }
     }
 
-    private void start(double tps) {
-        lagging = true;
-        alerted = false;
-        since = System.currentTimeMillis();
-        long cooldown = Math.max(1, cfg().getLong("cooldown-minutes", 5)) * 60_000L;
-        if (System.currentTimeMillis() - lastAlert < cooldown) {
-            return;
-        }
+    private void act(double tps) {
         lastAlert = System.currentTimeMillis();
         alerted = true;
         double mspt = plugin.getServer().getAverageTickTime();
@@ -131,6 +139,7 @@ final class LagGuard {
 
     private void recover(double tps) {
         lagging = false;
+        goodSince = 0;
         if (!alerted) {
             return; // binnen de cooldown: er was ook geen melding dat het begon
         }
