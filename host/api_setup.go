@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -31,7 +29,7 @@ type DNSRecord struct {
 
 func (a *App) handleSetupInfo(q *Request) (any, error) {
 	config := a.config.get()
-	plugin, exists, err := readPluginDB(config.pluginDir())
+	plugin, exists, err := a.readPluginDB()
 	if err != nil {
 		return nil, err
 	}
@@ -154,10 +152,13 @@ func (a *App) handleSetupDatabase(q *Request) (any, error) {
 	if err := q.body(&body); err != nil {
 		return nil, err
 	}
+	// Na de setup gaat dit via Databases: daar zie je ook wat er met de gegevens gebeurt.
+	if a.config.get().SetupDone {
+		return nil, badRequest("De setup is al afgerond. Beheer de database via Databases.")
+	}
 	switch body.Type {
 	case "sqlite":
-		config := a.config.get()
-		current, exists, err := readPluginDB(config.pluginDir())
+		current, exists, err := a.readPluginDB()
 		if err != nil {
 			return nil, err
 		}
@@ -166,18 +167,16 @@ func (a *App) handleSetupDatabase(q *Request) (any, error) {
 		}
 		current.Type = "sqlite"
 		current.Convert = false
-		if err := writePluginDB(config.pluginDir(), config.ServiceUser, current); err != nil {
+		if err := a.writePluginDB(current); err != nil {
 			return nil, err
 		}
 	case "mysql":
 		// Heeft de plugin al gegevens in SQLite (bijv. bij een herinstallatie), zet die dan over.
-		config := a.config.get()
-		current, _, err := readPluginDB(config.pluginDir())
+		current, _, err := a.readPluginDB()
 		if err != nil {
 			return nil, err
 		}
-		_, statErr := os.Stat(filepath.Join(config.pluginDir(), current.SqliteFile))
-		if _, err := a.setupPluginMySQL(statErr == nil); err != nil {
+		if _, err := a.setupPluginMySQL(a.pluginFileExists(current.SqliteFile)); err != nil {
 			return nil, err
 		}
 	default:
@@ -190,10 +189,10 @@ func (a *App) handleSetupDatabase(q *Request) (any, error) {
 	return a.handleSetupInfo(q)
 }
 
-// setupPluginMySQL maakt de database en gebruiker voor de plugin (of zet een nieuw wachtwoord)
-// en schrijft database.yml. Met convert worden de SQLite-gegevens bij de volgende start overgezet.
+// setupPluginMySQL maakt de database en gebruiker voor de plugin en schrijft database.yml.
+// Met convert worden de SQLite-gegevens bij de volgende start overgezet. Staat de plugin al op
+// MySQL, dan verandert er niets: geen nieuw wachtwoord en niet (nog eens) omzetten.
 func (a *App) setupPluginMySQL(convert bool) (PluginDB, error) {
-	config := a.config.get()
 	server := a.mariadb.status()
 	if !server.Installed {
 		return PluginDB{}, badRequest("MariaDB is niet geïnstalleerd. Draai de installer opnieuw om het te installeren.")
@@ -201,12 +200,11 @@ func (a *App) setupPluginMySQL(convert bool) (PluginDB, error) {
 	if !server.Running {
 		return PluginDB{}, badRequest("MariaDB draait niet: %s", fallback(server.Error, "start de dienst mariadb"))
 	}
-	plugin, _, err := readPluginDB(config.pluginDir())
+	plugin, _, err := a.readPluginDB()
 	if err != nil {
 		return PluginDB{}, err
 	}
-	if plugin.Type == "mysql" && !convert && plugin.Password != "" {
-		// Al ingesteld; niets kapot maken.
+	if plugin.Type == "mysql" && plugin.Password != "" {
 		return plugin, nil
 	}
 	name := "pindacraft"
@@ -231,7 +229,7 @@ func (a *App) setupPluginMySQL(convert bool) (PluginDB, error) {
 	plugin.Password = password
 	plugin.SSL = false
 	plugin.Convert = convert
-	if err := writePluginDB(config.pluginDir(), config.ServiceUser, plugin); err != nil {
+	if err := a.writePluginDB(plugin); err != nil {
 		return PluginDB{}, err
 	}
 	return plugin, nil

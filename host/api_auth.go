@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/subtle"
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,6 +14,32 @@ const (
 	sessionCookie = "pinda_host"
 	loginCookie   = "pinda_host_login"
 )
+
+// Grenzen per kwartier: per IP-adres, per naam vanaf één IP, per naam in totaal en 2FA-codes per naam.
+const (
+	limitWindow    = 15 * time.Minute
+	limitPerIP     = 10
+	limitUserPerIP = 8
+	limitUser      = 50
+	limitCodes     = 10
+)
+
+var errTooMany = &apiError{http.StatusTooManyRequests, "Te veel pogingen. Probeer het over een kwartier opnieuw."}
+
+// hashSlots: wachtwoorden controleren kost bewust veel rekenwerk; hooguit twee tegelijk, zodat
+// een stortvloed aan inlogpogingen de server niet platlegt.
+var hashSlots = make(chan struct{}, 2)
+
+func withHashSlot(work func()) error {
+	select {
+	case hashSlots <- struct{}{}:
+		defer func() { <-hashSlots }()
+		work()
+		return nil
+	case <-time.After(10 * time.Second):
+		return &apiError{http.StatusTooManyRequests, "Het is even te druk. Probeer het zo opnieuw."}
+	}
+}
 
 func (a *App) registerAuth(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/state", a.api(public, a.handleState))
@@ -71,20 +98,6 @@ func (a *App) handleState(q *Request) (any, error) {
 	return state, nil
 }
 
-// tooMany: te veel mislukte pogingen vanaf dit IP (of op deze naam)?
-func (a *App) tooMany(keys ...string) error {
-	for _, key := range keys {
-		limit := 10
-		if strings.HasPrefix(key, "user:") {
-			limit = 8
-		}
-		if a.limiter.blocked(key, limit, 15*time.Minute) {
-			return &apiError{http.StatusTooManyRequests, "Te veel mislukte pogingen. Probeer het over een kwartier opnieuw."}
-		}
-	}
-	return nil
-}
-
 func (a *App) issuer() string {
 	config := a.config.get()
 	if config.ServerName != "" {
@@ -109,6 +122,8 @@ func (a *App) challengeResponse(challenge *Challenge, account string) (map[strin
 	return response, nil
 }
 
+var errBadLogin = &apiError{http.StatusUnauthorized, "Gebruikersnaam of wachtwoord klopt niet."}
+
 func (a *App) handleLogin(q *Request) (any, error) {
 	var body struct {
 		Username string `json:"username"`
@@ -117,22 +132,36 @@ func (a *App) handleLogin(q *Request) (any, error) {
 	if err := q.body(&body); err != nil {
 		return nil, err
 	}
-	name := strings.TrimSpace(body.Username)
-	ipKey, userKey := "ip:"+q.ip, "user:"+strings.ToLower(name)
-	if err := a.tooMany(ipKey, userKey); err != nil {
-		return nil, err
+	name := strings.ToLower(strings.TrimSpace(body.Username))
+	ipKey := "ip:" + ipGroup(q.ip)
+	if !a.limiter.take(ipKey, limitPerIP, limitWindow) {
+		return nil, errTooMany
+	}
+	if !usernamePattern.MatchString(name) || len(body.Password) > 256 {
+		return nil, errBadLogin
+	}
+	// Per naam vanaf dit IP, en per naam in totaal (veel hoger, zodat een ander je niet zomaar
+	// buiten kan sluiten).
+	userIPKey, userKey := "user:"+name+"|"+ipGroup(q.ip), "user:"+name
+	if !a.limiter.take(userIPKey, limitUserPerIP, limitWindow) || !a.limiter.take(userKey, limitUser, limitWindow) {
+		return nil, errTooMany
 	}
 	user, exists := a.users.get(name)
 	hash := dummyHash
 	if exists {
 		hash = user.PasswordHash
 	}
-	if !verifyPassword(hash, body.Password) || !exists {
-		a.limiter.fail(ipKey)
-		a.limiter.fail(userKey)
-		a.audit.add(name, q.ip, "inloggen mislukt", "", "verkeerde naam of wachtwoord")
-		return nil, &apiError{http.StatusUnauthorized, "Gebruikersnaam of wachtwoord klopt niet."}
+	valid := false
+	if err := withHashSlot(func() { valid = verifyPassword(hash, body.Password) }); err != nil {
+		return nil, err
 	}
+	if !valid || !exists {
+		a.audit.add(name, q.ip, "inloggen mislukt", "", "verkeerde naam of wachtwoord")
+		return nil, errBadLogin
+	}
+	a.limiter.forgive(ipKey)
+	a.limiter.reset(userIPKey)
+	a.limiter.forgive(userKey)
 	if user.Disabled {
 		return nil, &apiError{http.StatusForbidden, "Dit account staat uit. Vraag een beheerder om het weer aan te zetten."}
 	}
@@ -157,10 +186,12 @@ func (a *App) loginChallenge(q *Request) (*Challenge, error) {
 	return challenge, nil
 }
 
-// checkCode controleert de 2FA-code van een inlogpoging en telt mislukte pogingen.
+// checkCode controleert de 2FA-code van een inlogpoging. Pogingen tellen per IP, per naam en
+// per inlogpoging (na 5 keer fout moet je opnieuw beginnen).
 func (a *App) checkCode(q *Request, challenge *Challenge, code string) (int64, error) {
-	if err := a.tooMany("ip:" + q.ip); err != nil {
-		return 0, err
+	ipKey, codeKey := "ip:"+ipGroup(q.ip), "2fa:"+strings.ToLower(challenge.User)
+	if !a.limiter.take(ipKey, limitPerIP, limitWindow) || !a.limiter.take(codeKey, limitCodes, limitWindow) {
+		return 0, errTooMany
 	}
 	secret := challenge.Secret
 	var lastStep int64
@@ -173,9 +204,10 @@ func (a *App) checkCode(q *Request, challenge *Challenge, code string) (int64, e
 	}
 	step, ok := verifyTOTP(secret, code, lastStep, time.Now())
 	if ok {
+		a.limiter.forgive(ipKey)
+		a.limiter.forgive(codeKey)
 		return step, nil
 	}
-	a.limiter.fail("ip:" + q.ip)
 	attempts := challenge.Attempts + 1
 	a.sessions.updateChallenge(challenge.Token, func(c *Challenge) { c.Attempts = attempts })
 	if attempts >= challengeAttempts {
@@ -183,8 +215,7 @@ func (a *App) checkCode(q *Request, challenge *Challenge, code string) (int64, e
 		a.audit.add(challenge.User, q.ip, "inloggen mislukt", "", "te vaak een verkeerde 2FA-code")
 		return 0, &apiError{http.StatusUnauthorized, "Te vaak een verkeerde code. Begin opnieuw met inloggen."}
 	}
-	left := challengeAttempts - attempts
-	return 0, badRequest("Deze code klopt niet. Je kunt het nog %d keer proberen.", left)
+	return 0, badRequest("Deze code klopt niet. Je kunt het nog %d keer proberen.", challengeAttempts-attempts)
 }
 
 func (a *App) handleLoginVerify(q *Request) (any, error) {
@@ -208,14 +239,30 @@ func (a *App) handleLoginVerify(q *Request) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Alles opnieuw controleren onder het slot van de gebruikers: zo telt dezelfde code maar
+	// één keer, ook als hij twee keer tegelijk binnenkomt.
 	_, err = a.users.update(challenge.User, func(user *User) error {
+		if user.Disabled {
+			return &apiError{http.StatusForbidden, "Dit account staat uit."}
+		}
 		if challenge.Secret != "" {
+			if user.TOTPSecret != "" {
+				return &apiError{http.StatusConflict, "Voor dit account is net al 2FA ingesteld. Log opnieuw in."}
+			}
 			user.TOTPSecret = challenge.Secret
+		} else if user.TOTPSecret == "" {
+			return &apiError{http.StatusUnauthorized, "De 2FA van dit account is gereset. Log opnieuw in."}
+		}
+		if step <= user.TOTPLastStep {
+			return badRequest("Deze code is al gebruikt. Wacht op de volgende code.")
 		}
 		user.TOTPLastStep = step
 		return nil
 	})
 	if err != nil {
+		if errors.Is(err, errUserNotFound) {
+			return nil, &apiError{http.StatusUnauthorized, "Je inlogpoging is verlopen. Begin opnieuw."}
+		}
 		return nil, err
 	}
 	if challenge.Secret != "" {
@@ -248,11 +295,18 @@ func (a *App) handleLoginPassword(q *Request) (any, error) {
 	if err := checkPasswordStrength(body.Password, challenge.User); err != nil {
 		return nil, badRequest("%s", capitalize(err.Error())+".")
 	}
-	hash, err := hashPassword(body.Password)
-	if err != nil {
+	var hash string
+	var hashErr error
+	if err := withHashSlot(func() { hash, hashErr = hashPassword(body.Password) }); err != nil {
 		return nil, err
 	}
+	if hashErr != nil {
+		return nil, hashErr
+	}
 	if _, err := a.users.update(challenge.User, func(user *User) error {
+		if user.Disabled {
+			return &apiError{http.StatusForbidden, "Dit account staat uit."}
+		}
 		if verifyPassword(user.PasswordHash, body.Password) {
 			return badRequest("Kies een ander wachtwoord dan het tijdelijke.")
 		}
@@ -268,7 +322,6 @@ func (a *App) handleLoginPassword(q *Request) (any, error) {
 
 func (a *App) finishLogin(q *Request, name, challengeToken string) (any, error) {
 	a.sessions.removeChallenge(challengeToken)
-	a.limiter.reset("user:" + strings.ToLower(name))
 	user, err := a.users.update(name, func(user *User) error {
 		user.LastLogin = time.Now().UnixMilli()
 		return nil
@@ -304,19 +357,30 @@ func (a *App) handleChangePassword(q *Request) (any, error) {
 	if err := q.body(&body); err != nil {
 		return nil, err
 	}
-	if err := a.tooMany("ip:" + q.ip); err != nil {
-		return nil, err
-	}
-	if !verifyPassword(q.user.PasswordHash, body.Current) {
-		a.limiter.fail("ip:" + q.ip)
-		return nil, badRequest("Je huidige wachtwoord klopt niet.")
+	ipKey := "ip:" + ipGroup(q.ip)
+	if !a.limiter.take(ipKey, limitPerIP, limitWindow) {
+		return nil, errTooMany
 	}
 	if err := checkPasswordStrength(body.Password, q.user.Name); err != nil {
 		return nil, badRequest("%s", capitalize(err.Error())+".")
 	}
-	hash, err := hashPassword(body.Password)
-	if err != nil {
+	var valid bool
+	var hash string
+	var hashErr error
+	if err := withHashSlot(func() {
+		valid = verifyPassword(q.user.PasswordHash, body.Current)
+		if valid {
+			hash, hashErr = hashPassword(body.Password)
+		}
+	}); err != nil {
 		return nil, err
+	}
+	if !valid {
+		return nil, badRequest("Je huidige wachtwoord klopt niet.")
+	}
+	a.limiter.forgive(ipKey)
+	if hashErr != nil {
+		return nil, hashErr
 	}
 	if _, err := a.users.update(q.user.Name, func(user *User) error {
 		user.PasswordHash = hash
@@ -355,18 +419,19 @@ func (a *App) handleSetupAccount(q *Request) (any, error) {
 	if a.users.count() > 0 {
 		return nil, forbidden("Er is al een beheerder. Log gewoon in.")
 	}
-	if err := a.tooMany("ip:" + q.ip); err != nil {
-		return nil, err
+	ipKey := "ip:" + ipGroup(q.ip)
+	if !a.limiter.take(ipKey, limitPerIP, limitWindow) || !a.limiter.take("setup", 30, limitWindow) {
+		return nil, errTooMany
 	}
 	expected, err := a.setupCode()
 	if err != nil {
 		return nil, err
 	}
-	if subtle.ConstantTimeCompare([]byte(normalizeCode(body.Code)), []byte(normalizeCode(expected))) != 1 {
-		a.limiter.fail("ip:" + q.ip)
+	if expected == "" || subtle.ConstantTimeCompare([]byte(normalizeCode(body.Code)), []byte(normalizeCode(expected))) != 1 {
 		a.audit.add("", q.ip, "setup mislukt", "", "verkeerde setupcode")
 		return nil, badRequest("Deze setupcode klopt niet. Je vindt hem in de installer, of met: sudo pinda-host setup-code")
 	}
+	a.limiter.forgive(ipKey)
 	name := strings.TrimSpace(body.Username)
 	if !usernamePattern.MatchString(name) {
 		return nil, badRequest("Een gebruikersnaam is 3 tot 32 tekens: letters, cijfers, punt, streepje of underscore.")
@@ -374,9 +439,13 @@ func (a *App) handleSetupAccount(q *Request) (any, error) {
 	if err := checkPasswordStrength(body.Password, name); err != nil {
 		return nil, badRequest("%s", capitalize(err.Error())+".")
 	}
-	hash, err := hashPassword(body.Password)
-	if err != nil {
+	var hash string
+	var hashErr error
+	if err := withHashSlot(func() { hash, hashErr = hashPassword(body.Password) }); err != nil {
 		return nil, err
+	}
+	if hashErr != nil {
+		return nil, hashErr
 	}
 	challenge := a.sessions.newChallenge(&Challenge{User: name, PasswordHash: hash, Secret: newTOTPSecret(), Setup: true, IP: q.ip})
 	a.setCookie(q.w, q.r, loginCookie, challenge.Token, int(challengeLifetime.Seconds()))
@@ -405,12 +474,13 @@ func (a *App) handleSetupAccountVerify(q *Request) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = a.users.create(User{
+	err = a.users.createFirst(User{
 		Name: challenge.User, PasswordHash: challenge.PasswordHash, TOTPSecret: challenge.Secret,
 		TOTPLastStep: step, Admin: true, CreatedBy: "setup",
 	})
 	if err != nil {
-		return nil, err
+		a.sessions.removeChallenge(challenge.Token)
+		return nil, forbidden("Er is al een beheerder. Log gewoon in.")
 	}
 	_ = os.Remove(filepath.Join(a.dataDir, "setup-code"))
 	a.audit.add(challenge.User, q.ip, "setup", challenge.User, "eerste beheerder aangemaakt")

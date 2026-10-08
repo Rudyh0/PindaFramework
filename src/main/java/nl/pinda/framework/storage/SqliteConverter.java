@@ -31,6 +31,8 @@ final class SqliteConverter {
     }
 
     private static final int BATCH = 500;
+    /** Zolang dit in pinda_migrations staat, loopt er een omzetting (of is er een mislukt). */
+    private static final String MARKER = "sqlite-conversion";
 
     private SqliteConverter() {
     }
@@ -40,6 +42,7 @@ final class SqliteConverter {
         try (Connection sqlite = Migrations.openSqlite(sqliteFile)) {
             Migrations.migrateAll(sqlite, Dialect.SQLITE, logger);
             Migrations.migrateAll(mysql, Dialect.MYSQL, logger);
+            guardTarget(mysql);
 
             List<String> tables = new ArrayList<>();
             try (Statement statement = sqlite.createStatement();
@@ -78,7 +81,48 @@ final class SqliteConverter {
                 total += copied;
                 logger.info("  " + table + ": " + copied + " rijen");
             }
+            try (PreparedStatement done = mysql.prepareStatement("DELETE FROM pinda_migrations WHERE module = ?")) {
+                done.setString(1, MARKER);
+                done.executeUpdate();
+            }
             return new Result(perTable.size(), total, perTable);
+        }
+    }
+
+    /**
+     * Staan er al gegevens van PindaFramework in MySQL, dan zetten we niets over: dat zou ze
+     * overschrijven. Alleen een eerdere, mislukte omzetting (te zien aan de markering) mag
+     * opnieuw beginnen.
+     */
+    private static void guardTarget(Connection mysql) throws SQLException {
+        try (PreparedStatement marker = mysql.prepareStatement("SELECT version FROM pinda_migrations WHERE module = ?")) {
+            marker.setString(1, MARKER);
+            try (ResultSet result = marker.executeQuery()) {
+                if (result.next()) {
+                    return;
+                }
+            }
+        }
+        List<String> tables = new ArrayList<>();
+        try (Statement statement = mysql.createStatement();
+             ResultSet result = statement.executeQuery("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() "
+                     + "AND TABLE_NAME LIKE 'pinda\\_%' AND TABLE_NAME <> 'pinda_migrations'")) {
+            while (result.next()) {
+                tables.add(result.getString(1));
+            }
+        }
+        for (String table : tables) {
+            try (Statement statement = mysql.createStatement();
+                 ResultSet result = statement.executeQuery("SELECT 1 FROM " + MysqlSql.quote(table) + " LIMIT 1")) {
+                if (result.next()) {
+                    throw new SQLException("De MySQL-database bevat al gegevens van PindaFramework (tabel " + table + "). "
+                            + "Omzetten zou die overschrijven. Gebruik een lege database, of zet convert-from-sqlite op false.");
+                }
+            }
+        }
+        try (PreparedStatement marker = mysql.prepareStatement("INSERT INTO pinda_migrations (module, version) VALUES (?, 0)")) {
+            marker.setString(1, MARKER);
+            marker.executeUpdate();
         }
     }
 

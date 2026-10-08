@@ -7,3 +7,5 @@ out/
 .DS_Store
 run/
 javac.*.args
+/host/host
+/host/pinda-host

@@ -164,16 +164,25 @@ curl -fsSL https://github.com/Rudyh0/PindaFramework/releases/latest/download/ins
 
 De installer zet alle software neer (Java 25, MariaDB, Caddy, UFW en het dev-paneel) en vraagt één ding: hoe je het paneel wilt bereiken.
 
-- **Met een domein**, bijv. `dev.jouwdomein.nl`: HTTPS via Caddy. Loopt het via **Cloudflare** met de proxy aan (oranje wolk), zet dan bij SSL/TLS de modus op **Full**; de echte IP van bezoekers wordt dan gewoon herkend.
+- **Met een domein**, bijv. `dev.jouwdomein.nl`: HTTPS via Caddy. Loopt het via **Cloudflare** met de proxy aan (oranje wolk), zet dan bij SSL/TLS de modus op **Full**; de echte IP van bezoekers wordt dan gewoon herkend, en poort 80 en 443 staan in de firewall alleen open voor Cloudflare.
 - **Alleen IP:poort**, bijv. `https://1.2.3.4:8443`: met een eigen certificaat (je browser waarschuwt één keer; de installer toont de vingerafdruk om te controleren).
 
-Aan het eind krijg je een **setupcode**. Open het paneel, vul de code in en maak de eerste beheerder, met verplichte **2FA** (authenticator-app). Daarna loop je de setup door: servernaam, adres voor spelers, **SQLite of MySQL**, en precies welke **DNS-records** je moet maken (A-records en het **SRV-record** voor `play.jouwdomein.nl`). Het adres voor spelers moet in Cloudflare op *DNS only* (grijze wolk): Minecraft-verkeer kan niet door de proxy.
+De installer controleert de download van het dev-paneel met een controlegetal (SHA-256) en houdt SSH altijd open (ook op een andere poort dan 22). Aan het eind krijg je een **setupcode**. Open het paneel, vul de code in en maak de eerste beheerder, met verplichte **2FA** (authenticator-app). Daarna loop je de setup door: servernaam, adres voor spelers, **SQLite of MySQL**, en precies welke **DNS-records** je moet maken (A-records en het **SRV-record** voor `play.jouwdomein.nl`). Het adres voor spelers moet in Cloudflare op *DNS only* (grijze wolk): Minecraft-verkeer kan niet door de proxy.
 
 Wat er nu in zit:
 
 - **Dashboard**: draait de Minecraft-server, database, webserver, firewall? Plus processor, geheugen, schijf en hoe lang de VPS al aan staat.
-- **Databases** (MariaDB): databases en gebruikers aanmaken en verwijderen, wachtwoorden en toegang, downloaden als `.sql` en `.sql` inladen. PindaFramework met één knop **omzetten naar MySQL** (de server wordt herstart en zet alles over). MariaDB is alleen vanaf de VPS zelf bereikbaar.
-- **Gebruikers**: beheerders en developers, met een tijdelijk wachtwoord en verplichte 2FA bij de eerste keer inloggen. Uitzetten, 2FA of wachtwoord resetten.
+- **Databases** (MariaDB): databases en gebruikers aanmaken en verwijderen, wachtwoorden en toegang, downloaden als `.sql` en `.sql` inladen. PindaFramework met één knop **omzetten naar MySQL** (de server wordt herstart en zet alles over). Krijgt de plugin geen verbinding meer, dan geeft de sleutel bij zijn gebruiker een nieuw wachtwoord dat meteen in `database.yml` komt. MariaDB is alleen vanaf de VPS zelf bereikbaar. Een `.sql` inladen gebeurt met een tijdelijke gebruiker die alleen bij die ene database kan, dus een bestand kan nooit bij andere databases of bij de server zelf.
+- **Gebruikers**: beheerders en developers, met een tijdelijk wachtwoord en verplichte 2FA bij de eerste keer inloggen. Uitzetten, 2FA of wachtwoord resetten. Bij 2FA resetten krijgt de gebruiker ook een nieuw tijdelijk wachtwoord, zodat iemand met alleen het oude wachtwoord nooit 2FA kan omzeilen.
+
+| | Beheerder | Developer |
+|---|---|---|
+| Dashboard en logboek bekijken | ✓ | ✓ |
+| Databases bekijken, aanmaken en downloaden | ✓ | ✓ |
+| Databases verwijderen of `.sql` inladen | ✓ | |
+| Databasegebruikers, wachtwoorden en toegang | ✓ | |
+| PindaFramework omzetten naar MySQL | ✓ | |
+| Gebruikers van het dev-paneel beheren | ✓ | |
 - **Logboek**: wie deed wat en vanaf welk IP.
 
 Op de server zelf (als root):
@@ -181,7 +190,7 @@ Op de server zelf (als root):
 | Opdracht | Wat |
 |---|---|
 | `pinda-host setup-code` | De setupcode voor de eerste beheerder |
-| `pinda-host reset-2fa <naam>` | 2FA van een gebruiker resetten (telefoon kwijt) |
+| `pinda-host reset-2fa <naam>` | 2FA van een gebruiker resetten (telefoon kwijt); geeft ook een tijdelijk wachtwoord |
 | `pinda-host reset-password <naam>` | Tijdelijk wachtwoord geven |
 | `pinda-host fingerprint` | Vingerafdruk van het eigen certificaat (zonder domein) |
 | `journalctl -u pinda-host -f` | Meekijken wat het dev-paneel doet |

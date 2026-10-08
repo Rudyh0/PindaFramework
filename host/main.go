@@ -67,11 +67,12 @@ func main() {
 		fmt.Println(app.certificateFingerprint())
 	case "reset-2fa":
 		requireArg(rest, "reset-2fa <gebruiker>")
-		if err := app.users.resetTwoFactor(rest[0]); err != nil {
+		password, err := app.users.resetTwoFactor(rest[0])
+		if err != nil {
 			log.Fatal(err)
 		}
 		app.audit.add("cli", "", "2fa-reset", rest[0], "via de opdrachtregel")
-		fmt.Printf("De 2FA van %s is gereset. Bij de volgende keer inloggen stelt hij/zij een nieuwe in.\n", rest[0])
+		fmt.Printf("De 2FA van %s is gereset.\nTijdelijk wachtwoord: %s\n(bij het inloggen koppel je een nieuwe authenticator-app en kies je een eigen wachtwoord)\n", rest[0], password)
 	case "reset-password":
 		requireArg(rest, "reset-password <gebruiker>")
 		password, err := app.users.resetPassword(rest[0])

@@ -133,10 +133,19 @@ public final class MysqlSql {
                         indexed.getOrDefault(name.toLowerCase(Locale.ROOT), Set.of()), types));
                 created.put(name.toLowerCase(Locale.ROOT), types);
             } else if (index.matches()) {
-                result.add(createIndex(index, created, connection));
+                // Bestaat hij al (een half gelukte migratie die opnieuw draait), dan overslaan.
+                // "IF NOT EXISTS" kent alleen MariaDB, niet MySQL 8.
+                if (connection == null || !exists(connection, "STATISTICS", "INDEX_NAME", index.group(4), index.group(3))) {
+                    result.add(createIndex(index, created, connection));
+                }
             } else if (column.matches()) {
-                // IF NOT EXISTS: bij MySQL kan een half gelukte migratie opnieuw draaien.
-                result.add("ALTER TABLE " + quote(column.group(1)) + " ADD COLUMN IF NOT EXISTS " + columnDefinition(column.group(3), false, null));
+                String definition = columnDefinition(column.group(3), false, null);
+                String name = unquote(firstWord(column.group(3)));
+                if (connection == null) {
+                    result.add("ALTER TABLE " + quote(column.group(1)) + " ADD COLUMN IF NOT EXISTS " + definition);
+                } else if (!exists(connection, "COLUMNS", "COLUMN_NAME", column.group(1), name)) {
+                    result.add("ALTER TABLE " + quote(column.group(1)) + " ADD COLUMN " + definition);
+                }
             } else {
                 result.add(statement(sql));
             }
@@ -215,8 +224,21 @@ public final class MysqlSql {
             String order = part.trim().substring(column.length()).replaceAll("(?i)\\s*COLLATE\\s+NOCASE", "").trim();
             columns.add(quote(column) + (text ? "(" + KEY_LENGTH + ")" : "") + (order.isEmpty() ? "" : " " + order));
         }
-        return "CREATE " + (index.group(1) != null ? "UNIQUE " : "") + "INDEX " + (index.group(2) != null ? "IF NOT EXISTS " : "")
+        // Zonder verbinding (alleen bij testen) met IF NOT EXISTS; anders is al gecontroleerd of hij bestaat.
+        return "CREATE " + (index.group(1) != null ? "UNIQUE " : "") + "INDEX " + (connection == null && index.group(2) != null ? "IF NOT EXISTS " : "")
                 + quote(index.group(3)) + " ON " + quote(table) + " (" + String.join(", ", columns) + ")";
+    }
+
+    /** Bestaat deze index of kolom al in de database? */
+    private static boolean exists(Connection connection, String view, String column, String table, String name) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("SELECT COUNT(*) FROM information_schema." + view
+                + " WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND " + column + " = ?")) {
+            statement.setString(1, table);
+            statement.setString(2, name);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next() && result.getInt(1) > 0;
+            }
+        }
     }
 
     /** Het type van een kolom: uit deze migratie, of uit de database zelf. */

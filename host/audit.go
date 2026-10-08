@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 // AuditEntry is één regel in het logboek: wie deed wat, wanneer en vanaf welk IP.
@@ -52,8 +53,21 @@ func openAudit(path string) *AuditLog {
 	return audit
 }
 
+// clip houdt regels in het logboek kort (een aanvaller kan rare, lange namen sturen).
+func clip(text string, max int) string {
+	if len(text) <= max {
+		return text
+	}
+	cut := max
+	for cut > 0 && !utf8.RuneStart(text[cut]) {
+		cut--
+	}
+	return text[:cut] + "…"
+}
+
 func (a *AuditLog) add(user, ip, action, target, details string) {
-	entry := AuditEntry{Time: time.Now().UnixMilli(), User: user, IP: ip, Action: action, Target: target, Details: details}
+	entry := AuditEntry{Time: time.Now().UnixMilli(), User: clip(user, 64), IP: clip(ip, 64), Action: clip(action, 64),
+		Target: clip(target, 200), Details: clip(details, 500)}
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.recent = append(a.recent, entry)

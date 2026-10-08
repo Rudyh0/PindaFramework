@@ -45,10 +45,6 @@ func (c Config) serverDir() string {
 	return filepath.Join(c.BaseDir, "server")
 }
 
-func (c Config) pluginDir() string {
-	return filepath.Join(c.serverDir(), "plugins", "PindaFramework")
-}
-
 // ConfigStore leest en bewaart config.json.
 type ConfigStore struct {
 	mu     sync.RWMutex

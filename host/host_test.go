@@ -5,8 +5,8 @@ import (
 	"encoding/base32"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"net/http/cookiejar"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -69,10 +69,13 @@ func TestPluginDatabaseFile(t *testing.T) {
 	config.Type = "mysql"
 	config.Password = `ge"heim\'#: met tekens`
 	config.Convert = true
-	if err := writePluginDB(dir, "", config); err != nil {
+	if err := writePluginDBAt(dir, "plugins/Pinda", "", config); err != nil {
 		t.Fatal(err)
 	}
-	read, exists, err := readPluginDB(dir)
+	if info, err := os.Stat(filepath.Join(dir, "plugins", "Pinda", "database.yml")); err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("database.yml niet (alleen voor de eigenaar) geschreven: %v", err)
+	}
+	read, exists, err := readPluginDBAt(dir, "plugins/Pinda")
 	if err != nil || !exists {
 		t.Fatalf("niet terug te lezen: %v", err)
 	}
@@ -81,12 +84,74 @@ func TestPluginDatabaseFile(t *testing.T) {
 	}
 	// Zoals de plugin (Bukkit) hem zelf zou kunnen wegschrijven.
 	bukkit := "type: mysql\nsqlite:\n  file: data.db\nmysql:\n  host: db.example.com\n  port: 3307\n  database: mc\n  user: 'o''neil'\n  password: abc # commentaar\n  ssl: true\nconvert-from-sqlite: false\n"
-	if err := os.WriteFile(filepath.Join(dir, "database.yml"), []byte(bukkit), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "plugins", "Pinda", "database.yml"), []byte(bukkit), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	read, _, _ = readPluginDB(dir)
+	read, _, _ = readPluginDBAt(dir, "plugins/Pinda")
 	if read.Host != "db.example.com" || read.Port != 3307 || read.User != "o'neil" || read.Password != "abc" || !read.SSL || read.Convert {
 		t.Errorf("Bukkit-stijl verkeerd gelezen: %+v", read)
+	}
+}
+
+// De pluginmap is van de Minecraft-gebruiker: symlinks daarin mogen het paneel (root) nooit
+// naar een ander bestand laten lezen of schrijven.
+func TestPluginFilesIgnoreSymlinks(t *testing.T) {
+	base := t.TempDir()
+	outside := t.TempDir()
+	secret := filepath.Join(outside, "geheim")
+	if err := os.WriteFile(secret, []byte("type: mysql\nmysql:\n  password: root-geheim\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	plugin := filepath.Join(base, "plugins", "Pinda")
+	if err := os.MkdirAll(plugin, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// 1. database.yml is een symlink naar een ander bestand.
+	if err := os.Symlink(secret, filepath.Join(plugin, "database.yml")); err != nil {
+		t.Fatal(err)
+	}
+	if read, _, err := readPluginDBAt(base, "plugins/Pinda"); err == nil && read.Password == "root-geheim" {
+		t.Error("symlink gevolgd bij lezen")
+	}
+	if fileExistsAt(base, "plugins/Pinda", "database.yml") {
+		t.Error("symlink telt als bestand")
+	}
+	if err := writePluginDBAt(base, "plugins/Pinda", "", defaultPluginDB()); err != nil {
+		t.Fatal(err)
+	}
+	if data, _ := os.ReadFile(secret); !strings.Contains(string(data), "root-geheim") {
+		t.Error("symlink gevolgd bij schrijven: bestand buiten de map overschreven")
+	}
+	if info, err := os.Lstat(filepath.Join(plugin, "database.yml")); err != nil || !info.Mode().IsRegular() {
+		t.Error("de symlink is niet vervangen door een gewoon bestand")
+	}
+	// 2. Een map onderweg is een symlink.
+	if err := os.RemoveAll(filepath.Join(base, "plugins")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(base, "plugins")); err != nil {
+		t.Fatal(err)
+	}
+	if err := writePluginDBAt(base, "plugins", "", defaultPluginDB()); err == nil {
+		t.Error("geschreven via een gesymlinkte map")
+	}
+	if _, err := os.Stat(filepath.Join(outside, "database.yml")); err == nil {
+		t.Error("bestand buiten de map aangemaakt")
+	}
+	if _, err := readFileAt(base, "plugins", "geheim", 1<<20); err == nil {
+		t.Error("gelezen via een gesymlinkte map")
+	}
+	// 3. Geen paden als bestandsnaam en geen gigantische bestanden.
+	for _, name := range []string{"../geheim", "", ".", "..", "a/b"} {
+		if fileExistsAt(outside, "", name) {
+			t.Errorf("naam %q toegestaan", name)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(outside, "groot"), make([]byte, 2048), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := readFileAt(outside, "", "groot", 1024); err == nil {
+		t.Error("te groot bestand gelezen")
 	}
 }
 
@@ -115,7 +180,7 @@ func TestSQLHelpers(t *testing.T) {
 }
 
 func TestClientIP(t *testing.T) {
-	app := &App{config: &ConfigStore{config: Config{Mode: "domain"}}}
+	app := &App{config: &ConfigStore{config: Config{Mode: "domain", Cloudflare: true}}}
 	request := func(remote string, headers map[string]string) *http.Request {
 		r := httptest.NewRequest("GET", "/", nil)
 		r.RemoteAddr = remote
@@ -139,6 +204,11 @@ func TestClientIP(t *testing.T) {
 		if got := app.clientIP(request(c.remote, c.headers)); got != c.want {
 			t.Errorf("%s %v: kreeg %s, verwacht %s", c.remote, c.headers, got, c.want)
 		}
+	}
+	// Zonder Cloudflare geloven we CF-Connecting-IP nooit.
+	app.config.config.Cloudflare = false
+	if got := app.clientIP(request("127.0.0.1:5000", map[string]string{"X-Forwarded-For": "104.16.0.5", "CF-Connecting-IP": "6.6.6.6"})); got != "104.16.0.5" {
+		t.Errorf("zonder Cloudflare toch CF-Connecting-IP gebruikt: %s", got)
 	}
 }
 
@@ -267,11 +337,14 @@ func TestLoginFlow(t *testing.T) {
 	if status, body := admin.post("/api/setup/database", map[string]string{"type": "sqlite"}); status != 200 {
 		t.Fatalf("setup database: %d %v", status, body)
 	}
-	if read, exists, _ := readPluginDB(app.config.get().pluginDir()); !exists || read.Type != "sqlite" {
+	if read, exists, _ := app.readPluginDB(); !exists || read.Type != "sqlite" {
 		t.Error("database.yml niet geschreven")
 	}
 	if status, _ := admin.post("/api/setup/finish", nil); status != 200 {
 		t.Fatal("setup afmaken mislukt")
+	}
+	if status, _ := admin.post("/api/setup/database", map[string]string{"type": "sqlite"}); status != 400 {
+		t.Error("database-keuze na de setup nog via de setup aan te passen")
 	}
 
 	// Een developer aanmaken: tijdelijk wachtwoord, 2FA koppelen, eigen wachtwoord.
@@ -302,6 +375,12 @@ func TestLoginFlow(t *testing.T) {
 	}
 	if status, _ := dev.get("/api/users"); status != 403 {
 		t.Fatal("developer mag gebruikers beheren")
+	}
+	for _, path := range []string{"/api/database/databases/pindacraft/delete", "/api/database/databases/pindacraft/import",
+		"/api/database/users", "/api/database/users/pindacraft/localhost/password", "/api/database/plugin/mysql"} {
+		if status, _ := dev.post(path, map[string]string{}); status != 403 {
+			t.Errorf("developer mag %s (%d)", path, status)
+		}
 	}
 	if status, _ := dev.get("/api/dashboard"); status != 200 {
 		t.Fatal("developer niet ingelogd")

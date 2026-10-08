@@ -146,7 +146,7 @@ func systemInfo(path string) SystemInfo {
 			}
 		}
 	}
-	if data, err := os.ReadFile("/proc/loadavg"); err == nil {
+	if data, err := os.ReadFile("/proc/loadavg"); err == nil && len(strings.Fields(string(data))) >= 3 {
 		for _, field := range strings.Fields(string(data))[:3] {
 			value, _ := strconv.ParseFloat(field, 64)
 			info.Load = append(info.Load, value)

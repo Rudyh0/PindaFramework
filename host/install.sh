@@ -117,8 +117,13 @@ if [ "$MODE" = "domain" ]; then
     DOMAIN="$(ask "Domeinnaam voor het dev-paneel (bijv. dev.jouwdomein.nl)" "")"
     [ -n "$DOMAIN" ] || [ "$ASSUME_YES" = 0 ] || fail "Geef een domein op met --domain."
   done
-  DOMAIN="$(echo "$DOMAIN" | tr 'A-Z' 'a-z' | sed -e 's#^https\?://##' -e 's#/.*##')"
-  echo "$DOMAIN" | grep -Eq '^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$' || fail "\"$DOMAIN\" is geen geldige domeinnaam."
+  DOMAIN="${DOMAIN,,}"
+  DOMAIN="${DOMAIN#http://}"
+  DOMAIN="${DOMAIN#https://}"
+  DOMAIN="${DOMAIN%%/*}"
+  # Met [[ =~ ]] wordt de hele waarde getest (grep keurt ook iets goed waarvan maar één regel klopt).
+  DOMAIN_PATTERN='^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$'
+  [[ "$DOMAIN" =~ $DOMAIN_PATTERN ]] || fail "\"$DOMAIN\" is geen geldige domeinnaam."
   if [ -z "$CLOUDFLARE" ]; then
     answer="$(ask "Loopt dit domein via Cloudflare met de proxy aan (oranje wolk)? (j/n)" "j")"
     case "$answer" in n|N|nee|no) CLOUDFLARE="false" ;; *) CLOUDFLARE="true" ;; esac
@@ -126,7 +131,7 @@ if [ "$MODE" = "domain" ]; then
 else
   CLOUDFLARE="false"
   [ -n "$PORT" ] || PORT="$(ask "Poort voor het dev-paneel" "8443")"
-  echo "$PORT" | grep -Eq '^[0-9]+$' && [ "$PORT" -ge 1024 ] && [ "$PORT" -le 65535 ] || fail "Kies een poort tussen 1024 en 65535."
+  [[ "$PORT" =~ ^[0-9]{1,5}$ ]] && [ "$PORT" -ge 1024 ] && [ "$PORT" -le 65535 ] || fail "Kies een poort tussen 1024 en 65535."
 fi
 
 # ------------------------------------------------------------------ software
@@ -208,8 +213,14 @@ trap 'rm -rf "$TMP"' EXIT
 if [ -n "$LOCAL_BINARY" ]; then
   cp "$LOCAL_BINARY" "$TMP/pinda-host"
 else
-  curl -fsSL -o "$TMP/pinda-host" "https://github.com/$REPO/releases/latest/download/pinda-host-linux-$ARCH" \
-    || fail "Downloaden van het dev-paneel mislukt. Is GitHub bereikbaar?"
+  URL="https://github.com/$REPO/releases/latest/download/pinda-host-linux-$ARCH"
+  curl -fsSL -o "$TMP/pinda-host" "$URL" || fail "Downloaden van het dev-paneel mislukt. Is GitHub bereikbaar?"
+  curl -fsSL -o "$TMP/pinda-host.sha256" "$URL.sha256" || fail "Downloaden van het controlegetal mislukt. Is GitHub bereikbaar?"
+  EXPECTED="$(awk '{print $1; exit}' "$TMP/pinda-host.sha256")"
+  ACTUAL="$(sha256sum "$TMP/pinda-host" | awk '{print $1}')"
+  [[ "$EXPECTED" =~ ^[0-9a-f]{64}$ ]] && [ "$EXPECTED" = "$ACTUAL" ] \
+    || fail "De download klopt niet met het controlegetal (SHA-256). Probeer het opnieuw."
+  ok "Controlegetal klopt"
 fi
 chmod 0755 "$TMP/pinda-host"
 "$TMP/pinda-host" version >/dev/null || fail "Het gedownloade dev-paneel werkt niet op deze server."
@@ -308,13 +319,34 @@ ok "Caddy"
 # ------------------------------------------------------------------ firewall
 
 step "Firewall (UFW) instellen"
-SSH_PORTS="$( (sshd -T 2>/dev/null | awk '/^port /{print $2}') || true)"
+# SSH mag nooit dichtgaan: we zoeken de poort op alle manieren die er zijn.
+SSH_PORTS=""
+add_ssh_port() { [[ "$1" =~ ^[0-9]{1,5}$ ]] && [ "$1" -ge 1 ] && [ "$1" -le 65535 ] && SSH_PORTS="$SSH_PORTS $1"; return 0; }
+for port in $(sshd -T 2>/dev/null | awk '/^port /{print $2}'); do add_ssh_port "$port"; done
+# Wat sshd (of systemd voor ssh.socket) nu echt open heeft.
+for port in $(ss -Htlnp 2>/dev/null | awk '/"sshd/ {n=split($4,a,":"); print a[n]}'); do add_ssh_port "$port"; done
+for port in $(systemctl show ssh.socket -p Listen --value 2>/dev/null | grep -oE '[0-9]+ \(Stream\)' | awk '{print $1}'); do add_ssh_port "$port"; done
+# De verbinding waarmee je nu bent ingelogd (als sudo die doorgeeft).
+[ -n "${SSH_CONNECTION:-}" ] && add_ssh_port "$(echo "$SSH_CONNECTION" | awk '{print $4}')"
+SSH_PORTS="$(echo $SSH_PORTS | tr ' ' '\n' | sort -un | tr '\n' ' ')"
+SSH_PORTS="${SSH_PORTS% }"
 [ -n "$SSH_PORTS" ] || SSH_PORTS="22"
 for port in $SSH_PORTS; do
   ufw allow "$port/tcp" comment "SSH" >/dev/null
 done
-ufw allow 80/tcp comment "Website" >/dev/null
-ufw allow 443/tcp comment "HTTPS" >/dev/null
+if [ "$MODE" = "domain" ] && [ "$CLOUDFLARE" = "true" ]; then
+  # Alles loopt via de Cloudflare-proxy: 80 en 443 alleen open voor Cloudflare zelf.
+  ufw delete allow 80/tcp >/dev/null 2>&1 || true
+  ufw delete allow 443/tcp >/dev/null 2>&1 || true
+  for range in $CF_RANGES; do
+    ufw allow proto tcp from "$range" to any port 80,443 comment "Cloudflare" >/dev/null
+  done
+  WEB_OPEN="80 en 443 (alleen voor Cloudflare)"
+else
+  ufw allow 80/tcp comment "Website" >/dev/null
+  ufw allow 443/tcp comment "HTTPS" >/dev/null
+  WEB_OPEN="80, 443"
+fi
 ufw allow 25565/tcp comment "Minecraft" >/dev/null
 if [ "$MODE" = "ip" ]; then
   ufw allow "$PORT/tcp" comment "PindaHost dev-paneel" >/dev/null
@@ -322,7 +354,7 @@ fi
 ufw default deny incoming >/dev/null
 ufw default allow outgoing >/dev/null
 ufw --force enable >/dev/null
-ok "Open: SSH ($SSH_PORTS), 80, 443, 25565$([ "$MODE" = "ip" ] && echo ", $PORT") — de rest is dicht"
+ok "Open: SSH (${SSH_PORTS// /, }), $WEB_OPEN, 25565$([ "$MODE" = "ip" ] && echo ", $PORT") — de rest is dicht"
 
 # ------------------------------------------------------------------ klaar
 

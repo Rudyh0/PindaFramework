@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"net"
 	"strings"
 	"sync"
 	"time"
@@ -185,38 +186,53 @@ func (s *Sessions) cleanup() {
 
 // ============================================================ te veel pogingen
 
-// RateLimiter telt mislukte pogingen per sleutel (IP of gebruikersnaam).
+// RateLimiter telt pogingen per sleutel (IP-adres, gebruikersnaam, ...). Een poging telt al
+// mee vóór de controle, zodat veel tegelijk proberen niets oplevert.
 type RateLimiter struct {
 	mu       sync.Mutex
-	failures map[string][]time.Time
+	attempts map[string][]time.Time
 }
 
 func newRateLimiter() *RateLimiter {
-	return &RateLimiter{failures: map[string][]time.Time{}}
+	limiter := &RateLimiter{attempts: map[string][]time.Time{}}
+	go func() {
+		for range time.Tick(5 * time.Minute) {
+			limiter.cleanup()
+		}
+	}()
+	return limiter
 }
 
-// blocked: te veel mislukte pogingen in het venster?
-func (r *RateLimiter) blocked(key string, max int, window time.Duration) bool {
+// take telt een poging mee, behalve als er al te veel waren (dan false).
+func (r *RateLimiter) take(key string, max int, window time.Duration) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return len(r.recent(key, window)) >= max
+	recent := r.recent(key, window)
+	if len(recent) >= max {
+		return false
+	}
+	r.attempts[key] = append(recent, time.Now())
+	return true
 }
 
-func (r *RateLimiter) fail(key string) {
+// forgive haalt de laatste poging weg (hij lukte).
+func (r *RateLimiter) forgive(key string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.failures[key] = append(r.recent(key, time.Hour), time.Now())
+	if list := r.attempts[key]; len(list) > 0 {
+		r.attempts[key] = list[:len(list)-1]
+	}
 }
 
 func (r *RateLimiter) reset(key string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	delete(r.failures, key)
+	delete(r.attempts, key)
 }
 
 func (r *RateLimiter) recent(key string, window time.Duration) []time.Time {
 	cutoff := time.Now().Add(-window)
-	list := r.failures[key]
+	list := r.attempts[key]
 	kept := list[:0]
 	for _, at := range list {
 		if at.After(cutoff) {
@@ -224,9 +240,26 @@ func (r *RateLimiter) recent(key string, window time.Duration) []time.Time {
 		}
 	}
 	if len(kept) == 0 {
-		delete(r.failures, key)
+		delete(r.attempts, key)
 		return nil
 	}
-	r.failures[key] = kept
+	r.attempts[key] = kept
 	return kept
+}
+
+func (r *RateLimiter) cleanup() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for key := range r.attempts {
+		r.recent(key, time.Hour)
+	}
+}
+
+// ipGroup: een IPv6-adres telt per /64 (zo groot is een normale aansluiting), IPv4 per adres.
+func ipGroup(address string) string {
+	ip := net.ParseIP(address)
+	if ip == nil || ip.To4() != nil {
+		return address
+	}
+	return ip.Mask(net.CIDRMask(64, 128)).String() + "/64"
 }

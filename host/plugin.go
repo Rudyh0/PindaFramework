@@ -2,12 +2,13 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/user"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -29,18 +30,38 @@ func defaultPluginDB() PluginDB {
 	return PluginDB{Type: "sqlite", SqliteFile: "data.db", Host: "127.0.0.1", Port: 3306, Database: "pindacraft", User: "pindacraft"}
 }
 
-// readPluginDB leest database.yml. Bestaat hij niet, dan de standaard (SQLite).
-func readPluginDB(pluginDir string) (PluginDB, bool, error) {
+// pluginRel: waar de plugin zijn bestanden heeft, gezien vanaf de basismap (/opt/pinda).
+const pluginRel = "server/plugins/PindaFramework"
+
+func (a *App) readPluginDB() (PluginDB, bool, error) {
+	return readPluginDBAt(a.config.get().BaseDir, pluginRel)
+}
+
+func (a *App) writePluginDB(config PluginDB) error {
+	settings := a.config.get()
+	return writePluginDBAt(settings.BaseDir, pluginRel, settings.ServiceUser, config)
+}
+
+func (a *App) readPluginDBStatus() PluginDBStatus {
+	return readPluginDBStatusAt(a.config.get().BaseDir, pluginRel)
+}
+
+// pluginFileExists: staat dit bestand (alleen een naam, geen pad) in de pluginmap?
+func (a *App) pluginFileExists(name string) bool {
+	return fileExistsAt(a.config.get().BaseDir, pluginRel, name)
+}
+
+// readPluginDBAt leest database.yml. Bestaat hij niet, dan de standaard (SQLite).
+func readPluginDBAt(base, rel string) (PluginDB, bool, error) {
 	config := defaultPluginDB()
-	file, err := os.Open(filepath.Join(pluginDir, "database.yml"))
+	data, err := readFileAt(base, rel, "database.yml", 1<<20)
 	if errors.Is(err, os.ErrNotExist) {
 		return config, false, nil
 	}
 	if err != nil {
 		return config, false, err
 	}
-	defer file.Close()
-	values := parseSimpleYAML(file)
+	values := parseSimpleYAML(bytes.NewReader(data))
 	if v, ok := values["type"]; ok {
 		config.Type = strings.ToLower(v)
 	}
@@ -70,7 +91,7 @@ func readPluginDB(pluginDir string) (PluginDB, bool, error) {
 }
 
 // parseSimpleYAML leest "sleutel: waarde" met inspringen, genoeg voor database.yml.
-func parseSimpleYAML(file *os.File) map[string]string {
+func parseSimpleYAML(file io.Reader) map[string]string {
 	values := map[string]string{}
 	type level struct {
 		indent int
@@ -131,11 +152,8 @@ func quoteYAML(value string) string {
 	return string(data)
 }
 
-// writePluginDB schrijft database.yml (met uitleg) en maakt hem van de Minecraft-gebruiker.
-func writePluginDB(pluginDir, owner string, config PluginDB) error {
-	if err := os.MkdirAll(pluginDir, 0o755); err != nil {
-		return err
-	}
+// writePluginDBAt schrijft database.yml (met uitleg) en maakt hem van de Minecraft-gebruiker.
+func writePluginDBAt(base, rel, owner string, config PluginDB) error {
 	content := fmt.Sprintf(`# ┌──────────────────────────────────────────────┐
 # │           PindaFramework - database          │
 # └──────────────────────────────────────────────┘
@@ -167,30 +185,25 @@ mysql:
 convert-from-sqlite: %t
 `, config.Type, quoteYAML(config.SqliteFile), quoteYAML(config.Host), config.Port, quoteYAML(config.Database),
 		quoteYAML(config.User), quoteYAML(config.Password), config.SSL, config.Convert)
-	path := filepath.Join(pluginDir, "database.yml")
-	if err := writeFileAtomic(path, []byte(content), 0o600); err != nil {
-		return err
-	}
-	chownTo(path, owner)
-	chownTo(pluginDir, owner)
-	return nil
+	uid, gid := lookupOwner(owner)
+	return writeFileAt(base, rel, "database.yml", []byte(content), uid, gid)
 }
 
-// chownTo maakt een bestand van een gebruiker (als die bestaat; anders blijft het zoals het is).
-func chownTo(path, owner string) {
+// lookupOwner: uid en gid van een gebruiker, of -1 als die er (nog) niet is.
+func lookupOwner(owner string) (int, int) {
 	if owner == "" {
-		return
+		return -1, -1
 	}
 	account, err := user.Lookup(owner)
 	if err != nil {
-		return
+		return -1, -1
 	}
 	uid, err1 := strconv.Atoi(account.Uid)
 	gid, err2 := strconv.Atoi(account.Gid)
 	if err1 != nil || err2 != nil {
-		return
+		return -1, -1
 	}
-	_ = os.Chown(path, uid, gid)
+	return uid, gid
 }
 
 // PluginDBStatus komt uit database-status.json en database-conversion.json (geschreven door de plugin).
@@ -199,12 +212,12 @@ type PluginDBStatus struct {
 	Conversion map[string]any `json:"conversion"`
 }
 
-func readPluginDBStatus(pluginDir string) PluginDBStatus {
+func readPluginDBStatusAt(base, rel string) PluginDBStatus {
 	var result PluginDBStatus
-	if data, err := os.ReadFile(filepath.Join(pluginDir, "database-status.json")); err == nil {
+	if data, err := readFileAt(base, rel, "database-status.json", 1<<20); err == nil {
 		_ = json.Unmarshal(data, &result.Status)
 	}
-	if data, err := os.ReadFile(filepath.Join(pluginDir, "database-conversion.json")); err == nil {
+	if data, err := readFileAt(base, rel, "database-conversion.json", 1<<20); err == nil {
 		_ = json.Unmarshal(data, &result.Conversion)
 	}
 	return result

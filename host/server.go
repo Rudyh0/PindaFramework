@@ -179,7 +179,7 @@ func (a *App) clientIP(r *http.Request) string {
 	if peer == nil {
 		return host
 	}
-	if isCloudflare(peer) {
+	if a.config.get().Cloudflare && isCloudflare(peer) {
 		if real := net.ParseIP(strings.TrimSpace(r.Header.Get("CF-Connecting-IP"))); real != nil {
 			return real.String()
 		}
@@ -237,12 +237,12 @@ func securityHeaders(next http.Handler) http.Handler {
 func (a *App) serve() error {
 	config := a.config.get()
 	if a.users.count() == 0 {
-		code, err := a.setupCode()
-		if err != nil {
+		if _, err := a.setupCode(); err != nil {
 			return err
 		}
-		log.Printf("Nog geen gebruikers. Setupcode voor de eerste beheerder: %s", code)
+		log.Printf("Nog geen gebruikers. Maak de eerste beheerder met de setupcode: sudo pinda-host setup-code")
 	}
+	go a.mariadb.cleanupImportUsers()
 	server := &http.Server{
 		Addr:              config.Listen,
 		Handler:           a.routes(),

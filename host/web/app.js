@@ -572,6 +572,8 @@
     const pluginDb = plugin.type === 'mysql' ? plugin.database : '';
     const pluginUser = plugin.type === 'mysql' ? plugin.user : '';
     const conversion = plugin.conversion;
+    // Developers mogen kijken, aanmaken en downloaden; weggooien, inladen en rechten zijn voor beheerders.
+    const admin = !!(state.user && state.user.admin);
     const serverBadge = !server.installed ? html`<span class="badge plain">Niet geïnstalleerd</span>`
       : server.running ? html`<span class="badge success"><span class="dot on"></span>MariaDB ${server.version}</span>`
         : html`<span class="badge error">Draait niet</span>`;
@@ -582,7 +584,8 @@
         ? html`${icon('check')} <div>Omgezet naar MySQL ${ago(conversion.at)}: ${num(conversion.rows)} rijen uit ${num(conversion.tables)} tabellen. Het oude bestand staat nog als <span class="mono">${conversion.backup}</span>.</div>`
         : html`${icon('warn')} <div>Omzetten mislukt ${ago(conversion.at)}: ${conversion.error}. De server draait op SQLite verder; bij de volgende start wordt het opnieuw geprobeerd.</div>`}</div>` : ''}
       ${plugin.type !== 'mysql' ? html`<p class="muted small" style="margin-top:12px">Met MySQL kun je de gegevens los van de server back-uppen en ook vanuit andere plugins of tools bij de gegevens. Je spelers merken er niets van.</p>
-        <div class="btn-row"><button class="btn primary" data-action="plugin-mysql" ${server.running ? '' : 'disabled'}>${icon('swap')} Omzetten naar MySQL</button></div>`
+        ${admin ? html`<div class="btn-row"><button class="btn primary" data-action="plugin-mysql" ${server.running ? '' : 'disabled'}>${icon('swap')} Omzetten naar MySQL</button></div>`
+          : html`<p class="muted small">Omzetten kan alleen een beheerder.</p>`}`
         : plugin.convert ? html`<p class="muted small" style="margin-top:12px">Bij de volgende start van de Minecraft-server worden alle gegevens uit <span class="mono">${plugin.sqliteFile}</span> overgezet.</p>` : ''}
       </div>`);
 
@@ -591,19 +594,19 @@
         <td class="num">${num(db.tables)}</td><td class="num">${bytes(db.size)}</td>
         <td class="actions">
           <a class="btn sm" href="/api/database/databases/${encodeURIComponent(db.name)}/export" download title="Downloaden als .sql">${icon('download')} .sql</a>
-          <button class="btn sm" data-action="db-import" data-name="${db.name}" title="Een .sql-bestand inladen">${icon('upload')} Inladen</button>
-          ${db.name === pluginDb ? '' : html`<button class="btn sm danger icon-only" data-action="db-drop" data-name="${db.name}" title="Verwijderen" aria-label="${db.name} verwijderen">${icon('trash')}</button>`}
+          ${admin ? html`<button class="btn sm" data-action="db-import" data-name="${db.name}" title="Een .sql-bestand inladen">${icon('upload')} Inladen</button>` : ''}
+          ${!admin || db.name === pluginDb ? '' : html`<button class="btn sm danger icon-only" data-action="db-drop" data-name="${db.name}" title="Verwijderen" aria-label="${db.name} verwijderen">${icon('trash')}</button>`}
         </td></tr>`) : emptyRow(4, server.running ? 'Nog geen databases.' : 'MariaDB draait niet.');
 
     const userRows = d.users.length ? d.users.map(user => html`<tr>
         <td><b class="mono">${user.name}</b><span class="muted mono">@${user.host}</span>${user.name === pluginUser ? html` <span class="badge warning">PindaFramework</span>` : ''}</td>
         <td><div class="chips">${user.databases.length ? user.databases.map(db => html`<span class="badge plain mono">${db}
-          ${user.name === pluginUser && db === pluginDb ? '' : html`<button class="chip-x" data-action="db-revoke" data-user="${user.name}" data-host="${user.host}" data-db="${db}" title="Toegang intrekken" aria-label="Toegang tot ${db} intrekken">×</button>`}</span>`)
+          ${!admin || (user.name === pluginUser && db === pluginDb) ? '' : html`<button class="chip-x" data-action="db-revoke" data-user="${user.name}" data-host="${user.host}" data-db="${db}" title="Toegang intrekken" aria-label="Toegang tot ${db} intrekken">×</button>`}</span>`)
           : html`<span class="muted">geen</span>`}</div></td>
-        <td class="actions">
+        <td class="actions">${admin ? html`
           <button class="btn sm" data-action="db-grant" data-user="${user.name}" data-host="${user.host}">${icon('plus')} Toegang</button>
-          ${user.name === pluginUser ? '' : html`<button class="btn sm" data-action="db-password" data-user="${user.name}" data-host="${user.host}" title="Nieuw wachtwoord">${icon('key')}</button>
-            <button class="btn sm danger icon-only" data-action="db-user-drop" data-user="${user.name}" data-host="${user.host}" title="Verwijderen" aria-label="${user.name} verwijderen">${icon('trash')}</button>`}
+          <button class="btn sm" data-action="db-password" data-user="${user.name}" data-host="${user.host}" data-plugin="${user.name === pluginUser && user.host === 'localhost'}" title="Nieuw wachtwoord">${icon('key')}</button>
+          ${user.name === pluginUser ? '' : html`<button class="btn sm danger icon-only" data-action="db-user-drop" data-user="${user.name}" data-host="${user.host}" title="Verwijderen" aria-label="${user.name} verwijderen">${icon('trash')}</button>`}` : ''}
         </td></tr>`) : emptyRow(3, server.running ? 'Nog geen gebruikers.' : 'MariaDB draait niet.');
 
     render(main, html`${pageHead('Databases', 'MariaDB op deze VPS: databases en gebruikers voor PindaFramework en andere plugins.',
@@ -625,11 +628,11 @@
       <div style="margin-top:16px">${card('Gebruikers', 'key', html`<div class="table-wrap"><table>
         <thead><tr><th>Gebruiker</th><th>Toegang tot</th><th></th></tr></thead>
         <tbody>${userRows}</tbody></table></div>
-        <form class="card-body inline-form" data-form="db-user-create">
+        ${admin ? html`<form class="card-body inline-form" data-form="db-user-create">
           <input class="input mono" name="name" pattern="[A-Za-z0-9_]{1,32}" maxlength="32" placeholder="gebruikersnaam" aria-label="Gebruikersnaam" required ${server.running ? '' : 'disabled'}>
           <select name="database" aria-label="Toegang tot database" ${server.running ? '' : 'disabled'}><option value="">Nog geen toegang</option>${d.databases.map(db => html`<option value="${db.name}">${db.name}</option>`)}</select>
           <button class="btn" ${server.running ? '' : 'disabled'}>${icon('userPlus')} Gebruiker maken</button>
-        </form>`, html`<span class="count">${num(d.users.length)}</span>`)}</div>
+        </form>` : html`<p class="card-body muted small">Gebruikers en rechten beheren kan alleen een beheerder.</p>`}`, html`<span class="count">${num(d.users.length)}</span>`)}</div>
       <p class="muted small" style="margin-top:14px">${icon('shield')} Gebruikers kunnen alleen vanaf deze VPS inloggen (localhost); MariaDB is niet van buitenaf bereikbaar. Databases gaan straks ook mee in de backups.</p>`);
   }
 
@@ -640,7 +643,9 @@
     if (result.credentials) {
       const c = result.credentials;
       showSecret({
-        title: 'Gegevens van de gebruiker', intro: 'Vul deze in bij de plugin die de database gebruikt.',
+        title: 'Gegevens van de gebruiker',
+        intro: c.plugin ? 'database.yml van PindaFramework is bijgewerkt. Herstart de Minecraft-server, dan gebruikt de plugin het nieuwe wachtwoord.'
+          : 'Vul deze in bij de plugin die de database gebruikt.',
         rows: [['Host', '127.0.0.1'], ['Poort', '3306'], ...(c.database ? [['Database', c.database]] : []), ['Gebruiker', c.user], ['Wachtwoord', c.password, true]]
       });
     }
@@ -696,7 +701,7 @@
           <button class="btn sm ${user.disabled ? '' : 'warn'}" data-action="user-act" data-name="${user.name}" data-act="disable" data-value="${!user.disabled}">${user.disabled ? 'Aanzetten' : 'Uitzetten'}</button>
           <button class="btn sm danger icon-only" data-action="user-act" data-name="${user.name}" data-act="delete" title="Verwijderen" aria-label="${user.name} verwijderen">${icon('trash')}</button>`}</td></tr>`;
     });
-    render(main, html`${pageHead('Gebruikers', 'Wie op het dev-paneel mag. 2FA is voor iedereen verplicht. Developers kunnen alles behalve gebruikers beheren.',
+    render(main, html`${pageHead('Gebruikers', 'Wie op het dev-paneel mag. 2FA is voor iedereen verplicht. Developers kunnen geen gebruikers beheren en bij Databases niets weggooien, inladen of rechten aanpassen.',
         html`<button class="btn primary" data-action="user-new">${icon('userPlus')} Nieuwe gebruiker</button>`)}
       ${card('Gebruikers', 'users', html`<div class="table-wrap"><table>
         <thead><tr><th>Naam</th><th>Rol</th><th>Beveiliging</th><th>Laatst ingelogd</th><th></th></tr></thead>
@@ -705,7 +710,7 @@
 
   const USER_ACTIONS = {
     'reset-password': ['Tijdelijk wachtwoord geven?', 'Het oude wachtwoord werkt niet meer en de gebruiker wordt overal uitgelogd.', 'Wachtwoord resetten', false],
-    'reset-2fa': ['2FA resetten?', 'Bij de volgende keer inloggen koppelt de gebruiker opnieuw een authenticator-app.', '2FA resetten', false],
+    'reset-2fa': ['2FA resetten?', 'De gebruiker wordt overal uitgelogd en krijgt een tijdelijk wachtwoord. Bij de volgende keer inloggen koppelt hij opnieuw een authenticator-app en kiest hij een eigen wachtwoord. (Zo kan iemand met alleen het oude wachtwoord nooit 2FA omzeilen.)', '2FA resetten', false],
     delete: ['Gebruiker verwijderen?', 'Deze gebruiker kan niet meer inloggen op het dev-paneel.', 'Verwijderen', true]
   };
 
@@ -734,7 +739,7 @@
         ${card('Sessies', 'lock', html`<div class="card-body">
           <p class="muted">Ergens ingelogd laten en vergeten? Log overal uit, behalve in deze browser.</p>
           <div class="btn-row"><button class="btn" data-action="logout-everywhere">${icon('logout')} Overal uitloggen</button></div>
-          <p class="muted small" style="margin-top:12px">2FA kwijt? Een beheerder kan je 2FA resetten, of op de server: <span class="kbd">sudo pinda-host reset-2fa ${state.user.name}</span></p></div>`)}
+          <p class="muted small" style="margin-top:12px">2FA kwijt? Een beheerder kan je 2FA resetten (je krijgt dan ook een tijdelijk wachtwoord), of op de server: <span class="kbd">sudo pinda-host reset-2fa ${state.user.name}</span></p></div>`)}
       </div>`);
   }
 
@@ -853,7 +858,10 @@
 
     async 'db-password'(button) {
       const { user, host } = button.dataset;
-      const ok = await confirmDialog({ title: `Nieuw wachtwoord voor ${user}?`, text: 'Het oude wachtwoord werkt dan niet meer. Pas het daarna aan in de plugin die deze gebruiker gebruikt.', confirm: 'Nieuw wachtwoord' });
+      const text = button.dataset.plugin === 'true'
+        ? 'Dit is de gebruiker van PindaFramework. Het nieuwe wachtwoord komt meteen in database.yml; na een herstart van de Minecraft-server gebruikt de plugin het. Handig als de plugin geen verbinding meer krijgt.'
+        : 'Het oude wachtwoord werkt dan niet meer. Pas het daarna aan in de plugin die deze gebruiker gebruikt.';
+      const ok = await confirmDialog({ title: `Nieuw wachtwoord voor ${user}?`, text, confirm: 'Nieuw wachtwoord' });
       if (!ok) return;
       afterDatabaseChange(await busy(button, () => post(`/database/users/${encodeURIComponent(user)}/${encodeURIComponent(host)}/password`)), null);
     },
@@ -887,7 +895,9 @@
       if (!result) return;
       renderUsers($('#main'), result);
       if (result.password) {
-        showSecret({ title: `Tijdelijk wachtwoord voor ${name}`, intro: 'Geef dit door aan de gebruiker. Bij het inloggen kiest hij een eigen wachtwoord.', rows: [['Gebruiker', name], ['Wachtwoord', result.password, true]] });
+        showSecret({ title: `Tijdelijk wachtwoord voor ${name}`, intro: act === 'reset-2fa'
+          ? 'Geef dit door aan de gebruiker. Bij het inloggen koppelt hij opnieuw 2FA en kiest hij een eigen wachtwoord.'
+          : 'Geef dit door aan de gebruiker. Bij het inloggen kiest hij een eigen wachtwoord.', rows: [['Gebruiker', name], ['Wachtwoord', result.password, true]] });
       } else {
         toast('Opgeslagen.');
       }

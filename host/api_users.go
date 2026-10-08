@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 )
@@ -70,6 +71,14 @@ func (a *App) handleCreateUser(q *Request) (any, error) {
 	return response, nil
 }
 
+// userError: een gewone fout van de gebruikers (zoals "laatste beheerder") netjes teruggeven.
+func userError(err error) error {
+	if errors.Is(err, errLastAdmin) || errors.Is(err, errUserNotFound) {
+		return badRequest("%s", capitalize(err.Error())+".")
+	}
+	return err
+}
+
 func (a *App) handleUserAction(q *Request) (any, error) {
 	name := q.r.PathValue("name")
 	action := q.r.PathValue("action")
@@ -88,15 +97,17 @@ func (a *App) handleUserAction(q *Request) (any, error) {
 	response := map[string]any{}
 	switch action {
 	case "reset-2fa":
-		if err := a.users.resetTwoFactor(target.Name); err != nil {
-			return nil, err
+		password, err := a.users.resetTwoFactor(target.Name)
+		if err != nil {
+			return nil, userError(err)
 		}
 		a.sessions.removeUser(target.Name, "")
-		q.log("2fa gereset", target.Name, "")
+		response["password"] = password
+		q.log("2fa gereset", target.Name, "met een tijdelijk wachtwoord")
 	case "reset-password":
 		password, err := a.users.resetPassword(target.Name)
 		if err != nil {
-			return nil, err
+			return nil, userError(err)
 		}
 		a.sessions.removeUser(target.Name, "")
 		response["password"] = password
@@ -109,7 +120,7 @@ func (a *App) handleUserAction(q *Request) (any, error) {
 			user.Admin = body.Value
 			return nil
 		}); err != nil {
-			return nil, err
+			return nil, userError(err)
 		}
 		q.log("rol gewijzigd", target.Name, map[bool]string{true: "beheerder", false: "developer"}[body.Value])
 	case "disable":
@@ -120,7 +131,7 @@ func (a *App) handleUserAction(q *Request) (any, error) {
 			user.Disabled = body.Value
 			return nil
 		}); err != nil {
-			return nil, err
+			return nil, userError(err)
 		}
 		if body.Value {
 			a.sessions.removeUser(target.Name, "")
@@ -131,7 +142,7 @@ func (a *App) handleUserAction(q *Request) (any, error) {
 			return nil, badRequest("Je kunt jezelf of de laatste beheerder niet verwijderen.")
 		}
 		if err := a.users.remove(target.Name); err != nil {
-			return nil, err
+			return nil, userError(err)
 		}
 		a.sessions.removeUser(target.Name, "")
 		q.log("gebruiker verwijderd", target.Name, "")

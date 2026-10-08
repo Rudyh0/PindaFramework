@@ -17,20 +17,21 @@ func (a *App) registerDashboard(mux *http.ServeMux) {
 }
 
 func (a *App) registerDatabase(mux *http.ServeMux) {
+	// Developers mogen kijken, databases aanmaken en downloaden. Alles wat gegevens weggooit,
+	// overschrijft of wie-mag-waar verandert, is voor beheerders.
 	mux.HandleFunc("GET /api/database", a.api(member, a.handleDatabase))
 	mux.HandleFunc("POST /api/database/databases", a.api(member, a.handleCreateDatabase))
-	mux.HandleFunc("POST /api/database/databases/{name}/delete", a.api(member, a.handleDropDatabase))
 	mux.HandleFunc("GET /api/database/databases/{name}/export", a.api(member, a.handleExportDatabase))
-	mux.HandleFunc("POST /api/database/databases/{name}/import", a.api(member, a.handleImportDatabase))
-	mux.HandleFunc("POST /api/database/users", a.api(member, a.handleCreateDBUser))
-	mux.HandleFunc("POST /api/database/users/{name}/{host}/{action}", a.api(member, a.handleDBUserAction))
-	mux.HandleFunc("POST /api/database/plugin/mysql", a.api(member, a.handlePluginToMySQL))
+	mux.HandleFunc("POST /api/database/databases/{name}/delete", a.api(admin, a.handleDropDatabase))
+	mux.HandleFunc("POST /api/database/databases/{name}/import", a.api(admin, a.handleImportDatabase))
+	mux.HandleFunc("POST /api/database/users", a.api(admin, a.handleCreateDBUser))
+	mux.HandleFunc("POST /api/database/users/{name}/{host}/{action}", a.api(admin, a.handleDBUserAction))
+	mux.HandleFunc("POST /api/database/plugin/mysql", a.api(admin, a.handlePluginToMySQL))
 }
 
 // pluginView: de database van de plugin, zonder het wachtwoord.
 func (a *App) pluginView() map[string]any {
-	config := a.config.get()
-	plugin, exists, err := readPluginDB(config.pluginDir())
+	plugin, exists, err := a.readPluginDB()
 	view := map[string]any{
 		"exists":     exists,
 		"type":       plugin.Type,
@@ -46,14 +47,14 @@ func (a *App) pluginView() map[string]any {
 	if err != nil {
 		view["error"] = err.Error()
 	}
-	status := readPluginDBStatus(config.pluginDir())
+	status := a.readPluginDBStatus()
 	if status.Status != nil {
 		view["status"] = status.Status
 	}
 	if status.Conversion != nil {
 		view["conversion"] = status.Conversion
 	}
-	if _, err := os.Stat(filepath.Join(config.pluginDir(), plugin.SqliteFile)); err == nil {
+	if a.pluginFileExists(plugin.SqliteFile) {
 		view["sqliteExists"] = true
 	}
 	return view
@@ -109,7 +110,7 @@ func dbError(err error) error {
 
 // pluginDatabaseName: de database die de plugin gebruikt (die mag je niet zomaar weggooien).
 func (a *App) pluginDatabaseName() string {
-	plugin, _, err := readPluginDB(a.config.get().pluginDir())
+	plugin, _, err := a.readPluginDB()
 	if err != nil || plugin.Type != "mysql" {
 		return ""
 	}
@@ -182,7 +183,7 @@ func (a *App) handleDropDatabase(q *Request) (any, error) {
 	}
 	q.log("database verwijderd", name, "")
 	if body.DropUser && checkDBUser(name, "localhost") == nil {
-		plugin, _, _ := readPluginDB(a.config.get().pluginDir())
+		plugin, _, _ := a.readPluginDB()
 		if exists, _ := a.mariadb.userExists(name, "localhost"); exists && !(plugin.Type == "mysql" && plugin.User == name) {
 			if err := a.mariadb.dropUser(name, "localhost"); err != nil {
 				return nil, dbError(fmt.Errorf("de database is verwijderd, maar de gebruiker niet: %w", err))
@@ -230,12 +231,21 @@ func (a *App) handleExportDatabase(q *Request) (any, error) {
 }
 
 // handleImportDatabase: de browser stuurt het .sql-bestand als body. Inladen gebeurt op de
-// achtergrond; de browser volgt de voortgang via /api/jobs/{id}.
+// achtergrond; de browser volgt de voortgang via /api/jobs/{id}. Eén import tegelijk.
 func (a *App) handleImportDatabase(q *Request) (any, error) {
 	name := q.r.PathValue("name")
 	if err := checkDBName(name); err != nil {
 		return nil, dbError(err)
 	}
+	if !a.mariadb.importing.TryLock() {
+		return nil, badRequest("Er wordt al een database ingeladen. Wacht tot die klaar is.")
+	}
+	started := false
+	defer func() {
+		if !started {
+			a.mariadb.importing.Unlock()
+		}
+	}()
 	if exists, err := a.mariadb.databaseExists(name); err != nil {
 		return nil, dbError(err)
 	} else if !exists {
@@ -262,10 +272,12 @@ func (a *App) handleImportDatabase(q *Request) (any, error) {
 		return nil, badRequest("Het bestand is leeg.")
 	}
 	user, ip := q.user.Name, q.ip
+	started = true
 	job := a.jobs.start("Inladen in "+name, user, func(say func(string, ...any)) error {
+		defer a.mariadb.importing.Unlock()
 		defer os.Remove(path)
 		say("%s inladen in %s…", humanBytes(written), name)
-		if err := a.mariadb.importFile(name, path, say); err != nil {
+		if err := a.mariadb.importFile(name, path, dir, say); err != nil {
 			a.audit.add(user, ip, "database-import mislukt", name, err.Error())
 			return err
 		}
@@ -345,20 +357,25 @@ func (a *App) handleDBUserAction(q *Request) (any, error) {
 	if err := q.body(&body); err != nil {
 		return nil, err
 	}
-	plugin, _, _ := readPluginDB(a.config.get().pluginDir())
+	plugin, _, _ := a.readPluginDB()
 	isPlugin := plugin.Type == "mysql" && plugin.User == name && host == "localhost"
 	var credentials map[string]string
 	switch action {
 	case "password":
-		if isPlugin {
-			return nil, badRequest("Dit is de gebruiker van PindaFramework. Zet die opnieuw op via de knop bij de plugin.")
-		}
 		password := randomPassword(24)
 		if err := a.mariadb.setPassword(name, host, password); err != nil {
 			return nil, dbError(err)
 		}
 		credentials = map[string]string{"user": name, "password": password}
 		q.log("databasewachtwoord gereset", name+"@"+host, "")
+		if isPlugin {
+			// De plugin moet het nieuwe wachtwoord ook weten; het geldt na een herstart.
+			plugin.Password = password
+			if err := a.writePluginDB(plugin); err != nil {
+				return nil, fmt.Errorf("het wachtwoord is veranderd, maar database.yml niet bij te werken: %w", err)
+			}
+			credentials["plugin"] = "true"
+		}
 	case "grant":
 		if err := a.mariadb.grant(name, host, body.Database); err != nil {
 			return nil, dbError(err)
@@ -402,16 +419,14 @@ func (a *App) handlePluginToMySQL(q *Request) (any, error) {
 	if err := q.body(&body); err != nil {
 		return nil, err
 	}
-	config := a.config.get()
-	current, _, err := readPluginDB(config.pluginDir())
+	current, _, err := a.readPluginDB()
 	if err != nil {
 		return nil, err
 	}
 	if current.Type == "mysql" && !current.Convert {
 		return nil, badRequest("De plugin gebruikt al MySQL.")
 	}
-	_, statErr := os.Stat(filepath.Join(config.pluginDir(), current.SqliteFile))
-	convert := statErr == nil
+	convert := a.pluginFileExists(current.SqliteFile)
 	if _, err := a.setupPluginMySQL(convert); err != nil {
 		return nil, dbError(err)
 	}

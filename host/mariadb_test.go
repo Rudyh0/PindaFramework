@@ -69,7 +69,7 @@ func TestMariaDBManagement(t *testing.T) {
 	if _, err := m.run("DROP TABLE t;", db); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.importFile(db, dump, func(string, ...any) {}); err != nil {
+	if err := m.importFile(db, dump, dir, func(string, ...any) {}); err != nil {
 		t.Fatal(err)
 	}
 	rows, _ = m.run("SELECT COUNT(*) FROM t;", db)
@@ -78,8 +78,50 @@ func TestMariaDBManagement(t *testing.T) {
 	}
 	broken := filepath.Join(dir, "kapot.sql")
 	_ = os.WriteFile(broken, []byte("CREATE TABEL oeps;"), 0o600)
-	if err := m.importFile(db, broken, func(string, ...any) {}); err == nil || !strings.Contains(err.Error(), "syntax") {
+	if err := m.importFile(db, broken, dir, func(string, ...any) {}); err == nil || !strings.Contains(err.Error(), "syntax") {
 		t.Errorf("kapotte import gaf geen nette fout: %v", err)
+	}
+	// Een kwaadaardig .sql-bestand mag niet buiten zijn eigen database komen.
+	marker := filepath.Join(dir, "shell-uitgevoerd")
+	outfile := "/tmp/pinda-import-outfile-" + randomToken()[:8]
+	for _, evil := range []string{
+		"\\! touch " + marker + "\n",
+		"system touch " + marker + "\n",
+		"USE mysql;\nSELECT 1;\n",
+		"CREATE DATABASE pindahost_evil;\n",
+		"SELECT 1 INTO OUTFILE '" + outfile + "';\n",
+		"CREATE USER evil@'%' IDENTIFIED BY 'x';\n",
+		"SET GLOBAL max_connections = 5;\n",
+	} {
+		file := filepath.Join(dir, "evil.sql")
+		_ = os.WriteFile(file, []byte(evil), 0o600)
+		if err := m.importFile(db, file, dir, func(string, ...any) {}); err == nil {
+			t.Errorf("gevaarlijke import gelukt: %q", evil)
+		}
+	}
+	if _, err := os.Stat(marker); err == nil {
+		t.Error("shell-opdracht uit een import uitgevoerd")
+	}
+	if _, err := os.Stat(outfile); err == nil {
+		os.Remove(outfile)
+		t.Error("INTO OUTFILE uit een import gelukt")
+	}
+	if exists, _ := m.databaseExists("pindahost_evil"); exists {
+		_ = m.dropDatabase("pindahost_evil")
+		t.Error("andere database gemaakt vanuit een import")
+	}
+	if rows, _ := m.run("SELECT COUNT(*) FROM mysql.user WHERE User LIKE 'pinda\\_import\\_%';", ""); len(rows) != 1 || rows[0][0] != "0" {
+		t.Errorf("tijdelijke importgebruiker blijft staan: %v", rows)
+	}
+	if entries, _ := os.ReadDir(dir); len(entries) > 0 {
+		for _, entry := range entries {
+			if strings.HasSuffix(entry.Name(), ".cnf") {
+				t.Errorf("wachtwoordbestand blijft staan: %s", entry.Name())
+			}
+		}
+	}
+	if err := checkDBUser("pinda_import_abc", "localhost"); err == nil {
+		t.Error("naam van een tijdelijke importgebruiker toegestaan")
 	}
 
 	if err := m.setPassword(user, "localhost", "nieuw-wachtwoord-123"); err != nil {
@@ -124,7 +166,7 @@ func TestSetupPluginMySQL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	read, _, _ := readPluginDB(app.config.get().pluginDir())
+	read, _, _ := app.readPluginDB()
 	if read.Type != "mysql" || read.Password != plugin.Password || len(read.Password) != 24 || !read.Convert {
 		t.Fatalf("database.yml klopt niet: %+v", read)
 	}
@@ -133,9 +175,9 @@ func TestSetupPluginMySQL(t *testing.T) {
 	if err != nil || strings.TrimSpace(out) != "pindacraft" {
 		t.Fatalf("inloggen als pindacraft lukt niet: %v %s", err, out)
 	}
-	// Nog een keer: wachtwoord wordt vernieuwd, niets gaat stuk.
+	// Nog een keer: de plugin staat al op MySQL, dus er verandert niets (geen nieuw wachtwoord).
 	again, err := app.setupPluginMySQL(true)
-	if err != nil || again.Password == plugin.Password {
-		t.Fatalf("opnieuw instellen: %v", err)
+	if err != nil || again.Password != plugin.Password {
+		t.Fatalf("opnieuw instellen veranderde het wachtwoord: %v", err)
 	}
 }

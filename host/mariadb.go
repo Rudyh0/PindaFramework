@@ -12,12 +12,19 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 // MariaDB beheert de lokale MariaDB-server via de mariadb-opdrachten, als root via de socket
 // (de installer zet MariaDB zo neer; root heeft dan geen wachtwoord nodig).
-type MariaDB struct{}
+type MariaDB struct {
+	// Eén import tegelijk.
+	importing sync.Mutex
+
+	sandboxOnce sync.Once
+	sandbox     bool
+}
 
 func newMariaDB() *MariaDB {
 	return &MariaDB{}
@@ -29,6 +36,10 @@ var (
 	systemDatabases = map[string]bool{"information_schema": true, "mysql": true, "performance_schema": true, "sys": true}
 	systemUsers     = map[string]bool{"root": true, "mysql": true, "mariadb.sys": true, "debian-sys-maint": true, "PUBLIC": true}
 )
+
+// importUserPrefix: tijdelijke gebruikers voor een import. Die zie je niet in de lijst en
+// die naam kun je zelf niet kiezen.
+const importUserPrefix = "pinda_import_"
 
 // Een database: naam, grootte in bytes en aantal tabellen.
 type DBInfo struct {
@@ -85,7 +96,8 @@ func (m *MariaDB) run(sql string, database string) ([][]string, error) {
 		args = append(args, "--database="+database)
 	}
 	cmd := exec.CommandContext(ctx, client, args...)
-	cmd.Stdin = strings.NewReader(sql)
+	// Onze manier van tekst escapen gaat uit van de backslash; zet dat vast, wat de server ook zegt.
+	cmd.Stdin = strings.NewReader("SET SESSION sql_mode = REPLACE(@@sql_mode, 'NO_BACKSLASH_ESCAPES', '');\n" + sql)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -221,7 +233,7 @@ func (m *MariaDB) users() ([]DBUser, error) {
 	}
 	list := []DBUser{}
 	for _, row := range rows {
-		if len(row) < 2 || systemUsers[row[0]] || row[0] == "" {
+		if len(row) < 2 || systemUsers[row[0]] || row[0] == "" || strings.HasPrefix(strings.ToLower(row[0]), importUserPrefix) {
 			continue
 		}
 		databases := byGrantee["'"+row[0]+"'@'"+row[1]+"'"]
@@ -263,6 +275,9 @@ func checkDBUser(name, host string) error {
 	}
 	if systemUsers[name] {
 		return errors.New("die gebruiker is van MariaDB zelf")
+	}
+	if strings.HasPrefix(strings.ToLower(name), importUserPrefix) {
+		return errors.New("namen die met " + importUserPrefix + " beginnen zijn voor het paneel zelf")
 	}
 	if host != "localhost" && host != "%" && host != "127.0.0.1" {
 		return errors.New("onbekende host")
@@ -385,8 +400,11 @@ func (m *MariaDB) export(database, path string) error {
 	return closeErr
 }
 
-// importFile leest een .sql-bestand in een database in.
-func (m *MariaDB) importFile(database, path string, say func(string, ...any)) error {
+// importFile leest een .sql-bestand in een database in. Niet als root: een .sql-bestand kan
+// van alles bevatten. Daarom een tijdelijke gebruiker die alleen bij deze database mag (geen
+// FILE- of SUPER-rechten), en de client zonder eigen opdrachten (\! of source) en zonder
+// LOAD DATA LOCAL. dir is een map van alleen root, voor het wachtwoordbestand.
+func (m *MariaDB) importFile(database, path, dir string, say func(string, ...any)) error {
 	if err := checkDBName(database); err != nil {
 		return err
 	}
@@ -399,9 +417,38 @@ func (m *MariaDB) importFile(database, path string, say func(string, ...any)) er
 		return err
 	}
 	defer in.Close()
+
+	user := importUserPrefix + randomToken()[:12]
+	password := randomToken()[:32]
+	if _, err := m.run(fmt.Sprintf("CREATE USER '%s'@'localhost' IDENTIFIED BY '%s';\n"+
+		"GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'localhost';\nFLUSH PRIVILEGES;", user, password, database, user), ""); err != nil {
+		return err
+	}
+	defer func() {
+		if _, err := m.run(fmt.Sprintf("DROP USER IF EXISTS '%s'@'localhost';\nFLUSH PRIVILEGES;", user), ""); err != nil {
+			say("Let op: de tijdelijke gebruiker %s kon niet worden verwijderd: %s", user, err.Error())
+		}
+	}()
+
+	// Het wachtwoord in een bestand dat alleen root kan lezen, niet op de opdrachtregel (ps).
+	options, err := os.CreateTemp(dir, "import-*.cnf")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(options.Name())
+	_, writeErr := fmt.Fprintf(options, "[client]\nuser=%s\npassword=%s\n", user, password)
+	if err := options.Close(); err != nil || writeErr != nil {
+		return errors.Join(writeErr, err)
+	}
+
+	args := []string{"--defaults-extra-file=" + options.Name(), "--protocol=socket", "--binary-mode",
+		"--local-infile=0", "--default-character-set=utf8mb4", "--database=" + database}
+	if m.hasSandbox(client) {
+		args = append(args, "--sandbox")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, client, "--protocol=socket", "-uroot", "--default-character-set=utf8mb4", "--database="+database)
+	cmd := exec.CommandContext(ctx, client, args...)
 	cmd.Stdin = in
 	var stderr bytes.Buffer
 	cmd.Stdout = io.Discard
@@ -411,8 +458,37 @@ func (m *MariaDB) importFile(database, path string, say func(string, ...any)) er
 		if message == "" {
 			message = err.Error()
 		}
+		message = cleanMariaDBError(message)
+		if strings.Contains(message, "SUPER") || strings.Contains(message, "SET USER") || strings.Contains(strings.ToLower(message), "definer") {
+			message += " (in het bestand staat een DEFINER van een andere gebruiker; haal die weg of exporteer zonder triggers/views)"
+		}
 		say("%s", message)
-		return errors.New(cleanMariaDBError(message))
+		return errors.New(message)
 	}
 	return nil
+}
+
+// hasSandbox: kent deze client --sandbox (MariaDB 10.5.25, 10.6.18, 10.11.8 en nieuwer)?
+func (m *MariaDB) hasSandbox(client string) bool {
+	m.sandboxOnce.Do(func() {
+		out, _ := runQuiet(10*time.Second, client, "--help")
+		m.sandbox = strings.Contains(out, "--sandbox")
+	})
+	return m.sandbox
+}
+
+// cleanupImportUsers ruimt tijdelijke importgebruikers op die zijn blijven staan (paneel gecrasht).
+func (m *MariaDB) cleanupImportUsers() {
+	if !m.installed() {
+		return
+	}
+	rows, err := m.run("SELECT User, Host FROM mysql.user WHERE User LIKE 'pinda\\_import\\_%';", "")
+	if err != nil {
+		return
+	}
+	for _, row := range rows {
+		if len(row) >= 2 && strings.HasPrefix(row[0], importUserPrefix) && dbUserPattern.MatchString(row[0]) && row[1] == "localhost" {
+			_, _ = m.run(fmt.Sprintf("DROP USER IF EXISTS '%s'@'localhost';", row[0]), "")
+		}
+	}
 }
