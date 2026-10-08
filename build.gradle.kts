@@ -14,12 +14,19 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc"
     }
+    // PlaceholderAPI (optioneel op de server; alleen nodig om te compileren)
+    maven("https://repo.extendedclip.com/releases/") {
+        name = "placeholderapi"
+        content { includeGroup("me.clip") }
+    }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.2.build.129-stable")
     // QR-codes voor de 2FA van het webpaneel (Paper downloadt deze bij het opstarten, zie plugin.yml)
     compileOnly("com.google.zxing:core:3.5.3")
+    // %pinda_...% placeholders voor andere plugins, als PlaceholderAPI op de server staat
+    compileOnly("me.clip:placeholderapi:2.11.6")
 }
 
 java {

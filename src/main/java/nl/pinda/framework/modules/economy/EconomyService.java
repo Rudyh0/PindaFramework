@@ -115,6 +115,11 @@ public final class EconomyService implements Economy, Listener {
         return account;
     }
 
+    /** De rekening als hij al geladen is (online spelers), anders null. Laadt nooit iets; veilig vanaf elke thread. */
+    public Account cached(UUID uuid) {
+        return cache.get(uuid);
+    }
+
     /** Leest een rekening zonder hem aan te maken. Null als de speler nog geen rekening heeft. */
     public CompletableFuture<Account> peek(UUID uuid) {
         Account cached = cache.get(uuid);

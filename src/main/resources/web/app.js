@@ -74,7 +74,11 @@
     zap: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
     cog: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
     type: '<path d="M4 7V4h16v3M9 20h6M12 4v16"/>',
-    chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
+    chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+    sword: '<path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/>',
+    ghost: '<path d="M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/>',
+    skull: '<circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2M12.5 17l-.5-1-.5 1z"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/>'
   };
   const icon = (name, cls = '') => raw(`<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`);
 
@@ -180,7 +184,7 @@
     stop: 'pinda.panel.stop', console: 'pinda.panel.console', log: 'pinda.panel.log', banPermanent: 'pinda.mod.ban.permanent',
     skills: 'pinda.panel.skills', skillsEdit: 'pinda.panel.skills.edit', config: 'pinda.panel.config',
     texts: 'pinda.panel.texts', ranksEdit: 'pinda.panel.ranks.edit', playersManage: 'pinda.panel.players.manage',
-    security: 'pinda.panel.security'
+    security: 'pinda.panel.security', broadcasts: 'pinda.panel.broadcasts'
   };
 
   const state = { me: null, info: null, timers: [], renderId: 0, history: null, playerQuery: '' };
@@ -343,8 +347,11 @@
     { path: 'economie', title: 'Economie', icon: 'coin', perm: P.ecoView, feature: 'economy', page: pageEconomy },
     { path: 'shops', title: 'Shops', icon: 'shop', perm: P.shops, feature: 'shop', page: pageShops },
     { path: 'skills', title: 'Skills', icon: 'award', perm: P.skills, feature: 'skills', page: pageSkills },
+    { path: 'toplijsten', title: 'Toplijsten', icon: 'trophy', perm: P.players, feature: 'leaderboards', page: pageLeaderboards },
     { path: 'straffen', title: 'Straffen', icon: 'shield', perm: P.players, feature: 'moderation', page: pagePunishments },
     { path: 'server', title: 'Server', icon: 'server', perm: [P.server, P.config], page: pageServer, group: 'Beheer' },
+    { path: 'prestaties', title: 'Prestaties', icon: 'gauge', perm: P.server, feature: 'antilag', page: pagePerformance, group: 'Beheer' },
+    { path: 'aankondigingen', title: 'Aankondigingen', icon: 'megaphone', perm: P.broadcasts, feature: 'broadcasts', page: pageBroadcasts, group: 'Beheer' },
     { path: 'instellingen', title: 'Instellingen', icon: 'cog', perm: P.config, page: pageSettings, group: 'Beheer' },
     { path: 'teksten', title: 'Teksten', icon: 'type', perm: P.texts, page: pageTexts, group: 'Beheer' },
     { path: 'rangen', title: 'Rangen', icon: 'crown', perm: P.ranksEdit, feature: 'ranks', page: pageRanks, group: 'Beheer' },
@@ -574,7 +581,7 @@
    * De visuele teksteditor: knoppen voor kleuren, verloop, opmaak en placeholders, met een
    * voorbeeld van hoe het er in Minecraft uitziet (exact, door de server gemaakt).
    */
-  function openTextEditor({ title, subtitle, value, placeholders = [], onSave, onReset, list = Array.isArray(value) }) {
+  function openTextEditor({ title, subtitle, value, placeholders = [], onSave, onReset, list = Array.isArray(value), saveLabel = 'Opslaan' }) {
     const text = Array.isArray(value) ? value.join('\n') : (value || '');
     const extras = ['prefix', 'server', ...placeholders.filter(p => p !== 'prefix' && p !== 'server')];
     state.textEditor = { onSave, onReset, list };
@@ -606,7 +613,7 @@
       <div class="modal-foot">
         ${onReset ? html`<button type="button" class="btn ghost te-reset" data-te="reset">Standaardtekst terugzetten</button>` : ''}
         <button type="button" class="btn ghost" data-action="close">Annuleren</button>
-        <button class="btn primary">Opslaan</button>
+        <button class="btn primary">${saveLabel}</button>
       </div></form>`, 'wide');
 
     const area = $('.te-source', modal);
@@ -656,7 +663,9 @@
     'modules/afk.yml': 'AFK', 'modules/utility.yml': 'Handige commando’s', 'modules/staff.yml': 'Vanish en invsee',
     'modules/economy.yml': 'Economie', 'modules/shop.yml': 'Shops', 'modules/locks.yml': 'Sloten',
     'modules/moderation.yml': 'Moderatie', 'modules/skills.yml': 'Skills', 'modules/sleep.yml': 'Slapen',
-    'modules/motd.yml': 'MOTD', 'modules/discord.yml': 'Discord', 'modules/panel.yml': 'Webpaneel'
+    'modules/motd.yml': 'MOTD', 'modules/discord.yml': 'Discord', 'modules/panel.yml': 'Webpaneel',
+    'modules/leaderboards.yml': 'Toplijsten', 'modules/scoreboard.yml': 'Scoreboard', 'modules/broadcasts.yml': 'Aankondigingen',
+    'modules/antilag.yml': 'Antilag'
   };
   const fileName = path => FILE_NAMES[path] || path.replace(/^modules\//, '').replace(/\.yml$/, '');
   const prettyKey = key => {
@@ -803,7 +812,8 @@
     general: 'Algemeen', settings: 'Instellingen-menu', tips: 'Tips', menu: 'Menu’s', teleport: 'Teleports', homes: 'Homes',
     tpa: 'TPA', spawn: 'Spawn', back: 'Terug', msg: 'Privéberichten', gamemode: 'Spelmodus', afk: 'AFK', utility: 'Handige commando’s',
     vanish: 'Vanish', invsee: 'Invsee', economy: 'Economie', shop: 'Shops', lock: 'Sloten', partner: 'Partners', rank: 'Rangen',
-    moderation: 'Moderatie', skills: 'Skills', sleep: 'Slapen', discord: 'Discord', panel: 'Webpaneel', admin: 'Beheer'
+    moderation: 'Moderatie', skills: 'Skills', sleep: 'Slapen', discord: 'Discord', panel: 'Webpaneel', admin: 'Beheer',
+    top: 'Toplijsten', scoreboard: 'Scoreboard', broadcasts: 'Aankondigingen', antilag: 'Antilag'
   };
 
   async function pageTexts(main, tab, alive) {
@@ -1187,7 +1197,8 @@
     const data = await api('/discord');
     if (!alive()) return;
     const events = { punishments: 'Bans, mutes, kicks en waarschuwingen', revokes: 'Unbans en unmutes', 'rank-changes': 'Iemand krijgt een andere rang',
-      'panel-logins': 'Iemand logt in op het paneel', 'panel-actions': 'Alle andere acties in het paneel', 'server-start-stop': 'De server start of stopt' };
+      'panel-logins': 'Iemand logt in op het paneel', 'panel-actions': 'Alle andere acties in het paneel', 'server-start-stop': 'De server start of stopt',
+      lag: 'De server laggt (lage TPS) en is weer normaal' };
     render(main, html`${pageHead('Discord', 'Koppel Discord-kanalen via webhooks: een live statusbericht en meldingen voor staff.')}
       ${data.moduleEnabled ? '' : html`<div class="alert warning">De Discord-module staat uit in config.yml (modules.discord). Zet hem aan en herstart de server.</div>`}
       <div class="alert info">Webhook maken: in Discord bij het kanaal op <b>Kanaal bewerken › Integraties › Webhooks › Nieuwe webhook</b>, daarna <b>Webhook-URL kopiëren</b> en hieronder plakken.</div>
@@ -1785,6 +1796,237 @@
     show('total');
   }
 
+  // =============================================================== toplijsten en scoreboard
+
+  const BOARD_ICONS = { money: 'coin', skills: 'award', playtime: 'clock', kills: 'sword', mobkills: 'ghost', deaths: 'skull' };
+
+  async function pageLeaderboards(main, _, alive) {
+    const data = await api('/leaderboards');
+    if (!alive()) return;
+    renderLeaderboards(main, data);
+  }
+
+  function renderLeaderboards(main, data) {
+    const sb = data.scoreboard;
+    const boards = data.boards.length ? html`<div class="grid three">${data.boards.map(b => html`<section class="card board-card">
+        <div class="card-head"><h2>${icon(BOARD_ICONS[b.id] || 'trophy')}${b.name}</h2><span class="count">${num(b.total)} ${b.total === 1 ? 'speler' : 'spelers'}</span></div>
+        ${b.description ? html`<p class="board-desc">${b.description}${b.id === 'money' ? ` In ${currency()}.` : ''}</p>` : ''}
+        <div class="table-wrap"><table><tbody>${b.entries.length ? b.entries.map(e => html`<tr ${can(P.players) ? raw(`data-href="#/spelers/${esc(e.uuid)}" tabindex="0"`) : ''}>
+          <td class="rank-pos ${e.position <= 3 ? `medal-${e.position}` : ''}">${e.position}</td><td>${who(e.name, null, null)}</td><td class="num nowrap"><b>${b.id === 'money' ? amount(e.text) : e.text}</b></td></tr>`)
+          : emptyRow(3, 'Nog niemand op deze lijst.')}</tbody></table></div></section>`)}</div>`
+      : html`<div class="empty-page">${icon('trophy')}<h2>Geen toplijsten</h2><p>Zet toplijsten aan bij Instellingen › Toplijsten.</p></div>`;
+    render(main, html`${pageHead('Toplijsten', `Spelers zien dit met /top en op het scoreboard. ${data.updated ? `Bijgewerkt ${ago(data.updated)}.` : 'Wordt nu berekend…'}`,
+        html`<button class="btn" data-action="leaderboards-refresh">${icon('refresh')} Nu bijwerken</button>`)}
+      ${boards}
+      ${sb && sb.enabled ? scoreboardCard(data) : html`<div class="alert info">Het scoreboard staat uit in config.yml (modules.scoreboard).</div>`}`);
+    if (sb && sb.enabled) {
+      $$('input[name=sb-board]', main).forEach(input => input.addEventListener('change', () => {
+        render($('#sb-preview', main), sidebarPreview(sb.previews[input.value]));
+      }));
+    }
+  }
+
+  function sidebarPreview(preview) {
+    if (!preview) return html`<div class="empty">Nog geen voorbeeld.</div>`;
+    return html`<div class="mc-sidebar"><div class="mc-sidebar-title">${raw(preview.title)}</div>
+      ${preview.lines.map(l => html`<div class="mc-sidebar-row"><span>${raw(l.left || '&nbsp;')}</span>${l.right ? html`<span class="mc-sidebar-right">${raw(l.right)}</span>` : ''}</div>`)}</div>`;
+  }
+
+  function scoreboardCard(data) {
+    const sb = data.scoreboard;
+    const s = sb.settings;
+    const ids = Object.keys(sb.previews);
+    const current = sb.current && sb.previews[sb.current] ? sb.current : ids[0];
+    const available = data.allBoards.filter(b => b.available);
+    const ordered = [...s.boards.map(id => available.find(b => b.id === id)).filter(Boolean), ...available.filter(b => !s.boards.includes(b.id))];
+    const names = Object.fromEntries(data.allBoards.map(b => [b.id, b.name]));
+    const row = (name, title, help, input) => html`<div class="cfg-row"><div class="cfg-text"><span class="cfg-label">${title}</span>${help ? html`<span class="cfg-help">${help}</span>` : ''}</div>${input}</div>`;
+    const toggle = (name, checked) => html`<label class="switch"><input type="checkbox" name="${name}" ${checked ? 'checked' : ''}><span></span></label>`;
+    return html`<section class="card" style="margin-top:16px"><div class="card-head"><h2>${icon('list')}Scoreboard</h2><span class="count">rechts in beeld, wisselt elke ${num(s.switchSeconds)} seconden</span></div>
+      <div class="card-body scoreboard-layout">
+        <div class="scoreboard-preview">
+          ${ids.length > 1 ? html`<div class="seg" role="tablist">${ids.map(id => html`<label><input type="radio" name="sb-board" value="${id}" ${id === current ? 'checked' : ''}><span>${names[id] || id}</span></label>`)}</div>` : ''}
+          <div class="scoreboard-stage" id="sb-preview">${sidebarPreview(sb.previews[current])}</div>
+          <p class="muted small">Zo ziet het eruit voor een speler die er nog niet op staat. Spelers zetten het zelf aan of uit in /instellingen.</p>
+        </div>
+        ${data.canEdit ? html`<form data-form="scoreboard" class="scoreboard-form">
+          ${row('defaultEnabled', 'Standaard aan', 'Voor spelers die zelf nog niets gekozen hebben.', toggle('defaultEnabled', s.defaultEnabled))}
+          ${row('showInSetup', 'In het welkomstmenu', 'De schakelaar tonen als iemand voor het eerst joint.', toggle('showInSetup', s.showInSetup))}
+          ${row('switchSeconds', 'Wisselen na', 'Seconden per toplijst (minimaal 3).', html`<input class="input cfg-number" type="number" min="3" max="600" name="switchSeconds" value="${s.switchSeconds}">`)}
+          ${row('places', 'Plekken per lijst', '1 tot 10.', html`<input class="input cfg-number" type="number" min="1" max="10" name="places" value="${s.places}">`)}
+          ${row('showOwn', 'Eigen plek onderaan', 'Iedereen ziet zijn eigen plek, ook buiten de top.', toggle('showOwn', s.showOwn))}
+          <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Toplijsten op het scoreboard</span><span class="cfg-help">In deze volgorde; vink uit wat je niet wilt zien.</span></div>
+            <div class="check-chips">${ordered.map(b => html`<label class="check-chip"><input type="checkbox" name="sb-boards" value="${b.id}" ${s.boards.includes(b.id) ? 'checked' : ''}> ${b.name}</label>`)}</div></div>
+          <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Werelden zonder scoreboard</span><span class="cfg-help">Namen gescheiden door komma's, bijv. minigames.</span></div>
+            <input class="input" name="disabledWorlds" value="${s.disabledWorlds.join(', ')}" placeholder="geen"></div>
+          <div class="save-bar"><button type="button" class="btn ghost" data-action="scoreboard-texts">${icon('type')} Teksten aanpassen</button><button class="btn primary">${icon('save')} Opslaan</button></div>
+        </form>` : ''}
+      </div></section>`;
+  }
+
+  // =============================================================== aankondigingen
+
+  async function pageBroadcasts(main, _, alive) {
+    const data = await api('/broadcasts');
+    if (!alive()) return;
+    renderBroadcasts(main, data);
+  }
+
+  const BROADCAST_PLACEHOLDERS = ['player', 'online', 'max'];
+
+  async function saveBroadcasts(body, message = 'Aankondigingen opgeslagen.') {
+    const result = await post('/broadcasts', body);
+    toast(message);
+    renderBroadcasts($('#main'), result);
+    return result;
+  }
+
+  function renderBroadcasts(main, data) {
+    const next = data.moduleEnabled && data.nextAt ? data.nextAt - Date.now() : 0;
+    const count = data.messages.length;
+    render(main, html`${pageHead('Aankondigingen', 'Berichten die vanzelf in de chat verschijnen, voor iedereen die online is.',
+        html`<button class="btn primary" data-action="broadcast-once">${icon('send')} Eenmalig versturen</button>`)}
+      ${data.moduleEnabled ? '' : html`<div class="alert warning">De module staat uit in config.yml (modules.broadcasts). Zet hem aan en herstart de server.</div>`}
+      <section class="card"><div class="card-head"><h2>${icon('megaphone')}Berichten</h2><span class="count">${count ? `${num(count)} · ${data.random ? 'willekeurige volgorde' : 'op volgorde'}` : ''}</span></div>
+        <div class="card-body bc-list">${count ? data.messages.map((m, i) => html`<div class="bc-item">
+            <div class="mc-preview">${raw(data.previews[i] || '')}</div>
+            <div class="btn-row">
+              <button class="btn sm" data-bc-edit="${i}">Bewerken</button>
+              <button class="btn sm" data-bc-send="${i}">${icon('send')} Nu versturen</button>
+              <button class="btn sm ghost" data-bc-move="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="Omhoog">↑</button>
+              <button class="btn sm ghost" data-bc-move="${i}" data-dir="1" ${i === count - 1 ? 'disabled' : ''} aria-label="Omlaag">↓</button>
+              <button class="btn sm danger" data-bc-remove="${i}">Verwijderen</button>
+            </div></div>`) : html`<div class="empty">${icon('megaphone')}Nog geen aankondigingen. Voeg er een toe!</div>`}
+          <button class="btn" data-bc-add>${icon('plus')} Aankondiging toevoegen</button></div></section>
+      <form class="card" data-form="broadcast-settings" style="margin-top:16px"><div class="card-head"><h2>${icon('clock')}Wanneer</h2>${next > 0 ? html`<span class="count">volgende over ${human(next)}</span>` : ''}</div><div class="card-body">
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Om de hoeveel minuten</span><span class="cfg-help">Elke keer één aankondiging.</span></div><input class="input cfg-number" type="number" min="1" max="1440" name="intervalMinutes" value="${data.intervalMinutes}"></div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Willekeurige volgorde</span><span class="cfg-help">Uit = de lijst van boven naar beneden.</span></div><label class="switch"><input type="checkbox" name="random" ${data.random ? 'checked' : ''}><span></span></label></div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Minimaal aantal spelers online</span><span class="cfg-help">Daaronder wordt er niets aangekondigd.</span></div><input class="input cfg-number" type="number" min="0" max="1000" name="minPlayers" value="${data.minPlayers}"></div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Geluidje</span></div><label class="switch"><input type="checkbox" name="sound" ${data.sound ? 'checked' : ''}><span></span></label></div>
+        <div class="alert info">In een aankondiging kun je &lt;player&gt; (wie het leest), &lt;online&gt;, &lt;max&gt; en &lt;server&gt; gebruiken${data.placeholderApi ? ', en ook %placeholders% van PlaceholderAPI' : ''}. De opmaak eromheen pas je aan bij Teksten › Aankondigingen.</div>
+        <div class="save-bar"><span></span><button class="btn primary">${icon('save')} Opslaan</button></div></div></form>`);
+    main.onclick = event => {
+      const edit = event.target.closest('[data-bc-edit]');
+      const send = event.target.closest('[data-bc-send]');
+      const move = event.target.closest('[data-bc-move]');
+      const remove = event.target.closest('[data-bc-remove]');
+      const add = event.target.closest('[data-bc-add]');
+      if (edit) {
+        const index = Number(edit.dataset.bcEdit);
+        openTextEditor({ title: 'Aankondiging bewerken', value: data.messages[index], placeholders: BROADCAST_PLACEHOLDERS, onSave: value => {
+          const list = [...data.messages];
+          list[index] = value;
+          return saveBroadcasts({ messages: list });
+        } });
+      } else if (send) {
+        busy(send, () => post('/broadcasts/send', { index: Number(send.dataset.bcSend) })).then(result => {
+          if (result) toast(`Verstuurd naar ${num(result.sent)} ${result.sent === 1 ? 'speler' : 'spelers'}.`);
+        });
+      } else if (move) {
+        const index = Number(move.dataset.bcMove);
+        const target = index + Number(move.dataset.dir);
+        const list = [...data.messages];
+        [list[index], list[target]] = [list[target], list[index]];
+        busy(move, () => saveBroadcasts({ messages: list }, 'Volgorde opgeslagen.'));
+      } else if (remove) {
+        confirmDialog({ title: 'Aankondiging verwijderen?', text: 'Dit bericht komt niet meer in de chat.', confirm: 'Verwijderen', danger: true }).then(ok => {
+          if (ok) busy(remove, () => saveBroadcasts({ messages: data.messages.filter((_, i) => i !== Number(remove.dataset.bcRemove)) }, 'Aankondiging verwijderd.'));
+        });
+      } else if (add) {
+        openTextEditor({ title: 'Nieuwe aankondiging', value: '<text>', placeholders: BROADCAST_PLACEHOLDERS,
+          onSave: value => saveBroadcasts({ messages: [...data.messages, value] }, 'Aankondiging toegevoegd.') });
+      }
+    };
+  }
+
+  // =============================================================== prestaties en antilag
+
+  const ENTITY_NAMES = {
+    item: 'item', experience_orb: 'XP-bol', arrow: 'pijl', cow: 'koe', chicken: 'kip', pig: 'varken', sheep: 'schaap',
+    villager: 'villager', iron_golem: 'ijzergolem', zombie: 'zombie', skeleton: 'skelet', creeper: 'creeper', spider: 'spin',
+    enderman: 'enderman', slime: 'slijm', squid: 'inktvis', glow_squid: 'gloei-inktvis', bat: 'vleermuis', horse: 'paard',
+    rabbit: 'konijn', wolf: 'wolf', cat: 'kat', bee: 'bij', fox: 'vos', goat: 'geit', frog: 'kikker', cod: 'kabeljauw',
+    salmon: 'zalm', tropical_fish: 'tropische vis', drowned: 'drowned', piglin: 'piglin', zombified_piglin: 'zombiepiglin',
+    magma_cube: 'magmakubus', item_frame: 'itemframe', glow_item_frame: 'itemframe', armor_stand: 'harnasstandaard',
+    minecart: 'mijnkar', hopper_minecart: 'hopperkar', chest_minecart: 'kistkar', falling_block: 'vallend blok',
+    painting: 'schilderij', wandering_trader: 'handelaar', turtle: 'schildpad', axolotl: 'axolotl', camel: 'kameel'
+  };
+  const entityName = key => ENTITY_NAMES[key] || key.replace(/_/g, ' ');
+
+  async function pagePerformance(main, _, alive) {
+    const load = async full => {
+      const data = await api('/performance');
+      if (!alive()) return;
+      renderPerformance(main, data, full);
+    };
+    await load(true);
+    every(10000, () => load(false).catch(() => {}));
+  }
+
+  function renderPerformance(main, data, full) {
+    if (full || !$('#perf-live', main)) {
+      render(main, html`${pageHead('Prestaties', 'Hoe soepel draait de server? Antilag ruimt op en grijpt in als het nodig is.',
+          html`<button class="btn" data-action="reload">${icon('refresh')} Verversen</button>`)}
+        <div id="perf-live"></div>
+        ${can(P.config) ? perfSettings(data.settings) : ''}`);
+    }
+    render($('#perf-live', main), perfLive(data));
+  }
+
+  function perfLive(d) {
+    const sum = key => d.worlds.reduce((total, w) => total + w[key], 0);
+    const clear = d.clear;
+    const nextText = !clear.next ? 'staat uit'
+      : clear.counting ? `aftelling loopt (nog ${Math.max(0, Math.round((clear.next - Date.now()) / 1000))} s)` : `over ${human(Math.max(0, clear.next - Date.now()))}`;
+    const lastText = clear.lastCount >= 0 ? `${num(clear.lastCount)} items, ${ago(clear.last)}` : 'nog niet sinds de start';
+    const stats = [
+      stat('TPS', fixed(d.tps[0]), `1 min · 5m ${fixed(d.tps[1])} · 15m ${fixed(d.tps[2])}`, 'gauge', tpsClass(d.tps[0])),
+      stat('Nu', fixed(d.recentTps), `${fixed(d.mspt)} ms per tick (onder 50 is goed)`, 'zap', tpsClass(d.recentTps)),
+      stat('Mobs', num(sum('living')), `${num(sum('entities'))} entities in totaal`, 'players'),
+      stat('Items op de grond', num(sum('items')), `opruimen ${nextText}`, 'box'),
+      stat('Chunks geladen', num(sum('chunks')), `${num(d.worlds.length)} ${d.worlds.length === 1 ? 'wereld' : 'werelden'}`, 'globe')
+    ];
+    const chunks = d.chunks.length ? d.chunks.map(c => html`<tr><td>${c.world}</td><td class="mono nowrap">${c.x}, ${c.z}</td>
+        <td class="num"><b>${num(c.entities)}</b></td><td class="num hide-sm">${num(c.items)}</td>
+        <td class="muted">${Object.entries(c.types).map(([type, count]) => `${entityName(type)} ${num(count)}`).join(' · ')}</td></tr>`)
+      : emptyRow(5, 'Er zijn geen entities geladen.');
+    const worlds = d.worlds.map(w => html`<tr><td><b>${w.name}</b><div class="muted">${ENVIRONMENTS[w.environment] || w.environment}</div></td>
+        <td class="num">${num(w.players)}</td><td class="num">${num(w.living)}</td><td class="num">${num(w.items)}</td>
+        <td class="num hide-sm">${num(w.entities)}</td><td class="num hide-sm">${num(w.chunks)}</td></tr>`);
+    return html`${d.lagging ? html`<div class="alert error" style="margin:0 0 16px">${icon('warn')} <b>De server laggt</b> sinds ${clock(d.laggingSince)} (TPS onder ${fixed(d.threshold)}). Staff met een melding weet ervan; losse items worden opgeruimd.</div>` : ''}
+      <div class="grid stats">${stats}</div>
+      <div class="grid two" style="margin-top:16px">
+        ${card('Items opruimen', 'box', html`<div class="card-body">
+          <dl class="kv"><dt>Volgende keer</dt><dd>${nextText}</dd><dt>Vorige keer</dt><dd>${lastText}</dd><dt>Nu op de grond</dt><dd>${num(sum('items'))} items</dd></dl>
+          ${can(P.server) ? html`<div class="btn-row" style="margin-top:16px">
+            <button class="btn" data-action="perf-clear" data-seconds="30" ${clear.counting ? 'disabled' : ''}>${icon('clock')} Over 30 seconden</button>
+            <button class="btn danger" data-action="perf-clear-now">${icon('x')} Meteen opruimen</button></div>
+            <p class="muted small" style="margin-top:10px">Met aftelling krijgen spelers eerst een waarschuwing. Waardevolle items, items met een naam en geld blijven altijd liggen.</p>` : ''}
+        </div>`)}
+        ${card('Drukste chunks', 'list', html`<div class="table-wrap"><table>
+          <thead><tr><th>Wereld</th><th>Plek (x, z)</th><th class="num">Entities</th><th class="num hide-sm">Items</th><th>Meeste</th></tr></thead>
+          <tbody>${chunks}</tbody></table></div>`, html`<span class="count">in-game: /lag chunks</span>`)}
+      </div>
+      <div style="margin-top:16px">${card('Werelden', 'globe', html`<div class="table-wrap"><table>
+        <thead><tr><th>Wereld</th><th class="num">Spelers</th><th class="num">Mobs</th><th class="num">Items</th><th class="num hide-sm">Entities</th><th class="num hide-sm">Chunks</th></tr></thead>
+        <tbody>${worlds}</tbody></table></div>`)}</div>`;
+  }
+
+  function perfSettings(s) {
+    const toggle = (name, checked) => html`<label class="switch"><input type="checkbox" name="${name}" ${checked ? 'checked' : ''}><span></span></label>`;
+    const row = (title, help, input) => html`<div class="cfg-row"><div class="cfg-text"><span class="cfg-label">${title}</span>${help ? html`<span class="cfg-help">${help}</span>` : ''}</div>${input}</div>`;
+    return html`<form class="card" data-form="perf-settings" style="margin-top:16px"><div class="card-head"><h2>${icon('cog')}Antilag</h2>
+        <a class="btn sm ghost" href="#/instellingen/modules/antilag.yml">Alle instellingen</a></div><div class="card-body">
+      ${row('Items automatisch opruimen', 'Met een aftelling in de chat vooraf.', toggle('clearEnabled', s.clearEnabled))}
+      ${row('Om de hoeveel minuten', null, html`<input class="input cfg-number" type="number" min="1" max="1440" name="intervalMinutes" value="${s.intervalMinutes}">`)}
+      ${row('Maximum mobs per chunk', 'Bij fokken, spawners en eieren. Gewone mobs ’s nachts niet.', toggle('mobLimitEnabled', s.mobLimitEnabled))}
+      ${row('Maximaal van dezelfde soort', '0 = geen maximum. Per soort (kippen, villagers…) stel je in bij Alle instellingen.', html`<input class="input cfg-number" type="number" min="0" max="10000" name="perType" value="${s.perType}">`)}
+      ${row('Ingrijpen bij lag', 'Staff krijgt een melding (ook in Discord) en losse items worden opgeruimd.', toggle('guardEnabled', s.guardEnabled))}
+      ${row('Lag als de TPS lager is dan', '20 is perfect. 15 is een goede grens.', html`<input class="input cfg-number" type="number" min="1" max="19.5" step="0.5" name="tpsBelow" value="${s.tpsBelow}">`)}
+      <div class="save-bar"><span></span><button class="btn primary">${icon('save')} Opslaan</button></div>
+    </div></form>`;
+  }
+
   // =============================================================== straffen
 
   async function pagePunishments(main, _, alive) {
@@ -1992,6 +2234,37 @@
       if (result) { toast('De XP-boost is gestopt.'); navigate(); }
     },
 
+    async 'leaderboards-refresh'(button) {
+      const result = await busy(button, () => post('/leaderboards/refresh'));
+      if (result) { toast('Toplijsten bijgewerkt.'); renderLeaderboards($('#main'), result); }
+    },
+
+    'scoreboard-texts'() {
+      state.textFilter = { section: 'scoreboard', query: '', changed: false };
+      location.hash = '#/teksten';
+    },
+
+    'broadcast-once'() {
+      openTextEditor({ title: 'Eenmalige aankondiging', subtitle: 'Gaat meteen naar iedereen die online is', value: '<text>', placeholders: BROADCAST_PLACEHOLDERS,
+        saveLabel: 'Versturen', onSave: async value => {
+          const result = await post('/broadcasts/send', { message: value });
+          toast(`Verstuurd naar ${num(result.sent)} ${result.sent === 1 ? 'speler' : 'spelers'}.`);
+          return result;
+        } });
+    },
+
+    async 'perf-clear'(button) {
+      const result = await busy(button, () => post('/performance/clear', { seconds: Number(button.dataset.seconds || 30) }));
+      if (result) { toast(`De items worden over ${result.seconds} seconden opgeruimd. Spelers krijgen een waarschuwing.`); navigate(); }
+    },
+
+    async 'perf-clear-now'(button) {
+      const ok = await confirmDialog({ title: 'Meteen opruimen?', text: 'Alle losse items op de grond verdwijnen nu, zonder waarschuwing. Waardevolle items, items met een naam en geld blijven liggen.', confirm: 'Opruimen', danger: true });
+      if (!ok) return;
+      const result = await busy(button, () => post('/performance/clear', { now: true }));
+      if (result) { toast(`${num(result.removed)} items opgeruimd.`); navigate(); }
+    },
+
     reload: () => navigate(),
     close: () => closeModal(),
     'open-nav': () => document.body.classList.add('nav-open'),
@@ -2099,6 +2372,33 @@
       } finally {
         state.verifying = false;
       }
+    },
+
+    async scoreboard(form, data, button) {
+      const boards = $$('input[name=sb-boards]:checked', form).map(input => input.value);
+      if (!boards.length) { toast('Kies minimaal één toplijst.', 'error'); return; }
+      const result = await busy(button, () => post('/scoreboard', {
+        defaultEnabled: form.defaultEnabled.checked, showInSetup: form.showInSetup.checked, showOwn: form.showOwn.checked,
+        switchSeconds: Number(data.get('switchSeconds')), places: Number(data.get('places')), boards,
+        disabledWorlds: String(data.get('disabledWorlds') || '').split(',').map(w => w.trim()).filter(Boolean)
+      }));
+      if (result) { toast('Scoreboard opgeslagen. Het is meteen bijgewerkt in-game.'); renderLeaderboards($('#main'), result); }
+    },
+
+    async 'broadcast-settings'(form, data, button) {
+      await busy(button, () => saveBroadcasts({
+        intervalMinutes: Number(data.get('intervalMinutes')), minPlayers: Number(data.get('minPlayers')),
+        random: form.random.checked, sound: form.sound.checked
+      }));
+    },
+
+    async 'perf-settings'(form, data, button) {
+      const result = await busy(button, () => post('/performance/settings', {
+        clearEnabled: form.clearEnabled.checked, intervalMinutes: Number(data.get('intervalMinutes')),
+        mobLimitEnabled: form.mobLimitEnabled.checked, perType: Number(data.get('perType')),
+        guardEnabled: form.guardEnabled.checked, tpsBelow: Number(data.get('tpsBelow'))
+      }));
+      if (result) { toast('Antilag-instellingen opgeslagen.'); renderPerformance($('#main'), result, true); }
     },
 
     async 'text-editor'(form, data, button) {

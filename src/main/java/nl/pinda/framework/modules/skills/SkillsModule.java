@@ -103,6 +103,11 @@ public final class SkillsModule extends PindaModule implements Listener {
         return service;
     }
 
+    /** Opent de skills-ranglijst (totaal level) voor een speler, bijv. vanuit /top. */
+    public void openTop(Player viewer) {
+        SkillsTopMenu.open(plugin, this, viewer, null);
+    }
+
     // ============================================================ laden en opslaan per speler
 
     @EventHandler(priority = EventPriority.MONITOR)

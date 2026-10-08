@@ -1,0 +1,32 @@
+# ┌──────────────────────────────────────────────┐
+# │          PindaFramework - scoreboard         │
+# └──────────────────────────────────────────────┘
+# Het scoreboard rechts in beeld. Het wisselt tussen de toplijsten, met je eigen plek onderaan.
+# De teksten pas je aan in het paneel (Teksten > Scoreboard) of in lang/nl.yml onder 'scoreboard'.
+
+# Staat het scoreboard standaard aan? Spelers kunnen het zelf uitzetten in /instellingen.
+default-enabled: true
+
+# De scoreboard-schakelaar ook tonen in het setupmenu bij de eerste keer joinen
+show-in-setup: true
+
+# Om de hoeveel seconden het naar de volgende toplijst wisselt (minimaal 3)
+switch-seconds: 10
+
+# Welke toplijsten erop komen, in deze volgorde (money, skills, playtime, kills, mobkills, deaths)
+boards:
+  - money
+  - skills
+  - playtime
+  - kills
+  - mobkills
+  - deaths
+
+# Hoeveel plekken per toplijst (1-10)
+places: 10
+
+# Je eigen plek onderaan tonen
+show-own: true
+
+# Werelden zonder scoreboard
+disabled-worlds: []

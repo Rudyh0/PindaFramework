@@ -341,6 +341,24 @@ public final class DiscordModule extends PindaModule implements Listener {
                 embed = embed(text("discord.staff.panel-action", "player", player, "action", escape(event.get("action"))),
                         null, 0xE9724C, fields);
             }
+            case "lag" -> {
+                if (!staffEvent("lag")) {
+                    return;
+                }
+                field(fields, text("discord.staff.mspt"), event.get("mspt") == null ? null : event.get("mspt") + " ms", true);
+                field(fields, text("discord.status.players"), event.get("online"), true);
+                field(fields, text("discord.staff.chunk"), escape(event.get("chunk")), false);
+                field(fields, text("discord.staff.cleanup"),
+                        event.get("cleanup") == null ? null : text("discord.staff.cleanup-in", "seconds", event.get("cleanup")), false);
+                embed = embed(text("discord.staff.lag", "tps", event.get("tps")), null, 0xFF6B6B, fields);
+            }
+            case "lag-recovered" -> {
+                if (!staffEvent("lag")) {
+                    return;
+                }
+                embed = embed(text("discord.staff.lag-recovered", "tps", event.get("tps"), "minutes", event.get("duration")),
+                        null, 0x7BE495, fields);
+            }
             default -> {
                 return;
             }

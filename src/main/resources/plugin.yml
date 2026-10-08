@@ -4,6 +4,8 @@ main: nl.pinda.framework.PindaFramework
 api-version: '26.1'
 author: Rudyh0
 description: Het all-in-one framework voor de server.
+# Optioneel: met PlaceholderAPI werken %placeholders% in onze teksten en %pinda_...% in andere plugins
+softdepend: [PlaceholderAPI]
 
 # SQLite-driver voor de database en ZXing voor QR-codes (2FA). Paper downloadt deze automatisch bij de eerste start.
 libraries:
@@ -270,6 +272,20 @@ permissions:
     description: /skills set, addxp, reset en boost
     default: op
 
+  # Toplijsten en antilag
+  pinda.top.use:
+    description: /top, de toplijsten bekijken
+    default: true
+  pinda.antilag.use:
+    description: /lag en /lag chunks, zien hoe het met de server gaat
+    default: op
+  pinda.antilag.admin:
+    description: /lag clear (items opruimen) en /lag tp (naar een drukke chunk)
+    default: op
+  pinda.antilag.notify:
+    description: Een melding krijgen als de server laggt
+    default: op
+
   # Slapen
   pinda.sleep.exempt:
     description: Telt niet mee bij het aantal spelers dat moet slapen
@@ -299,6 +315,7 @@ permissions:
       pinda.panel.ranks.edit: true
       pinda.panel.players.manage: true
       pinda.panel.security: true
+      pinda.panel.broadcasts: true
   pinda.panel.use:
     description: /panel, inloggen op het webpaneel en het dashboard zien
     default: op
@@ -355,4 +372,7 @@ permissions:
     default: op
   pinda.panel.security:
     description: Paneel - de 2FA van anderen resetten
+    default: op
+  pinda.panel.broadcasts:
+    description: Paneel - automatische aankondigingen beheren en versturen
     default: op

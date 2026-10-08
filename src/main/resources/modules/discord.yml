@@ -36,6 +36,8 @@ staff:
     panel-actions: false
     # De server start of stopt
     server-start-stop: true
+    # De server laggt (lage TPS, zie modules/antilag.yml) en is weer normaal
+    lag: true
 
 # De naam waarmee berichten in Discord verschijnen (leeg = de naam van de webhook)
 username: ""

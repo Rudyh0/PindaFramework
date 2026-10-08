@@ -4,13 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import nl.pinda.framework.modules.antilag.AntilagModule;
+import nl.pinda.framework.modules.broadcasts.BroadcastsModule;
 import nl.pinda.framework.modules.discord.DiscordModule;
 import nl.pinda.framework.modules.economy.EconomyService;
 import nl.pinda.framework.modules.homes.HomesModule;
+import nl.pinda.framework.modules.leaderboards.LeaderboardsModule;
 import nl.pinda.framework.modules.moderation.ModerationModule;
 import nl.pinda.framework.modules.motd.MotdModule;
 import nl.pinda.framework.modules.ranks.Rank;
 import nl.pinda.framework.modules.ranks.RankModule;
+import nl.pinda.framework.modules.scoreboard.ScoreboardModule;
 import nl.pinda.framework.modules.skills.SkillsModule;
 
 /**
@@ -216,7 +220,11 @@ final class AuthApi extends PanelApi {
                         "skills", enabled(SkillsModule.class) != null,
                         "motd", enabled(MotdModule.class) != null,
                         "discord", enabled(DiscordModule.class) != null,
-                        "homes", enabled(HomesModule.class) != null),
+                        "homes", enabled(HomesModule.class) != null,
+                        "leaderboards", enabled(LeaderboardsModule.class) != null,
+                        "scoreboard", enabled(ScoreboardModule.class) != null,
+                        "broadcasts", enabled(BroadcastsModule.class) != null,
+                        "antilag", enabled(AntilagModule.class) != null),
                 "ranks", ranks,
                 "currency", currency,
                 "maxTempBan", moderation == null ? 0 : moderation.maxTempBan(),

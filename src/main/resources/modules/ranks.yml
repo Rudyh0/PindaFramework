@@ -81,6 +81,9 @@ ranks:
       - pinda.mod.warn
       - pinda.mod.history
       - pinda.mod.notify
+      # Antilag: /lag bekijken en een melding bij lag
+      - pinda.antilag.use
+      - pinda.antilag.notify
       # Webpaneel: dashboard, spelers, straffen, saldo's en shops bekijken
       # (geld aanpassen, rangen, serverbeheer, console en logboek: alleen PindaAdmin)
       - pinda.panel.use

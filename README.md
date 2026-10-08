@@ -14,18 +14,18 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 
 ## Wat zit erin
 
-Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, een eigen MOTD, Discord-webhooks en een webpaneel waarin je alles kunt instellen.
+Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, toplijsten met een scoreboard, automatische aankondigingen, antilag, een eigen MOTD, Discord-webhooks, PlaceholderAPI-placeholders en een webpaneel waarin je alles kunt instellen.
 
 ## To-do
 
 1. ~~Rangensysteem (Pinda, PindaMod, PindaAdmin) met prefix in chat en tablist~~ ✅
 2. ~~Moderatie: kick, mute, tijdelijke en permanente ban, banlijst en logboek~~ ✅
 3. ~~Webpaneel: eigen webserver (IP + poort, later instelbare URL), eenmalige inloglink vanaf PindaMod, dashboard, spelers en rangen, moderatie, economy, shops, serverbeheer, statistieken, actielog~~ ✅
-4. Overige basis: automatische broadcasts, scoreboard en leaderboards (+ PlaceholderAPI), antilag
+4. ~~Overige basis: automatische broadcasts, scoreboard en leaderboards (+ PlaceholderAPI), antilag~~ ✅
 5. World control: creepers en TNT zonder blokschade, phantoms uit, spawnrates, ender dragon respawn
 6. Backpack: tweede inventory die bij doodgaan blijft liggen
 7. ~~Skills: level 0-99 (RuneScape-curve), geld bij level-up, menu met voortgang~~ ✅
-8. Bomen kappen (timber)
+8. Bomen kappen (timber), naar het voorbeeld van UltimateTimber: hele boom om, valanimatie, sapling terugplanten, geen random loot
 9. Live gaan: testopties uit, installatiehandleiding Ubuntu-VPS, automatische back-ups
 
 ## Rangen
@@ -67,12 +67,46 @@ Acht skills zoals in RuneScape: **Mijnbouw, Houthakken, Vissen, Vechten, Koken, 
 
 Als genoeg spelers in een wereld slapen (standaard **50%**), wordt de nacht of het onweer overgeslagen: de tijd spoelt in een paar seconden door en het weer klaart op. Iedereen in de wereld ziet wie er slaapt en hoeveel er nog nodig zijn. AFK-spelers, staff in vanish en spelers in creative/spectator tellen niet mee. Instellen in het paneel onder **Instellingen › Slapen**, of in `modules/sleep.yml`.
 
+## Toplijsten en scoreboard
+
+Zes toplijsten: **rijkste spelers** (contant + bank), **hoogste skills** (totaal level), **langst online**, **meeste spelerkills**, **meeste mobkills** en **vaakst doodgegaan**. Speeltijd, kills en doden komen uit de statistieken van Minecraft zelf, dus ook wat spelers deden voordat PindaFramework erop stond telt mee.
+
+- **`/top`** opent een menu met alle toplijsten en je eigen plek op elke lijst. **`/top geld`** (of `skills`, `speeltijd`, `kills`, `mobkills`, `doden`) zet een toplijst in de chat.
+- **Scoreboard** rechts in beeld: wisselt elke 10 seconden naar de volgende toplijst, met de top 10 en onderaan je eigen plek. Spelers zetten het zelf uit in `/instellingen`.
+- In het paneel onder **Toplijsten** zie je alle lijsten en stel je het scoreboard in (met voorbeeld). Staff of testaccounts haal je van de lijsten met `hidden-players` in `modules/leaderboards.yml`.
+
+## Aankondigingen
+
+Om de zoveel minuten (standaard 10) een bericht in de chat voor iedereen, op volgorde of willekeurig. Beheer ze in het paneel onder **Aankondigingen**: toevoegen en bewerken met de teksteditor, volgorde aanpassen, meteen versturen, of een eenmalige aankondiging sturen. In een aankondiging werken `<player>`, `<online>`, `<max>`, `<server>` en `%placeholders%` van PlaceholderAPI.
+
+## Antilag
+
+- **Losse items opruimen:** elke 15 minuten, met een aftelling in de chat vooraf (60, 30, 10 en 5-4-3-2-1 seconden). Waardevolle items (diamant, netherite, shulkerboxen, elytra, ...), items met een eigen naam, geld en spullen die er net liggen (bijv. na doodgaan) blijven liggen.
+- **Maximum mobs per chunk** bij fokken, spawners en eieren (standaard 40 per soort, kippen 50, villagers 20, iron golems 10). Wie fokt, krijgt een melding als het vol is. Gewone mobs 's nachts tellen niet mee.
+- **Ingrijpen bij lag:** zakt de TPS 15 seconden onder de 15, dan krijgt staff een melding met de drukste chunk (klik om erheen te gaan), komt er een melding in Discord en worden losse items opgeruimd. Als het weer goed gaat, komt er een melding dat het voorbij is.
+- **`/lag`** laat TPS, ticktijd, chunks, entities en items zien; **`/lag chunks`** de drukste chunks; **`/lag clear [seconden|nu]`** ruimt items op.
+- In het paneel onder **Prestaties**: live TPS, drukste chunks, werelden, opruimen met één klik en de belangrijkste instellingen.
+
+## PlaceholderAPI
+
+Optioneel. Staat [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) op de server, dan werken `%placeholders%` in de aankondigingen en op het scoreboard, en kunnen andere plugins (TAB, hologrammen, ...) deze placeholders van PindaFramework gebruiken:
+
+| Placeholder | Wat |
+|---|---|
+| `%pinda_rank%`, `%pinda_rank_prefix%`, `%pinda_rank_color%` | Rang, prefix (met kleuren) en rangkleur |
+| `%pinda_money%`, `%pinda_cash%`, `%pinda_bank%` | Geld (totaal, contant, bank); met `_raw` alleen het getal |
+| `%pinda_skills_total%`, `%pinda_skill_<skill>%` | Totaal level, of het level in één skill (bijv. `%pinda_skill_mining%`) |
+| `%pinda_playtime%`, `%pinda_kills%`, `%pinda_mobkills%`, `%pinda_deaths%` | Speeltijd, kills en doden |
+| `%pinda_position_<lijst>%`, `%pinda_value_<lijst>%` | Je plek en waarde op een toplijst (`money`, `skills`, `playtime`, `kills`, `mobkills`, `deaths`) |
+| `%pinda_top_<lijst>_<plek>_name%`, `%pinda_top_<lijst>_<plek>_value%` | Wie er op een plek staat, bijv. `%pinda_top_money_1_name%` |
+| `%pinda_afk%`, `%pinda_name_colored%`, `%pinda_tps%`, `%pinda_online%` | AFK (true/false), naam in de rangkleur, TPS, aantal online |
+
 ## Discord
 
 Koppeling via **webhooks** (geen bot nodig), in te stellen in het paneel onder **Discord**:
 
 - **Serverstatus:** één bericht in een kanaal dat zichzelf elke minuut bijwerkt met online/offline, aantal spelers, TPS, versie, sinds wanneer de server aan staat en wie er online is.
-- **Staffmeldingen:** bans, mutes, kicks, waarschuwingen, unbans, rangwijzigingen, inloggen op het paneel en (optioneel) alle paneelacties, plus server gestart/gestopt.
+- **Staffmeldingen:** bans, mutes, kicks, waarschuwingen, unbans, rangwijzigingen, inloggen op het paneel en (optioneel) alle paneelacties, plus server gestart/gestopt en lag (lage TPS) met de drukste chunk.
 
 Webhook maken: in Discord bij het kanaal **Kanaal bewerken › Integraties › Webhooks › Nieuwe webhook › Webhook-URL kopiëren**, en in het paneel plakken. Met de knop **Testbericht sturen** zie je meteen of het werkt.
 
@@ -84,6 +118,7 @@ Het idee: PindaFramework installeren en daarna alles in de browser inrichten.
 - **Teksten:** elke melding, elk menu en elke tip, in elke taal. Met knoppen voor themakleuren, Minecraft-kleuren, eigen kleur, verloop, vet/cursief/onderstreept en placeholders, en een voorbeeld van hoe het er in Minecraft uitziet. Onder **Uiterlijk** pas je de servernaam, de prefix en de themakleuren aan.
 - **Server:** tijd, weer, mededelingen, whitelist, MOTD (met voorbeeld zoals in de serverlijst), `server.properties` (wat kan, werkt meteen) en spelregels per wereld.
 - **Rangen:** rangen maken en bewerken, met een lijst van alle bekende permissies om uit te kiezen.
+- **Toplijsten, Aankondigingen en Prestaties:** alle toplijsten en het scoreboard, de automatische aankondigingen en de antilag.
 
 ## Webpaneel
 
@@ -107,6 +142,9 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | Shops | alle shops en hun aanbod bekijken | `pinda.panel.shops` | Mod |
 | Skills | ranglijsten en levels per speler | `pinda.panel.skills` | Mod |
 | Skills aanpassen | levels zetten, XP geven, resetten, XP-boost starten | `pinda.panel.skills.edit` | Admin |
+| Toplijsten | alle toplijsten; het scoreboard instellen kan met `pinda.panel.config` | `pinda.panel.players` | Mod |
+| Aankondigingen | automatische aankondigingen beheren en meteen versturen | `pinda.panel.broadcasts` | Admin |
+| Prestaties | TPS, drukste chunks, werelden, items opruimen; antilag instellen met `pinda.panel.config` | `pinda.panel.server` | Admin |
 | Instellingen | alle configbestanden als formulier, MOTD, server.properties, spelregels per wereld, Discord | `pinda.panel.config` | Admin |
 | Teksten | alle meldingen, menu's en tips bewerken met kleuren, verloop en opmaak (met voorbeeld), servernaam, prefix en themakleuren | `pinda.panel.texts` | Admin |
 | Rangen bewerken | rangen maken, kleuren, prefix, gewicht, erven en permissies, chatopmaak, standaardrang | `pinda.panel.ranks.edit` | Admin |
@@ -180,6 +218,9 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | `/panel 2fa reset <speler>` | | `pinda.panel.security` | op |
 | `/skills [speler]`, `/skills top [skill]` | `/skill`, `/vaardigheden`, `/levels` | `pinda.skills.use` (+ `.others`) | iedereen |
 | `/skills set\|addxp\|reset <speler> ...`, `/skills boost <x> <duur>\|stop` | | `pinda.skills.admin` | op |
+| `/top [lijst]` | `/toplijst`, `/leaderboard`, `/lb` | `pinda.top.use` | iedereen |
+| `/lag`, `/lag chunks` | `/antilag` | `pinda.antilag.use` | Mod |
+| `/lag clear [seconden\|nu]`, `/lag tp <wereld> <x> <z>` | | `pinda.antilag.admin` | op |
 
 Extra permissies:
 
@@ -203,6 +244,7 @@ Extra permissies:
 | `pinda.shop.admin` | Shopborden van anderen afbreken | op |
 | `pinda.lock.bypass` | Bij alle afgesloten kisten en deuren kunnen | op |
 | `pinda.sleep.exempt` | Telt niet mee bij het aantal spelers dat moet slapen | niemand |
+| `pinda.antilag.notify` | Een melding krijgen als de server laggt | Mod |
 
 `pinda.admin` geeft alle beheerrechten. Aliassen pas je aan in `config.yml` onder `commands`, bijvoorbeeld:
 
@@ -240,6 +282,10 @@ plugins/PindaFramework/
     ├── skills.yml      XP per blok/mob/item, levelcurve, geld per level-up, meldingen
     ├── sleep.yml       percentage slapers, doorspoelen, meldingen
     ├── motd.yml        de MOTD in de serverlijst (meerdere varianten)
+    ├── leaderboards.yml welke toplijsten, hoe vaak bijwerken, verborgen spelers
+    ├── scoreboard.yml  het scoreboard: wisselen, plekken, eigen plek, werelden
+    ├── broadcasts.yml  automatische aankondigingen en hoe vaak
+    ├── antilag.yml     items opruimen, maximum mobs per chunk, ingrijpen bij lag
     ├── discord.yml     webhooks voor het statusbericht en staffmeldingen
     └── panel.yml       webpaneel: poort, adres (public-url), hoe lang inloggen geldig is
 ```

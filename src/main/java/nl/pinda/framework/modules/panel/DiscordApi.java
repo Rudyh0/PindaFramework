@@ -13,7 +13,7 @@ final class DiscordApi extends PanelApi {
 
     private static final String FILE = "modules/discord.yml";
     private static final List<String> EVENTS = List.of("punishments", "revokes", "rank-changes", "panel-logins",
-            "panel-actions", "server-start-stop");
+            "panel-actions", "server-start-stop", "lag");
 
     private final ConfigEditor editor;
 

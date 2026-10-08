@@ -32,6 +32,10 @@ modules:
   skills: true
   sleep: true
   motd: true
+  leaderboards: true
+  scoreboard: true
+  broadcasts: true
+  antilag: true
   discord: true
   panel: true
 

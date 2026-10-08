@@ -91,6 +91,12 @@ settings:
         - "<text>Shows above your hotbar"
         - "<text>how much XP you earn."
 
+    scoreboard:
+      name: "<primary>Scoreboard"
+      description:
+        - "<text>The leaderboards on"
+        - "<text>the right of your screen."
+
   setup:
     done: "<prefix><success>Your preferences have been saved! <text>Have fun on <primary><server></primary>."
     done-title: "<gradient:#FFC857:#E9724C><bold><server>"
@@ -834,6 +840,114 @@ sleep:
   skipping-storm: "<prefix><success>Enough players are sleeping. <text>Skipping the thunderstorm..."
   morning: "<prefix><primary>Good morning!</primary> <text>It's day <highlight><day></highlight> on <server>."
 
+top:
+  boards:
+    money:
+      name: "Richest players"
+      description: "Cash and bank combined."
+    skills:
+      name: "Highest skills"
+      description: "The total level of all skills."
+    playtime:
+      name: "Most time played"
+      description: "Total time played on the server."
+    kills:
+      name: "Most player kills"
+      description: "How many players someone defeated."
+    mobkills:
+      name: "Most mob kills"
+      description: "How many mobs someone defeated."
+    deaths:
+      name: "Most deaths"
+      description: "How often someone died."
+  units: "d,h,m"
+  values:
+    skills: "<value> levels"
+  usage: "<prefix><text>Usage: <primary>/top [board]</primary> <muted>(<boards>)"
+  unknown: "<prefix><error>Leaderboard <highlight><input></highlight> does not exist. <text>Choose from: <primary><boards>"
+  none: "<prefix><text>There are no leaderboards enabled."
+  loading: "<prefix><text>The leaderboards are still being calculated. Try again in a moment."
+  empty: "<prefix><text>Nobody is on <primary><board></primary> yet."
+  header: "<prefix><primary><bold><board>"
+  entry: " <muted><position>. <text><player> <muted>» <primary><value>"
+  entry-self: " <muted><position>. <highlight><bold><player></bold> <muted>» <primary><value>"
+  own: " <muted>... <text>You are <primary>#<position></primary> <muted>» <primary><value>"
+  own-none: " <muted>You are not on this board yet."
+  menu:
+    title: "<dark_gray>Leaderboard: <board>"
+    board:
+      name: "<primary><bold><board>"
+      lore:
+        - "<text><description>"
+        - ""
+        - "<muted>Your position: <position>"
+        - ""
+        - "<muted>» <text>Click to view"
+      position: "<primary>#<position> <muted>(<value>)"
+      position-none: "<muted>not yet"
+    head:
+      name: "<primary><bold><player>"
+      line: "<text><board>: <primary>#<position> <muted>(<value>)"
+      line-none: "<text><board>: <muted>-"
+    entry: "<primary>#<position> <highlight><player>"
+    entry-self: "<primary>#<position> <highlight><bold><player></bold> <muted>(you)"
+    entry-lore:
+      - "<text><value>"
+    empty: "<muted>Nobody on this leaderboard yet."
+    skills:
+      name: "<primary><bold>Per skill"
+      lore:
+        - "<text>View the leaderboard"
+        - "<text>of each skill."
+    close: "<error>Close"
+
+scoreboard:
+  title: "<gradient:#FFC857:#E9724C><bold><board>"
+  entry: "<muted><position>. <text><player>"
+  entry-self: "<primary><position>. <highlight><bold><player>"
+  value: "<primary><value>"
+  empty: "<muted>Nobody yet"
+  own: "<text>You <muted>#<position>"
+  own-none: "<text>You <muted>-"
+  footer: "<muted>All boards: <primary>/top"
+
+broadcasts:
+  format: "<newline><gradient:#FFC857:#E9724C><bold>✦ <server></bold></gradient> <muted>»</muted> <text><message><newline>"
+
+antilag:
+  clear-warning: "<prefix><warning>Loose items on the ground will be cleared in <highlight><seconds></highlight> seconds."
+  clear-countdown: "[actionbar]<warning>Clearing items in <highlight><seconds></highlight>..."
+  clear-done: "<prefix><text>Cleared <highlight><count></highlight> loose items."
+  clear-started: "<prefix><success>Items will be cleared in <seconds> seconds."
+  clear-busy: "<prefix><text>A countdown to clear items is already running."
+  cleared: "<prefix><success>Cleared <count> items."
+  breed-limit: "[actionbar]<error>There are already too many of these mobs here (<mob>) <muted>(max <limit> per chunk)"
+  lag-alert: "<prefix><error><bold>Lag!</bold> <text>The TPS is <tps> <muted>(<mspt> ms per tick)"
+  lag-chunk: " <muted>Busiest chunk: <location> <muted>(<count> entities: <types>)"
+  lag-cleanup: " <muted>Loose items will be cleared in <seconds> seconds."
+  lag-recovered: "<prefix><success>The TPS is back to normal: <tps>."
+  status:
+    - "<prefix><primary><bold>Server performance"
+    - " <text>TPS <muted>(1m, 5m, 15m)</muted>: <tps>"
+    - " <text>Time per tick: <highlight><mspt> ms</highlight> <muted>(below 50 is good)"
+    - " <text>Chunks: <highlight><chunks></highlight> <muted>· <text>Entities: <highlight><entities></highlight> <muted>· <text>Items: <highlight><items>"
+    - " <text>Clearing items: <highlight><next>"
+    - " <muted>More: <primary>/lag chunks</primary>, <primary>/lag clear"
+  next-off: "disabled"
+  next-in: "in <time>"
+  chunks-header: "<prefix><text>The busiest chunks <muted>(click to go there)"
+  chunks-entry: " <muted><position>. <location> <muted>» <highlight><count></highlight> <muted>(<types>)"
+  location: "<primary><world> <x>, <z>"
+  location-hover: "<text>Click to go there"
+  chunks-none: "<prefix><text>There are no entities loaded."
+  teleported: "<prefix><text>You were taken to <primary><world> <x>, <z></primary>."
+  world-unknown: "<prefix><error>World <highlight><world></highlight> does not exist."
+  usage:
+    - "<prefix><text>Antilag:"
+    - " <primary>/lag</primary> <muted>» <text>TPS, entities and items"
+    - " <primary>/lag chunks</primary> <muted>» <text>The busiest chunks"
+    - " <primary>/lag clear [seconds|now]</primary> <muted>» <text>Clear loose items"
+
 discord:
   status:
     online: "🟢 **Online**"
@@ -866,6 +980,12 @@ discord:
     rank: "👑 <player> is now <rank>"
     panel-login: "🔐 <player> logged in to the panel"
     panel-action: "🛠️ <player>: <action>"
+    lag: "🐢 The server is lagging: TPS <tps>"
+    lag-recovered: "✅ The TPS is back to normal: <tps> (after <minutes> min)"
+    mspt: "Time per tick"
+    chunk: "Busiest chunk"
+    cleanup: "Cleanup"
+    cleanup-in: "Loose items will be cleared in <seconds> seconds"
 
 panel:
   usage: "<prefix><text>Usage: <primary>/panel</primary> <muted>(login link)</muted> <text>or <primary>/panel logout</primary> <muted>(log out everywhere)"

@@ -35,11 +35,12 @@ record PanelUser(UUID uuid, String name, String rankId, String rankName, String 
     static final String RANKS_EDIT = "pinda.panel.ranks.edit";
     static final String PLAYERS_MANAGE = "pinda.panel.players.manage";
     static final String SECURITY = "pinda.panel.security";
+    static final String BROADCASTS = "pinda.panel.broadcasts";
 
     /** Alle permissies die het paneel kent; de website laat alleen zien wat je mag. */
     static final List<String> NODES = List.of(USE, PLAYERS, MODERATE, ECONOMY_VIEW, ECONOMY_EDIT, RANKS,
             SHOPS, SHOPS_MANAGE, SERVER, STOP, CONSOLE, LOG, SKILLS, SKILLS_EDIT, CONFIG, TEXTS, RANKS_EDIT,
-            PLAYERS_MANAGE, SECURITY, "pinda.mod.ban.permanent");
+            PLAYERS_MANAGE, SECURITY, BROADCASTS, "pinda.mod.ban.permanent");
 
     boolean has(String node) {
         if (operator) {

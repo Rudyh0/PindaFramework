@@ -1,0 +1,79 @@
+# ┌──────────────────────────────────────────────┐
+# │            PindaFramework - antilag          │
+# └──────────────────────────────────────────────┘
+# Houdt de server soepel: losse items opruimen, niet te veel mobs per chunk
+# en ingrijpen als de TPS te laag wordt. Met /lag zie je hoe het gaat.
+
+clear-items:
+  # Losse items op de grond automatisch opruimen
+  enabled: true
+  # Om de hoeveel minuten
+  interval-minutes: 15
+  # Wanneer spelers een waarschuwing krijgen (seconden van tevoren)
+  warnings: [60, 30, 10, 5, 4, 3, 2, 1]
+  # Items die korter dan zoveel seconden liggen blijven liggen (zoals je spullen net na doodgaan)
+  min-age-seconds: 60
+  # Items met een eigen naam (van het aambeeld) blijven liggen
+  keep-named: true
+  # Pijlen die in de grond of in een muur steken ook opruimen
+  arrows: true
+  # Deze items blijven altijd liggen. Een * mag overal: DIAMOND* of *SHULKER_BOX
+  # (Geld van de economy blijft ook altijd liggen.)
+  keep:
+    - "DIAMOND*"
+    - "NETHERITE*"
+    - "*SHULKER_BOX"
+    - ELYTRA
+    - TOTEM_OF_UNDYING
+    - ENCHANTED_GOLDEN_APPLE
+    - NETHER_STAR
+    - BEACON
+    - DRAGON_EGG
+    - TRIDENT
+    - MACE
+    - HEAVY_CORE
+  # Iedereen laten zien hoeveel items er zijn opgeruimd
+  announce-result: true
+  # Werelden waar niets wordt opgeruimd
+  disabled-worlds: []
+
+mob-limit:
+  # Een maximum aantal mobs per chunk (16x16 blokken), zodat farms de server niet laten haperen
+  enabled: true
+  # Maximaal zoveel van dezelfde soort per chunk (0 = geen maximum)
+  per-type: 40
+  # Maximaal zoveel mobs in totaal per chunk, alle soorten samen (0 = geen maximum)
+  total: 0
+  # Een eigen maximum per soort
+  types:
+    CHICKEN: 50
+    VILLAGER: 20
+    IRON_GOLEM: 10
+  # Bij welke manieren van spawnen het maximum geldt. Gewone mobs 's nachts (NATURAL) staan er
+  # bewust niet in: daar heeft Minecraft zelf al een maximum voor.
+  reasons:
+    - BREEDING
+    - SPAWNER
+    - SPAWNER_EGG
+    - DISPENSE_EGG
+    - EGG
+    - BUILD_IRONGOLEM
+    - BUILD_SNOWMAN
+    - VILLAGE_DEFENSE
+    - DUPLICATION
+
+lag-guard:
+  # Ingrijpen als de TPS te laag is
+  enabled: true
+  # Onder deze TPS is er lag (20 = perfect)
+  tps-below: 15.0
+  # Zo lang (seconden) moet de TPS te laag zijn voordat we ingrijpen
+  seconds: 15
+  # Staff met pinda.antilag.notify krijgt een melding met de drukste chunk
+  notify-staff: true
+  # Losse items opruimen (met een korte aftelling)
+  clear-items: true
+  # De aftelling voor dat opruimen (seconden)
+  clear-countdown: 10
+  # Niet vaker dan eens per zoveel minuten ingrijpen
+  cooldown-minutes: 5

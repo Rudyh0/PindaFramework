@@ -8,20 +8,25 @@ import nl.pinda.framework.config.Theme;
 import nl.pinda.framework.economy.DisabledEconomy;
 import nl.pinda.framework.economy.Economy;
 import nl.pinda.framework.input.ChatInput;
+import nl.pinda.framework.integration.Placeholders;
 import nl.pinda.framework.lang.LanguageManager;
 import nl.pinda.framework.menu.Menu;
 import nl.pinda.framework.menu.MenuListener;
 import nl.pinda.framework.module.ModuleManager;
 import nl.pinda.framework.modules.afk.AfkModule;
+import nl.pinda.framework.modules.antilag.AntilagModule;
 import nl.pinda.framework.modules.back.BackModule;
+import nl.pinda.framework.modules.broadcasts.BroadcastsModule;
 import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.gamemode.GamemodeModule;
 import nl.pinda.framework.modules.homes.HomesModule;
+import nl.pinda.framework.modules.leaderboards.LeaderboardsModule;
 import nl.pinda.framework.modules.locks.LockModule;
 import nl.pinda.framework.modules.moderation.ModerationModule;
 import nl.pinda.framework.modules.ranks.RankModule;
 import nl.pinda.framework.modules.msg.MsgModule;
 import nl.pinda.framework.modules.panel.PanelModule;
+import nl.pinda.framework.modules.scoreboard.ScoreboardModule;
 import nl.pinda.framework.modules.settings.SettingsModule;
 import nl.pinda.framework.modules.shop.ShopModule;
 import nl.pinda.framework.modules.skills.SkillsModule;
@@ -115,9 +120,14 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new SkillsModule(this));
             modules.register(new SleepModule(this));
             modules.register(new MotdModule(this));
+            modules.register(new LeaderboardsModule(this));
+            modules.register(new ScoreboardModule(this));
+            modules.register(new BroadcastsModule(this));
+            modules.register(new AntilagModule(this));
             modules.register(new DiscordModule(this));
             modules.register(new PanelModule(this));
             modules.enableAll();
+            Placeholders.register(this);
 
             commands.register(new AdminCommand(this));
             commands.hook();
@@ -136,6 +146,7 @@ public final class PindaFramework extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        Placeholders.unregister();
         if (modules != null) {
             modules.disableAll();
         }

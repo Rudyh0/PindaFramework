@@ -1,0 +1,26 @@
+# ┌──────────────────────────────────────────────┐
+# │          PindaFramework - toplijsten         │
+# └──────────────────────────────────────────────┘
+# Toplijsten met /top, op het scoreboard, in het paneel en via PlaceholderAPI.
+# Speeltijd, kills en doden komen uit de statistieken van Minecraft zelf,
+# dus ook wat spelers deden voordat PindaFramework erop stond telt mee.
+
+# Welke toplijsten er zijn, in deze volgorde.
+# money = rijkste spelers, skills = totaal level, playtime = speeltijd,
+# kills = spelers verslagen, mobkills = mobs verslagen, deaths = vaakst doodgegaan
+boards:
+  - money
+  - skills
+  - playtime
+  - kills
+  - mobkills
+  - deaths
+
+# Hoe vaak de toplijsten opnieuw worden berekend (seconden, minimaal 15)
+refresh-seconds: 60
+
+# Hoeveel plekken /top <lijst> in de chat laat zien (1-20)
+chat-places: 10
+
+# Spelers die niet op de toplijsten komen (bijv. staff of testaccounts)
+hidden-players: []

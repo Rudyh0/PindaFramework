@@ -48,7 +48,12 @@ final class TextsApi extends PanelApi {
             Map.entry("balance", "1.250 PindaCredits"), Map.entry("cash", "125 PindaCredits"), Map.entry("bank", "7.840 PindaCredits"),
             Map.entry("fee", "2 PindaCredits"), Map.entry("tax", "5%"), Map.entry("input", "abc"), Map.entry("max", "7 dagen"),
             Map.entry("position", "1"), Map.entry("xp", "1.234"), Map.entry("next", "1.500"), Map.entry("total", "96"),
-            Map.entry("online", "3"), Map.entry("tip", "Zet je geld op tijd op de /bank."));
+            Map.entry("online", "3"), Map.entry("tip", "Zet je geld op tijd op de /bank."),
+            Map.entry("board", "Rijkste spelers"), Map.entry("value", "12.500 PindaCredits"), Map.entry("boards", "money, skills, playtime"),
+            Map.entry("description", "Contant geld en bank samen."), Map.entry("tps", "14,2"), Map.entry("mspt", "70,4"),
+            Map.entry("chunks", "1.204"), Map.entry("entities", "3.410"), Map.entry("items", "212"),
+            Map.entry("location", "world 120, -340"), Map.entry("types", "cow 120, item 40"), Map.entry("mob", "Koe"),
+            Map.entry("cx", "7"), Map.entry("cz", "-22"));
 
     private final ConfigEditor editor;
 

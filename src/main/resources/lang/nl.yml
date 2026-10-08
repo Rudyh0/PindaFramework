@@ -95,6 +95,12 @@ settings:
         - "<text>Laat boven je hotbar zien"
         - "<text>hoeveel XP je verdient."
 
+    scoreboard:
+      name: "<primary>Scoreboard"
+      description:
+        - "<text>De toplijsten rechts"
+        - "<text>in beeld."
+
   setup:
     done: "<prefix><success>Je voorkeuren zijn opgeslagen! <text>Veel plezier op <primary><server></primary>."
     done-title: "<gradient:#FFC857:#E9724C><bold><server>"
@@ -838,6 +844,114 @@ sleep:
   skipping-storm: "<prefix><success>Genoeg spelers slapen. <text>Het onweer wordt overgeslagen..."
   morning: "<prefix><primary>Goedemorgen!</primary> <text>Het is dag <highlight><day></highlight> op <server>."
 
+top:
+  boards:
+    money:
+      name: "Rijkste spelers"
+      description: "Contant geld en bank samen."
+    skills:
+      name: "Hoogste skills"
+      description: "Het totaal level van alle skills."
+    playtime:
+      name: "Langst online"
+      description: "De totale speeltijd op de server."
+    kills:
+      name: "Meeste spelerkills"
+      description: "Hoe vaak iemand een speler versloeg."
+    mobkills:
+      name: "Meeste mobkills"
+      description: "Hoeveel mobs iemand versloeg."
+    deaths:
+      name: "Vaakst doodgegaan"
+      description: "Hoe vaak iemand doodging."
+  units: "d,u,m"
+  values:
+    skills: "<value> levels"
+  usage: "<prefix><text>Gebruik: <primary>/top [lijst]</primary> <muted>(<boards>)"
+  unknown: "<prefix><error>Toplijst <highlight><input></highlight> bestaat niet. <text>Kies uit: <primary><boards>"
+  none: "<prefix><text>Er staan geen toplijsten aan."
+  loading: "<prefix><text>De toplijsten worden nog berekend. Probeer het zo nog eens."
+  empty: "<prefix><text>Er staat nog niemand op <primary><board></primary>."
+  header: "<prefix><primary><bold><board>"
+  entry: " <muted><position>. <text><player> <muted>» <primary><value>"
+  entry-self: " <muted><position>. <highlight><bold><player></bold> <muted>» <primary><value>"
+  own: " <muted>... <text>Jij staat op <primary>#<position></primary> <muted>» <primary><value>"
+  own-none: " <muted>Jij staat nog niet op deze lijst."
+  menu:
+    title: "<dark_gray>Toplijst: <board>"
+    board:
+      name: "<primary><bold><board>"
+      lore:
+        - "<text><description>"
+        - ""
+        - "<muted>Jouw plek: <position>"
+        - ""
+        - "<muted>» <text>Klik om te bekijken"
+      position: "<primary>#<position> <muted>(<value>)"
+      position-none: "<muted>nog niet"
+    head:
+      name: "<primary><bold><player>"
+      line: "<text><board>: <primary>#<position> <muted>(<value>)"
+      line-none: "<text><board>: <muted>-"
+    entry: "<primary>#<position> <highlight><player>"
+    entry-self: "<primary>#<position> <highlight><bold><player></bold> <muted>(jij)"
+    entry-lore:
+      - "<text><value>"
+    empty: "<muted>Nog niemand op deze toplijst."
+    skills:
+      name: "<primary><bold>Per skill"
+      lore:
+        - "<text>Bekijk de ranglijst van"
+        - "<text>elke skill apart."
+    close: "<error>Sluiten"
+
+scoreboard:
+  title: "<gradient:#FFC857:#E9724C><bold><board>"
+  entry: "<muted><position>. <text><player>"
+  entry-self: "<primary><position>. <highlight><bold><player>"
+  value: "<primary><value>"
+  empty: "<muted>Nog niemand"
+  own: "<text>Jij <muted>#<position>"
+  own-none: "<text>Jij <muted>-"
+  footer: "<muted>Alle lijsten: <primary>/top"
+
+broadcasts:
+  format: "<newline><gradient:#FFC857:#E9724C><bold>✦ <server></bold></gradient> <muted>»</muted> <text><message><newline>"
+
+antilag:
+  clear-warning: "<prefix><warning>Over <highlight><seconds></highlight> seconden worden losse items op de grond opgeruimd."
+  clear-countdown: "[actionbar]<warning>Items opruimen over <highlight><seconds></highlight>..."
+  clear-done: "<prefix><text>Er zijn <highlight><count></highlight> losse items opgeruimd."
+  clear-started: "<prefix><success>De items worden over <seconds> seconden opgeruimd."
+  clear-busy: "<prefix><text>Er loopt al een aftelling om items op te ruimen."
+  cleared: "<prefix><success><count> items opgeruimd."
+  breed-limit: "[actionbar]<error>Hier lopen al te veel van deze mobs (<mob>) <muted>(max <limit> per chunk)"
+  lag-alert: "<prefix><error><bold>Lag!</bold> <text>De TPS is <tps> <muted>(<mspt> ms per tick)"
+  lag-chunk: " <muted>Drukste chunk: <location> <muted>(<count> entities: <types>)"
+  lag-cleanup: " <muted>Losse items worden over <seconds> seconden opgeruimd."
+  lag-recovered: "<prefix><success>De TPS is weer normaal: <tps>."
+  status:
+    - "<prefix><primary><bold>Serverprestaties"
+    - " <text>TPS <muted>(1m, 5m, 15m)</muted>: <tps>"
+    - " <text>Tijd per tick: <highlight><mspt> ms</highlight> <muted>(onder 50 is goed)"
+    - " <text>Chunks: <highlight><chunks></highlight> <muted>· <text>Entities: <highlight><entities></highlight> <muted>· <text>Items: <highlight><items>"
+    - " <text>Items opruimen: <highlight><next>"
+    - " <muted>Meer: <primary>/lag chunks</primary>, <primary>/lag clear"
+  next-off: "staat uit"
+  next-in: "over <time>"
+  chunks-header: "<prefix><text>De drukste chunks <muted>(klik om erheen te gaan)"
+  chunks-entry: " <muted><position>. <location> <muted>» <highlight><count></highlight> <muted>(<types>)"
+  location: "<primary><world> <x>, <z>"
+  location-hover: "<text>Klik om erheen te gaan"
+  chunks-none: "<prefix><text>Er zijn geen entities geladen."
+  teleported: "<prefix><text>Je bent naar <primary><world> <x>, <z></primary> gebracht."
+  world-unknown: "<prefix><error>Wereld <highlight><world></highlight> bestaat niet."
+  usage:
+    - "<prefix><text>Antilag:"
+    - " <primary>/lag</primary> <muted>» <text>TPS, entities en items"
+    - " <primary>/lag chunks</primary> <muted>» <text>De drukste chunks"
+    - " <primary>/lag clear [seconden|nu]</primary> <muted>» <text>Losse items opruimen"
+
 discord:
   status:
     online: "🟢 **Online**"
@@ -870,6 +984,12 @@ discord:
     rank: "👑 <player> is nu <rank>"
     panel-login: "🔐 <player> is ingelogd op het paneel"
     panel-action: "🛠️ <player>: <action>"
+    lag: "🐢 De server laggt: TPS <tps>"
+    lag-recovered: "✅ De TPS is weer normaal: <tps> (na <minutes> min)"
+    mspt: "Tijd per tick"
+    chunk: "Drukste chunk"
+    cleanup: "Opruimen"
+    cleanup-in: "Losse items worden over <seconds> seconden opgeruimd"
 
 panel:
   usage: "<prefix><text>Gebruik: <primary>/panel</primary> <muted>(inloglink)</muted> <text>of <primary>/panel logout</primary> <muted>(overal uitloggen)"

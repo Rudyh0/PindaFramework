@@ -1,0 +1,26 @@
+# ┌──────────────────────────────────────────────┐
+# │        PindaFramework - aankondigingen       │
+# └──────────────────────────────────────────────┘
+# Automatische aankondigingen. Het makkelijkst beheer je ze in het paneel (Aankondigingen).
+# Opmaak met MiniMessage, net als in de taalbestanden. <newline> = een nieuwe regel.
+# Placeholders: <player> (wie het leest), <online>, <max> en <server>,
+# en %placeholders% van PlaceholderAPI als die op de server staat.
+# De opmaak eromheen pas je aan in Teksten > Aankondigingen (broadcasts.format).
+
+# Om de hoeveel minuten er een aankondiging komt
+interval-minutes: 10
+
+# true = een willekeurige aankondiging, false = de lijst op volgorde
+random: false
+
+# Alleen aankondigen als er minstens zoveel spelers online zijn
+min-players: 1
+
+# Geluid bij een aankondiging (in te stellen in config.yml onder theme.sounds.tip)
+sound: true
+
+messages:
+  - "<text>Wie staat er bovenaan? Bekijk de rijkste spelers, de hoogste skills en wie het langst online is met <click:run_command:/top><hover:show_text:'<text>Klik om te openen'><primary>/top</primary></hover></click>."
+  - "<text>Er zijn nu <highlight><online></highlight> spelers online. Nodig je vrienden uit op <primary><server></primary>!"
+  - "<text>Word sterker in <primary>8 skills</primary>, van mijnbouw tot alchemie. Kijk hoe je ervoor staat met <click:run_command:/skills><hover:show_text:'<text>Klik om te openen'><primary>/skills</primary></hover></click>."
+  - "<text>Zie je iemand die zich niet aan de regels houdt? Laat het weten aan een <#4D9DFF>PindaMod</#4D9DFF>."

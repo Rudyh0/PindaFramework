@@ -132,6 +132,9 @@ public final class PanelModule extends PindaModule {
         new DiscordApi(this).register(created);
         new RanksApi(this).register(created);
         new PlayerActionsApi(this).register(created);
+        new LeaderboardsApi(this).register(created);
+        new BroadcastsApi(this).register(created);
+        new PerformanceApi(this).register(created);
         String bind = bind();
         int port = port();
         try {
