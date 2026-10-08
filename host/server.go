@@ -163,8 +163,8 @@ func isLoopback(host string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-// clientIP: de echte IP van de bezoeker. Achter Caddy staat die in X-Forwarded-For (het laatste
-// adres is wie Caddy zag); is dat Cloudflare, dan staat de bezoeker in CF-Connecting-IP.
+// clientIP: de echte IP van de bezoeker. Achter nginx staat die in X-Forwarded-For (het laatste
+// adres is wie nginx zag); is dat Cloudflare, dan staat de bezoeker in CF-Connecting-IP.
 func (a *App) clientIP(r *http.Request) string {
 	host := remoteHost(r)
 	if !isLoopback(host) {
@@ -258,7 +258,7 @@ func (a *App) serve() error {
 		log.Printf("Dev-paneel luistert op https://%s (eigen certificaat)", config.Listen)
 		return server.ListenAndServeTLS(certFile, keyFile)
 	}
-	log.Printf("Dev-paneel luistert op http://%s (achter Caddy voor %s)", config.Listen, config.Domain)
+	log.Printf("Dev-paneel luistert op http://%s (achter nginx voor %s)", config.Listen, config.Domain)
 	return server.ListenAndServe()
 }
 

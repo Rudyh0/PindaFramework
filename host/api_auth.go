@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/hex"
 	"errors"
 	"net/http"
 	"os"
@@ -13,32 +15,64 @@ import (
 const (
 	sessionCookie = "pinda_host"
 	loginCookie   = "pinda_host_login"
+	deviceCookie  = "pinda_host_device"
+	deviceMaxAge  = 180 * 24 * 3600
 )
 
-// Grenzen per kwartier: per IP-adres, per naam vanaf één IP, per naam in totaal en 2FA-codes per naam.
+// Grenzen per kwartier: per IP-adres, per naam vanaf één IP, per naam in totaal, per bekend
+// apparaat en 2FA-codes per naam. Een bekend apparaat telt alleen voor zichzelf: zo kan een
+// aanvaller met veel IP-adressen jou niet buitensluiten.
 const (
 	limitWindow    = 15 * time.Minute
 	limitPerIP     = 10
 	limitUserPerIP = 8
 	limitUser      = 50
+	limitDevice    = 10
 	limitCodes     = 10
 )
 
 var errTooMany = &apiError{http.StatusTooManyRequests, "Te veel pogingen. Probeer het over een kwartier opnieuw."}
 
 // hashSlots: wachtwoorden controleren kost bewust veel rekenwerk; hooguit twee tegelijk, zodat
-// een stortvloed aan inlogpogingen de server niet platlegt.
-var hashSlots = make(chan struct{}, 2)
+// een stortvloed aan inlogpogingen de server niet platlegt. Bekende apparaten en ingelogde
+// gebruikers hebben een eigen plek, zodat zo'n stortvloed hen niet tegenhoudt.
+var (
+	hashSlots    = make(chan struct{}, 2)
+	trustedSlots = make(chan struct{}, 1)
+)
 
-func withHashSlot(work func()) error {
+func withHashSlot(trusted bool, work func()) error {
+	slots := hashSlots
+	if trusted {
+		slots = trustedSlots
+	}
 	select {
-	case hashSlots <- struct{}{}:
-		defer func() { <-hashSlots }()
+	case slots <- struct{}{}:
+		defer func() { <-slots }()
 		work()
 		return nil
 	case <-time.After(10 * time.Second):
 		return &apiError{http.StatusTooManyRequests, "Het is even te druk. Probeer het zo opnieuw."}
 	}
+}
+
+func deviceHash(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
+// knownDevice: de hash van het apparaat-token als deze browser eerder volledig als deze
+// gebruiker inlogde, anders "".
+func knownDevice(r *http.Request, user User) string {
+	cookie, err := r.Cookie(deviceCookie)
+	if err != nil || len(cookie.Value) != 64 {
+		return ""
+	}
+	hash := deviceHash(cookie.Value)
+	if _, ok := user.Devices[hash]; ok {
+		return hash
+	}
+	return ""
 }
 
 func (a *App) registerAuth(mux *http.ServeMux) {
@@ -133,39 +167,51 @@ func (a *App) handleLogin(q *Request) (any, error) {
 		return nil, err
 	}
 	name := strings.ToLower(strings.TrimSpace(body.Username))
-	ipKey := "ip:" + ipGroup(q.ip)
-	if !a.limiter.take(ipKey, limitPerIP, limitWindow) {
-		return nil, errTooMany
-	}
 	if !usernamePattern.MatchString(name) || len(body.Password) > 256 {
+		if !a.limiter.take("ip:"+ipGroup(q.ip), limitPerIP, limitWindow) {
+			return nil, errTooMany
+		}
 		return nil, errBadLogin
 	}
-	// Per naam vanaf dit IP, en per naam in totaal (veel hoger, zodat een ander je niet zomaar
-	// buiten kan sluiten).
-	userIPKey, userKey := "user:"+name+"|"+ipGroup(q.ip), "user:"+name
-	if !a.limiter.take(userIPKey, limitUserPerIP, limitWindow) || !a.limiter.take(userKey, limitUser, limitWindow) {
-		return nil, errTooMany
-	}
 	user, exists := a.users.get(name)
+	device := ""
+	if exists {
+		device = knownDevice(q.r, user)
+	}
+	// Een bekend apparaat telt alleen voor zichzelf. Anders: per IP, per naam vanaf dit IP en
+	// per naam in totaal.
+	var keys []string
+	if device != "" {
+		keys = []string{"device:" + device}
+		if !a.limiter.take(keys[0], limitDevice, limitWindow) {
+			return nil, errTooMany
+		}
+	} else {
+		keys = []string{"ip:" + ipGroup(q.ip), "user:" + name + "|" + ipGroup(q.ip), "user:" + name}
+		if !a.limiter.take(keys[0], limitPerIP, limitWindow) || !a.limiter.take(keys[1], limitUserPerIP, limitWindow) ||
+			!a.limiter.take(keys[2], limitUser, limitWindow) {
+			return nil, errTooMany
+		}
+	}
 	hash := dummyHash
 	if exists {
 		hash = user.PasswordHash
 	}
 	valid := false
-	if err := withHashSlot(func() { valid = verifyPassword(hash, body.Password) }); err != nil {
+	if err := withHashSlot(device != "", func() { valid = verifyPassword(hash, body.Password) }); err != nil {
 		return nil, err
 	}
 	if !valid || !exists {
 		a.audit.add(name, q.ip, "inloggen mislukt", "", "verkeerde naam of wachtwoord")
 		return nil, errBadLogin
 	}
-	a.limiter.forgive(ipKey)
-	a.limiter.reset(userIPKey)
-	a.limiter.forgive(userKey)
+	for _, key := range keys {
+		a.limiter.forgive(key)
+	}
 	if user.Disabled {
 		return nil, &apiError{http.StatusForbidden, "Dit account staat uit. Vraag een beheerder om het weer aan te zetten."}
 	}
-	challenge := &Challenge{User: user.Name, MustChange: user.MustChangePassword, IP: q.ip}
+	challenge := &Challenge{User: user.Name, MustChange: user.MustChangePassword, IP: q.ip, Generation: user.Generation, Device: device}
 	if user.TOTPSecret == "" {
 		challenge.Secret = newTOTPSecret()
 	}
@@ -245,6 +291,9 @@ func (a *App) handleLoginVerify(q *Request) (any, error) {
 		if user.Disabled {
 			return &apiError{http.StatusForbidden, "Dit account staat uit."}
 		}
+		if user.Generation != challenge.Generation {
+			return errChanged
+		}
 		if challenge.Secret != "" {
 			if user.TOTPSecret != "" {
 				return &apiError{http.StatusConflict, "Voor dit account is net al 2FA ingesteld. Log opnieuw in."}
@@ -260,10 +309,7 @@ func (a *App) handleLoginVerify(q *Request) (any, error) {
 		return nil
 	})
 	if err != nil {
-		if errors.Is(err, errUserNotFound) {
-			return nil, &apiError{http.StatusUnauthorized, "Je inlogpoging is verlopen. Begin opnieuw."}
-		}
-		return nil, err
+		return nil, a.loginUpdateError(challenge, err)
 	}
 	if challenge.Secret != "" {
 		a.audit.add(challenge.User, q.ip, "2fa ingesteld", "", "")
@@ -275,7 +321,23 @@ func (a *App) handleLoginVerify(q *Request) (any, error) {
 		})
 		return map[string]any{"step": "password"}, nil
 	}
-	return a.finishLogin(q, challenge.User, challenge.Token)
+	return a.finishLogin(q, challenge)
+}
+
+// errChanged: het account is tijdens het inloggen gereset (of het wachtwoord veranderd).
+var errChanged = &apiError{http.StatusUnauthorized, "Je account is net gewijzigd (bijvoorbeeld een reset). Log opnieuw in."}
+
+// loginUpdateError: bij een fout die betekent dat deze inlogpoging niet meer kan, wordt hij
+// weggegooid.
+func (a *App) loginUpdateError(challenge *Challenge, err error) error {
+	var api *apiError
+	if errors.Is(err, errUserNotFound) || (errors.As(err, &api) && (api.status == http.StatusUnauthorized || api.status == http.StatusForbidden)) {
+		a.sessions.removeChallenge(challenge.Token)
+	}
+	if errors.Is(err, errUserNotFound) {
+		return &apiError{http.StatusUnauthorized, "Je inlogpoging is verlopen. Begin opnieuw."}
+	}
+	return err
 }
 
 func (a *App) handleLoginPassword(q *Request) (any, error) {
@@ -297,7 +359,7 @@ func (a *App) handleLoginPassword(q *Request) (any, error) {
 	}
 	var hash string
 	var hashErr error
-	if err := withHashSlot(func() { hash, hashErr = hashPassword(body.Password) }); err != nil {
+	if err := withHashSlot(true, func() { hash, hashErr = hashPassword(body.Password) }); err != nil {
 		return nil, err
 	}
 	if hashErr != nil {
@@ -307,6 +369,9 @@ func (a *App) handleLoginPassword(q *Request) (any, error) {
 		if user.Disabled {
 			return &apiError{http.StatusForbidden, "Dit account staat uit."}
 		}
+		if user.Generation != challenge.Generation || user.TOTPSecret == "" {
+			return errChanged
+		}
 		if verifyPassword(user.PasswordHash, body.Password) {
 			return badRequest("Kies een ander wachtwoord dan het tijdelijke.")
 		}
@@ -314,24 +379,42 @@ func (a *App) handleLoginPassword(q *Request) (any, error) {
 		user.MustChangePassword = false
 		return nil
 	}); err != nil {
-		return nil, err
+		return nil, a.loginUpdateError(challenge, err)
 	}
 	a.audit.add(challenge.User, q.ip, "wachtwoord gewijzigd", "", "na een tijdelijk wachtwoord")
-	return a.finishLogin(q, challenge.User, challenge.Token)
+	return a.finishLogin(q, challenge)
 }
 
-func (a *App) finishLogin(q *Request, name, challengeToken string) (any, error) {
-	a.sessions.removeChallenge(challengeToken)
-	user, err := a.users.update(name, func(user *User) error {
-		user.LastLogin = time.Now().UnixMilli()
+// finishLogin maakt de sessie. De browser wordt (of blijft) een bekend apparaat.
+func (a *App) finishLogin(q *Request, challenge *Challenge) (any, error) {
+	a.sessions.removeChallenge(challenge.Token)
+	newDevice := ""
+	user, err := a.users.update(challenge.User, func(user *User) error {
+		if user.Disabled {
+			return &apiError{http.StatusForbidden, "Dit account staat uit."}
+		}
+		if user.Generation != challenge.Generation {
+			return errChanged
+		}
+		now := time.Now().UnixMilli()
+		user.LastLogin = now
+		device := challenge.Device
+		if _, known := user.Devices[device]; device == "" || !known {
+			newDevice = randomToken()
+			device = deviceHash(newDevice)
+		}
+		user.rememberDevice(device, now)
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, a.loginUpdateError(challenge, err)
 	}
 	session := a.sessions.create(user.Name, q.ip, q.r.UserAgent())
 	a.setCookie(q.w, q.r, loginCookie, "", -1)
 	a.setCookie(q.w, q.r, sessionCookie, session.Token, a.config.get().SessionHours*3600)
+	if newDevice != "" {
+		a.setCookie(q.w, q.r, deviceCookie, newDevice, deviceMaxAge)
+	}
 	a.audit.add(user.Name, q.ip, "inloggen", "", "")
 	return map[string]any{"step": "done", "user": me(user)}, nil
 }
@@ -367,7 +450,7 @@ func (a *App) handleChangePassword(q *Request) (any, error) {
 	var valid bool
 	var hash string
 	var hashErr error
-	if err := withHashSlot(func() {
+	if err := withHashSlot(true, func() {
 		valid = verifyPassword(q.user.PasswordHash, body.Current)
 		if valid {
 			hash, hashErr = hashPassword(body.Password)
@@ -384,6 +467,8 @@ func (a *App) handleChangePassword(q *Request) (any, error) {
 	}
 	if _, err := a.users.update(q.user.Name, func(user *User) error {
 		user.PasswordHash = hash
+		// Inlogpogingen die nog met het oude wachtwoord begonnen zijn, tellen niet meer.
+		user.Generation++
 		return nil
 	}); err != nil {
 		return nil, err
@@ -441,7 +526,7 @@ func (a *App) handleSetupAccount(q *Request) (any, error) {
 	}
 	var hash string
 	var hashErr error
-	if err := withHashSlot(func() { hash, hashErr = hashPassword(body.Password) }); err != nil {
+	if err := withHashSlot(false, func() { hash, hashErr = hashPassword(body.Password) }); err != nil {
 		return nil, err
 	}
 	if hashErr != nil {
@@ -484,5 +569,5 @@ func (a *App) handleSetupAccountVerify(q *Request) (any, error) {
 	}
 	_ = os.Remove(filepath.Join(a.dataDir, "setup-code"))
 	a.audit.add(challenge.User, q.ip, "setup", challenge.User, "eerste beheerder aangemaakt")
-	return a.finishLogin(q, challenge.User, challenge.Token)
+	return a.finishLogin(q, challenge)
 }

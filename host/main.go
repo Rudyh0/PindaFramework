@@ -1,6 +1,6 @@
 // PindaHost: het dev-paneel van een PindaCraft-server.
 //
-// Eén programma dat als dienst op de VPS draait (achter Caddy voor HTTPS). Hiermee beheren
+// Eén programma dat als dienst op de VPS draait (achter nginx voor HTTPS). Hiermee beheren
 // developers de server: gebruikers met verplichte 2FA, de eerste setup, databases (MariaDB)
 // en later ook de server zelf, bestanden, backups en de website.
 package main

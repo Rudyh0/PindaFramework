@@ -81,11 +81,17 @@ final class SqliteConverter {
                 total += copied;
                 logger.info("  " + table + ": " + copied + " rijen");
             }
-            try (PreparedStatement done = mysql.prepareStatement("DELETE FROM pinda_migrations WHERE module = ?")) {
-                done.setString(1, MARKER);
-                done.executeUpdate();
-            }
+            // De markering blijft staan tot finish(): pas als convert-from-sqlite op false staat,
+            // is de omzetting echt klaar. Gaat het daarvoor mis, dan mag de volgende start opnieuw.
             return new Result(perTable.size(), total, perTable);
+        }
+    }
+
+    /** Haalt de markering weg; roep dit pas aan als convert-from-sqlite op false staat. */
+    static void finish(Connection mysql) throws SQLException {
+        try (PreparedStatement done = mysql.prepareStatement("DELETE FROM pinda_migrations WHERE module = ?")) {
+            done.setString(1, MARKER);
+            done.executeUpdate();
         }
     }
 

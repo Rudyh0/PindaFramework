@@ -105,6 +105,12 @@ func openFileAt(base, rel, name string) (*os.File, error) {
 		file.Close()
 		return nil, &os.PathError{Op: "open", Path: name, Err: errNotRegular}
 	}
+	// Een hardlink naar een bestand elders (bijv. /etc/shadow) lezen we ook niet. Ubuntu houdt
+	// dat al tegen (fs.protected_hardlinks), maar zo hangt het daar niet van af.
+	if stat, ok := info.Sys().(*syscall.Stat_t); ok && stat.Nlink > 1 {
+		file.Close()
+		return nil, &os.PathError{Op: "open", Path: name, Err: errNotRegular}
+	}
 	return file, nil
 }
 

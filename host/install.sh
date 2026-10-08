@@ -2,7 +2,7 @@
 # ┌──────────────────────────────────────────────────────────────┐
 # │  PindaHost - installer voor een kale Ubuntu-server (VPS)      │
 # └──────────────────────────────────────────────────────────────┘
-# Installeert alles wat nodig is: Java, MariaDB, Caddy (webserver), UFW (firewall) en het
+# Installeert alles wat nodig is: Java, MariaDB, nginx (webserver), UFW (firewall) en het
 # dev-paneel (pinda-host). De rest (Minecraft-server, database, DNS) doe je daarna in het
 # dev-paneel zelf.
 #
@@ -97,6 +97,9 @@ if [ -f "$CONFIG" ]; then
   if command -v python3 >/dev/null 2>&1; then
     [ -n "$MODE" ] || MODE="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("mode",""))' "$CONFIG" 2>/dev/null || true)"
     [ -n "$DOMAIN" ] || DOMAIN="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("domain",""))' "$CONFIG" 2>/dev/null || true)"
+    # Cloudflare ja/nee ook overnemen: anders zou opnieuw draaien (met --yes of Enter) Cloudflare
+    # aanzetten en poort 80/443 voor iedereen behalve Cloudflare dichtzetten.
+    [ -n "$CLOUDFLARE" ] || CLOUDFLARE="$(python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); print("true" if c.get("cloudflare") else "false") if "cloudflare" in c else print("")' "$CONFIG" 2>/dev/null || true)"
   fi
 fi
 
@@ -139,9 +142,20 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 APT_OPTS=(-y -q -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
 
+# Een eerdere versie van deze installer gebruikte Caddy, uit een eigen pakketbron. Die bron kon
+# kapot zijn (sleutel niet te controleren), en dan stopt elke "apt-get update". Opruimen.
+if [ -f /etc/apt/sources.list.d/caddy-stable.list ] && ! command -v caddy >/dev/null 2>&1; then
+  rm -f /etc/apt/sources.list.d/caddy-stable.list /etc/apt/keyrings/caddy-stable.gpg /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  info "Oude Caddy-pakketbron weggehaald (PindaHost gebruikt nu nginx)."
+fi
+if grep -qs "PindaHost" /etc/caddy/Caddyfile; then
+  systemctl disable --now caddy >/dev/null 2>&1 || true
+  info "Caddy van een eerdere installatie uitgezet (PindaHost gebruikt nu nginx)."
+fi
+
 step "Systeem bijwerken en basispakketten installeren"
 apt-get update -q
-apt-get install "${APT_OPTS[@]}" ca-certificates curl gnupg ufw tar unzip python3 >/dev/null
+apt-get install "${APT_OPTS[@]}" ca-certificates curl gnupg openssl ufw tar unzip python3 >/dev/null
 ok "Basispakketten"
 
 step "Java 25 installeren (voor Minecraft)"
@@ -173,17 +187,22 @@ FLUSH PRIVILEGES;
 SQL
 ok "MariaDB $(mariadb -uroot -N -e 'SELECT VERSION()' 2>/dev/null | cut -d- -f1) (alleen bereikbaar vanaf deze server)"
 
-step "Caddy installeren (webserver met automatische HTTPS)"
-if ! command -v caddy >/dev/null 2>&1; then
-  install -d -m 0755 /etc/apt/keyrings
-  curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor --yes -o /etc/apt/keyrings/caddy-stable.gpg
-  curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt \
-    | sed 's#deb https#deb [signed-by=/etc/apt/keyrings/caddy-stable.gpg] https#; s#deb-src https#deb-src [signed-by=/etc/apt/keyrings/caddy-stable.gpg] https#' \
-    > /etc/apt/sources.list.d/caddy-stable.list
-  apt-get update -q
-  apt-get install "${APT_OPTS[@]}" caddy >/dev/null
+step "nginx installeren (webserver)"
+# Gewoon uit Ubuntu zelf: geen extra pakketbron of sleutel nodig.
+if ! apt-get install "${APT_OPTS[@]}" nginx >/dev/null 2>&1; then
+  # Zonder IPv6 kan de standaardpagina van Ubuntu (listen [::]:80) niet starten en blijft de
+  # installatie hangen. Die pagina hebben we niet nodig.
+  rm -f /etc/nginx/sites-enabled/default
+  dpkg --configure -a >/dev/null 2>&1 || true
+  apt-get install "${APT_OPTS[@]}" nginx >/dev/null || fail "nginx installeren mislukt."
 fi
-ok "Caddy $(caddy version 2>/dev/null | cut -d' ' -f1)"
+NGINX_VERSION="$(nginx -v 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)"
+ok "nginx $NGINX_VERSION"
+if [ "$MODE" = "domain" ] && [ "$CLOUDFLARE" != "true" ]; then
+  # Zonder Cloudflare: een echt certificaat van Let's Encrypt.
+  apt-get install "${APT_OPTS[@]}" certbot >/dev/null
+  ok "certbot (Let's Encrypt)"
+fi
 
 # ------------------------------------------------------------------ mappen en gebruiker
 
@@ -194,7 +213,7 @@ fi
 install -d -m 0755 "$BASE"
 install -d -m 0700 "$PANEL_DIR"
 install -d -m 0750 -o "$SERVICE_USER" -g "$SERVICE_USER" "$BASE/server" "$BASE/server/plugins"
-install -d -m 0755 -o caddy -g caddy "$BASE/website" 2>/dev/null || install -d -m 0755 "$BASE/website"
+install -d -m 0755 "$BASE/website" "$BASE/acme"
 install -d -m 0700 "$BASE/backups"
 if [ ! -f "$BASE/website/index.html" ]; then
   cat > "$BASE/website/index.html" <<'HTML'
@@ -263,7 +282,7 @@ Wants=network-online.target
 ExecStart=$BASE/pinda-host serve --config $CONFIG
 Restart=always
 RestartSec=3
-# Het dev-paneel beheert de server, MariaDB, Caddy en de firewall, en draait daarom als root.
+# Het dev-paneel beheert de server, MariaDB, nginx en de firewall, en draait daarom als root.
 User=root
 NoNewPrivileges=true
 PrivateTmp=true
@@ -278,43 +297,155 @@ ok "Draait als dienst (pinda-host)"
 
 # ------------------------------------------------------------------ webserver
 
-step "Webserver instellen"
+step "Webserver (nginx) instellen"
 CF_RANGES="173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32"
-if [ -f /etc/caddy/Caddyfile ] && ! grep -q "PindaHost" /etc/caddy/Caddyfile; then
-  cp /etc/caddy/Caddyfile "/etc/caddy/Caddyfile.voor-pindahost"
+NGINX_SITE="/etc/nginx/sites-available/pindahost"
+SSL_DIR="/etc/nginx/pinda-ssl"
+install -d -m 0700 "$SSL_DIR"
+
+# Draait er al iets anders op poort 80 of 443 (bijv. Apache), dan kan nginx niet starten.
+BUSY="$(ss -Htlnp 2>/dev/null | awk '$4 ~ /:(80|443)$/' | grep -v '"nginx"' | grep -oE '\(\("[^"]+"' | tr -d '("' | sort -u | tr '\n' ' ' || true)"
+[ -z "$BUSY" ] || fail "Poort 80 of 443 is al in gebruik door: $BUSY. Zet dat eerst uit (bijv. sudo systemctl disable --now apache2) en draai de installer opnieuw."
+
+# Een eigen certificaat (10 jaar). Achter Cloudflare (SSL/TLS-modus "Full") is dat genoeg:
+# Cloudflare versleutelt naar deze server, en bezoekers zien het certificaat van Cloudflare.
+self_signed() {
+  local name="$1"
+  if [ ! -s "$SSL_DIR/$name.crt" ] || [ ! -s "$SSL_DIR/$name.key" ]; then
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -days 3650 \
+      -subj "/CN=$name" -addext "subjectAltName=DNS:$name" \
+      -keyout "$SSL_DIR/$name.key" -out "$SSL_DIR/$name.crt" >/dev/null 2>&1 \
+      || fail "Certificaat maken mislukt (openssl)."
+    chmod 0600 "$SSL_DIR/$name.key"
+  fi
+}
+self_signed "pindahost.website"
+
+# http2: vanaf nginx 1.25.1 een eigen regel, daarvoor achter "listen".
+if [ "$(printf '%s\n' "1.25.1" "${NGINX_VERSION:-0}" | sort -V | head -n 1)" = "1.25.1" ]; then
+  LISTEN_SSL="ssl"; HTTP2_LINE="	http2 on;"
+else
+  LISTEN_SSL="ssl http2"; HTTP2_LINE=""
 fi
-{
-  echo "# Beheerd door PindaHost. Eigen aanpassingen kunnen worden overschreven."
-  if [ "$MODE" = "domain" ] && [ "$CLOUDFLARE" = "true" ]; then
-    echo "{"
-    echo "	servers {"
-    echo "		trusted_proxies static $CF_RANGES"
-    echo "		client_ip_headers CF-Connecting-IP"
-    echo "	}"
+
+write_nginx() {
+  local cert="$1" key="$2"
+  {
+    echo "# Beheerd door PindaHost (install.sh). Eigen aanpassingen worden bij opnieuw installeren overschreven."
+    echo
+    echo "map \$http_upgrade \$pinda_connection_upgrade {"
+    echo "	default upgrade;"
+    echo "	''      close;"
     echo "}"
     echo
-  fi
-  if [ "$MODE" = "domain" ]; then
-    echo "$DOMAIN {"
-    if [ "$CLOUDFLARE" = "true" ]; then
-      echo "	# Achter de Cloudflare-proxy: Cloudflare (SSL/TLS-modus 'Full') praat versleuteld met dit certificaat."
-      echo "	tls internal"
+    if [ "$MODE" = "domain" ]; then
+      cat <<NGINX
+# Dev-paneel: $DOMAIN
+server {
+	listen 80;
+	listen [::]:80;
+	server_name $DOMAIN;
+	server_tokens off;
+	location /.well-known/acme-challenge/ {
+		root $BASE/acme;
+	}
+	location / {
+		return 301 https://\$host\$request_uri;
+	}
+}
+
+server {
+	listen 443 $LISTEN_SSL;
+	listen [::]:443 $LISTEN_SSL;
+$HTTP2_LINE
+	server_name $DOMAIN;
+	server_tokens off;
+	ssl_certificate $cert;
+	ssl_certificate_key $key;
+	ssl_protocols TLSv1.2 TLSv1.3;
+	# Uploads (databases, later bestanden); via Cloudflare is de grens 100 MB per keer.
+	client_max_body_size 4g;
+
+	location / {
+		proxy_pass http://127.0.0.1:$PANEL_PORT_LOCAL;
+		proxy_http_version 1.1;
+		proxy_set_header Host \$host;
+		# Het paneel kijkt zelf of dit Cloudflare is (en leest dan CF-Connecting-IP).
+		proxy_set_header X-Forwarded-For \$remote_addr;
+		proxy_set_header X-Forwarded-Proto \$scheme;
+		proxy_set_header Upgrade \$http_upgrade;
+		proxy_set_header Connection \$pinda_connection_upgrade;
+		proxy_request_buffering off;
+		proxy_buffering off;
+		proxy_read_timeout 1h;
+		proxy_send_timeout 1h;
+	}
+}
+
+NGINX
     fi
-    echo "	encode gzip"
-    echo "	reverse_proxy 127.0.0.1:$PANEL_PORT_LOCAL"
-    echo "}"
-    echo
+    cat <<NGINX
+# De website (later te beheren in het dev-paneel)
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+	listen 443 $LISTEN_SSL default_server;
+	listen [::]:443 $LISTEN_SSL default_server;
+$HTTP2_LINE
+	server_name _;
+	server_tokens off;
+	ssl_certificate $SSL_DIR/pindahost.website.crt;
+	ssl_certificate_key $SSL_DIR/pindahost.website.key;
+	ssl_protocols TLSv1.2 TLSv1.3;
+	root $BASE/website;
+	index index.html;
+	location /.well-known/acme-challenge/ {
+		root $BASE/acme;
+	}
+	location / {
+		try_files \$uri \$uri/ =404;
+	}
+}
+NGINX
+  } > "$NGINX_SITE"
+  # Een VPS zonder IPv6: dan kan nginx niet op [::] luisteren.
+  [ -e /proc/net/if_inet6 ] || sed -i '/listen \[::\]/d' "$NGINX_SITE"
+  ln -sf "$NGINX_SITE" /etc/nginx/sites-enabled/pindahost
+  # De standaardpagina van Ubuntu wil ook "default_server" zijn.
+  [ -L /etc/nginx/sites-enabled/default ] && rm -f /etc/nginx/sites-enabled/default
+  nginx -t >/dev/null 2>&1 || fail "De nginx-configuratie klopt niet: $(nginx -t 2>&1 | tail -n 2 | tr '\n' ' ')"
+  systemctl enable nginx >/dev/null 2>&1 || true
+  systemctl reload nginx 2>/dev/null || systemctl restart nginx
+}
+
+CERT_NOTE=""
+if [ "$MODE" = "domain" ]; then
+  LE_DIR="/etc/letsencrypt/live/$DOMAIN"
+  if [ "$CLOUDFLARE" != "true" ] && [ -s "$LE_DIR/fullchain.pem" ]; then
+    write_nginx "$LE_DIR/fullchain.pem" "$LE_DIR/privkey.pem"
+    CERT_NOTE="letsencrypt"
+  else
+    self_signed "$DOMAIN"
+    write_nginx "$SSL_DIR/$DOMAIN.crt" "$SSL_DIR/$DOMAIN.key"
+    CERT_NOTE="eigen"
+    if [ "$CLOUDFLARE" != "true" ]; then
+      # Let's Encrypt lukt alleen als het domein al naar deze server wijst.
+      if certbot certonly --webroot -w "$BASE/acme" -d "$DOMAIN" --non-interactive --agree-tos \
+          --register-unsafely-without-email --keep-until-expiring \
+          --deploy-hook "systemctl reload nginx" >/dev/null 2>&1 && [ -s "$LE_DIR/fullchain.pem" ]; then
+        write_nginx "$LE_DIR/fullchain.pem" "$LE_DIR/privkey.pem"
+        CERT_NOTE="letsencrypt"
+      fi
+    fi
   fi
-  echo "# De website (later te beheren in het dev-paneel)"
-  echo ":80 {"
-  echo "	root * $BASE/website"
-  echo "	file_server"
-  echo "}"
-} > /etc/caddy/Caddyfile
-caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1 || fail "De Caddy-configuratie klopt niet (zie /etc/caddy/Caddyfile)."
-systemctl enable caddy >/dev/null 2>&1 || true
-systemctl reload caddy 2>/dev/null || systemctl restart caddy
-ok "Caddy"
+else
+  write_nginx "" ""
+fi
+case "$CERT_NOTE" in
+  letsencrypt) ok "nginx, met een certificaat van Let's Encrypt (wordt vanzelf verlengd)" ;;
+  eigen) if [ "$CLOUDFLARE" = "true" ]; then ok "nginx, met een eigen certificaat voor Cloudflare (modus Full)"; else ok "nginx (nog met een eigen certificaat, zie hieronder)"; fi ;;
+  *) ok "nginx (website op poort 80)" ;;
+esac
 
 # ------------------------------------------------------------------ firewall
 
@@ -371,9 +502,10 @@ if [ "$MODE" = "domain" ]; then
   echo
   echo "  Zorg dat ${BOLD}$DOMAIN${RESET} naar ${BOLD}$IP${RESET} wijst (A-record)."
   if [ "$CLOUDFLARE" = "true" ]; then
-    echo "  In Cloudflare: proxy aan (oranje wolk) en bij SSL/TLS de modus ${BOLD}Full${RESET}."
-  else
-    echo "  Het HTTPS-certificaat wordt automatisch aangevraagd zodra het domein naar deze server wijst."
+    echo "  In Cloudflare: proxy aan (oranje wolk) en bij SSL/TLS de modus ${BOLD}Full${RESET} (niet \"Full (strict)\")."
+  elif [ "$CERT_NOTE" != "letsencrypt" ]; then
+    echo "  ${YELLOW}Nog geen Let's Encrypt-certificaat:${RESET} het domein wijst (nog) niet naar deze server."
+    echo "  Zet het A-record goed en draai de installer daarna nog een keer; tot die tijd waarschuwt je browser."
   fi
 else
   echo "  Dev-paneel:  ${BOLD}https://$IP:$PORT${RESET}"

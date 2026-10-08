@@ -59,7 +59,8 @@ final class DatabaseStatus {
         conversion.put("tables", result.tables());
         conversion.put("rows", result.rows());
         conversion.put("perTable", result.perTable());
-        conversion.put("backup", backup.getName());
+        // Zonder backup: het bestand kon niet opzij worden gezet en staat er nog (ongebruikt).
+        conversion.put("backup", backup != null ? backup.getName() : null);
         conversion.put("error", null);
         save("database-conversion.json", conversion);
     }

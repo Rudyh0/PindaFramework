@@ -31,6 +31,33 @@ type User struct {
 	Created            int64  `json:"created"`
 	CreatedBy          string `json:"createdBy,omitempty"`
 	LastLogin          int64  `json:"lastLogin,omitempty"`
+	// Generation gaat omhoog bij elke reset of wachtwoordwijziging. Een inlogpoging die daarvoor
+	// begon, kan daarna niet meer worden afgemaakt.
+	Generation int64 `json:"generation,omitempty"`
+	// Devices: apparaten waarop deze gebruiker eerder helemaal (met 2FA) inlogde, als SHA-256
+	// van het apparaat-token, met wanneer ze voor het laatst gebruikt zijn. Zo'n apparaat telt
+	// niet mee in de grens per gebruiker, zodat een aanvaller je niet buiten kan sluiten.
+	Devices map[string]int64 `json:"devices,omitempty"`
+}
+
+const maxDevices = 10
+
+// rememberDevice zet een apparaat in de lijst (of werkt "laatst gebruikt" bij) en ruimt de
+// oudste op als het er te veel worden.
+func (u *User) rememberDevice(hash string, now int64) {
+	if u.Devices == nil {
+		u.Devices = map[string]int64{}
+	}
+	u.Devices[hash] = now
+	for len(u.Devices) > maxDevices {
+		oldest, when := "", int64(0)
+		for key, used := range u.Devices {
+			if oldest == "" || used < when {
+				oldest, when = key, used
+			}
+		}
+		delete(u.Devices, oldest)
+	}
 }
 
 var usernamePattern = regexp.MustCompile(`^[A-Za-z0-9_.-]{3,32}$`)
@@ -253,6 +280,8 @@ func (s *UserStore) resetTwoFactor(name string) (string, error) {
 		user.TOTPLastStep = 0
 		user.PasswordHash = hash
 		user.MustChangePassword = true
+		user.Generation++
+		user.Devices = nil
 		return nil
 	})
 	return password, err
@@ -268,6 +297,8 @@ func (s *UserStore) resetPassword(name string) (string, error) {
 	_, err = s.update(name, func(user *User) error {
 		user.PasswordHash = hash
 		user.MustChangePassword = true
+		user.Generation++
+		user.Devices = nil
 		return nil
 	})
 	return password, err

@@ -35,6 +35,10 @@ type Challenge struct {
 	Attempts     int
 	Expires      time.Time
 	IP           string
+	// De Generation van de gebruiker toen de inlogpoging begon.
+	Generation int64
+	// Het apparaat is bekend (eerder volledig ingelogd): SHA-256 van het apparaat-token.
+	Device string
 }
 
 const (
@@ -102,7 +106,8 @@ func (s *Sessions) remove(token string) {
 	delete(s.sessions, token)
 }
 
-// removeUser logt een gebruiker overal uit (behalve eventueel de huidige sessie).
+// removeUser logt een gebruiker overal uit (behalve eventueel de huidige sessie) en breekt
+// half afgemaakte inlogpogingen af.
 func (s *Sessions) removeUser(user, except string) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -111,6 +116,11 @@ func (s *Sessions) removeUser(user, except string) int {
 		if strings.EqualFold(session.User, user) && token != except {
 			delete(s.sessions, token)
 			removed++
+		}
+	}
+	for token, challenge := range s.challenges {
+		if strings.EqualFold(challenge.User, user) && !challenge.Setup {
+			delete(s.challenges, token)
 		}
 	}
 	return removed

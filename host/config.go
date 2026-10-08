@@ -13,10 +13,10 @@ import (
 
 // Config staat in config.json naast de andere gegevens van het paneel.
 type Config struct {
-	// "domain": achter Caddy op een domein (HTTPS door Caddy, eventueel via Cloudflare).
+	// "domain": achter nginx op een domein (HTTPS door nginx, eventueel via Cloudflare).
 	// "ip": rechtstreeks op IP:poort, met een eigen HTTPS-certificaat.
 	Mode string `json:"mode"`
-	// Waar het paneel luistert. Bij "domain" stuurt Caddy het domein hierheen door.
+	// Waar het paneel luistert. Bij "domain" stuurt nginx het domein hierheen door.
 	Listen string `json:"listen"`
 	// Het domein van dit dev-paneel, gekozen tijdens de installatie.
 	Domain string `json:"domain"`

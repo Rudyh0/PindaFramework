@@ -46,9 +46,13 @@ func (a *App) readPluginDBStatus() PluginDBStatus {
 	return readPluginDBStatusAt(a.config.get().BaseDir, pluginRel)
 }
 
-// pluginFileExists: staat dit bestand (alleen een naam, geen pad) in de pluginmap?
+// pluginFileExists: staat dit bestand in de pluginmap? Net als de plugin zelf (sqlite.file)
+// mag het in een submap staan, maar nooit erbuiten (geen .., geen symlinks).
 func (a *App) pluginFileExists(name string) bool {
-	return fileExistsAt(a.config.get().BaseDir, pluginRel, name)
+	parts := strings.Split(strings.Trim(name, "/"), "/")
+	file := parts[len(parts)-1]
+	dir := strings.Join(append([]string{pluginRel}, parts[:len(parts)-1]...), "/")
+	return fileExistsAt(a.config.get().BaseDir, dir, file)
 }
 
 // readPluginDBAt leest database.yml. Bestaat hij niet, dan de standaard (SQLite).

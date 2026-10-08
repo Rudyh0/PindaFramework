@@ -204,7 +204,7 @@ func (a *App) setupPluginMySQL(convert bool) (PluginDB, error) {
 	if err != nil {
 		return PluginDB{}, err
 	}
-	if plugin.Type == "mysql" && plugin.Password != "" {
+	if plugin.Type == "mysql" {
 		return plugin, nil
 	}
 	name := "pindacraft"
@@ -212,7 +212,17 @@ func (a *App) setupPluginMySQL(convert bool) (PluginDB, error) {
 	if err != nil {
 		return PluginDB{}, err
 	}
-	if !exists {
+	if exists {
+		// Een bestaande database alleen hergebruiken als hij leeg is: anders kunnen er tabellen,
+		// triggers of routines in staan die niet van de plugin zijn.
+		objects, err := a.mariadb.objectCount(name)
+		if err != nil {
+			return PluginDB{}, err
+		}
+		if objects > 0 {
+			return PluginDB{}, badRequest("Er is al een database %s en die is niet leeg. Download hem als backup en verwijder hem, dan maakt het paneel een nieuwe.", name)
+		}
+	} else {
 		if err := a.mariadb.createDatabase(name); err != nil {
 			return PluginDB{}, err
 		}

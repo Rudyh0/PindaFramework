@@ -397,6 +397,64 @@ func TestLoginFlow(t *testing.T) {
 		t.Fatal("jezelf verwijderen toegestaan")
 	}
 
+	// Een inlogpoging die liep vóór een reset, kan daarna niet meer worden afgemaakt.
+	// A: reset via het paneel (gooit ook lopende inlogpogingen weg).
+	status, created := admin.post("/api/users", map[string]any{"name": "dev2", "admin": false})
+	if status != 200 {
+		t.Fatalf("dev2 maken: %d", status)
+	}
+	thief := newClient(t, server)
+	status, pending := thief.post("/api/login", map[string]string{"username": "dev2", "password": created["password"].(string)})
+	if status != 200 || pending["step"] != "setup" {
+		t.Fatalf("inloggen dev2: %d %v", status, pending)
+	}
+	status, reset := admin.post("/api/users/dev2/reset-2fa", nil)
+	if status != 200 || reset["password"] == nil {
+		t.Fatalf("reset-2fa: %d %v", status, reset)
+	}
+	if status, _ := thief.post("/api/login/verify", map[string]string{"code": currentCode(t, pending["secret"].(string))}); status != 401 {
+		t.Errorf("inlogpoging van vóór de reset (paneel) afgemaakt: %d", status)
+	}
+	// B: reset op de opdrachtregel (andere processen; alleen users.json verandert), terwijl de
+	// aanvaller al voorbij de 2FA-stap is.
+	status, created = admin.post("/api/users", map[string]any{"name": "dev3", "admin": false})
+	if status != 200 {
+		t.Fatalf("dev3 maken: %d", status)
+	}
+	thief = newClient(t, server)
+	if status, pending = thief.post("/api/login", map[string]string{"username": "dev3", "password": created["password"].(string)}); status != 200 {
+		t.Fatalf("inloggen dev3: %d", status)
+	}
+	if status, body := thief.post("/api/login/verify", map[string]string{"code": currentCode(t, pending["secret"].(string))}); status != 200 || body["step"] != "password" {
+		t.Fatalf("2FA dev3: %d %v", status, body)
+	}
+	other, err := openUsers(filepath.Join(dir, "panel", "users.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fresh, err := other.resetTwoFactor("dev3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status, _ := thief.post("/api/login/password", map[string]string{"password": "van de aanvaller zelf"}); status != 401 {
+		t.Errorf("inlogpoging van vóór de reset (opdrachtregel) afgemaakt: %d", status)
+	}
+	if user, _ := app.users.get("dev3"); !user.MustChangePassword || user.TOTPSecret != "" || !verifyPassword(user.PasswordHash, fresh) {
+		t.Error("de reset is door een oude inlogpoging ongedaan gemaakt")
+	}
+
+	// Een aanvaller met veel IP-adressen kan de beheerder niet buitensluiten: in zijn eigen
+	// browser (een bekend apparaat) komt hij er altijd in.
+	for i := 0; i < limitUser; i++ {
+		app.limiter.take("user:rudy", limitUser, limitWindow)
+	}
+	if status, _ := newClient(t, server).post("/api/login", map[string]string{"username": "rudy", "password": "een lang wachtwoord"}); status != 429 {
+		t.Errorf("onbekend apparaat niet begrensd na veel pogingen op deze naam: %d", status)
+	}
+	if status, body := admin.post("/api/login", map[string]string{"username": "rudy", "password": "een lang wachtwoord"}); status != 200 || body["step"] != "code" {
+		t.Errorf("bekend apparaat buitengesloten: %d %v", status, body)
+	}
+
 	// Te veel foute pogingen vanaf één IP: tijdelijk geblokkeerd.
 	attacker := newClient(t, server)
 	blocked := false

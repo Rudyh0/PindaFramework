@@ -78,13 +78,12 @@ func (a *App) services() []Service {
 	}
 	list = append(list, dbService)
 
-	installed, state = unitState("caddy")
-	web := Service{ID: "web", Name: "Webserver (Caddy)", Unit: "caddy", Installed: installed, State: state, Active: state == "active"}
+	installed, state = unitState("nginx")
+	web := Service{ID: "web", Name: "Webserver (nginx)", Unit: "nginx", Installed: installed, State: state, Active: state == "active"}
 	if !installed {
 		web.Detail = "Niet geïnstalleerd"
-		if config.Mode == "ip" {
-			web.Detail = "Niet nodig zonder domein"
-		}
+	} else if config.Mode == "ip" {
+		web.Detail = "De website; het paneel heeft een eigen poort"
 	}
 	list = append(list, web)
 

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -37,7 +40,7 @@ var (
 	systemUsers     = map[string]bool{"root": true, "mysql": true, "mariadb.sys": true, "debian-sys-maint": true, "PUBLIC": true}
 )
 
-// importUserPrefix: tijdelijke gebruikers voor een import. Die zie je niet in de lijst en
+// importUserPrefix: de eigenaars voor imports (zie importUser). Die zie je niet in de lijst en
 // die naam kun je zelf niet kiezen.
 const importUserPrefix = "pinda_import_"
 
@@ -216,6 +219,23 @@ func (m *MariaDB) databaseExists(name string) (bool, error) {
 	return false, nil
 }
 
+// objectCount: hoeveel tabellen, views, routines en events er in een database staan.
+func (m *MariaDB) objectCount(name string) (int, error) {
+	if err := checkDBName(name); err != nil {
+		return 0, err
+	}
+	rows, err := m.run(fmt.Sprintf("SELECT (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = '%[1]s')"+
+		" + (SELECT COUNT(*) FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = '%[1]s')"+
+		" + (SELECT COUNT(*) FROM information_schema.EVENTS WHERE EVENT_SCHEMA = '%[1]s');", name), "")
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) != 1 || len(rows[0]) != 1 {
+		return 0, errors.New("onverwacht antwoord van MariaDB")
+	}
+	return strconv.Atoi(rows[0][0])
+}
+
 func (m *MariaDB) users() ([]DBUser, error) {
 	rows, err := m.run("SELECT User, Host FROM mysql.user WHERE Host <> '' ORDER BY User, Host;", "")
 	if err != nil {
@@ -228,7 +248,7 @@ func (m *MariaDB) users() ([]DBUser, error) {
 	byGrantee := map[string][]string{}
 	for _, row := range grants {
 		if len(row) >= 2 {
-			byGrantee[row[0]] = append(byGrantee[row[0]], row[1])
+			byGrantee[row[0]] = append(byGrantee[row[0]], unescapeGrantDB(row[1]))
 		}
 	}
 	list := []DBUser{}
@@ -293,12 +313,60 @@ func (m *MariaDB) createDatabase(name string) error {
 	return err
 }
 
+// grantDB: de databasenaam zoals hij in GRANT en REVOKE moet. Daar is _ een jokerteken (net als
+// in LIKE): GRANT ON `pinda_x` zou ook pindaAx en pindaBx geven. Met \_ geldt hij alleen voor
+// precies deze database. (checkDBName laat geen % of backtick toe.)
+func grantDB(name string) string {
+	return strings.ReplaceAll(name, "_", `\_`)
+}
+
+// unescapeGrantDB: van de naam in information_schema.SCHEMA_PRIVILEGES weer de echte naam.
+func unescapeGrantDB(name string) string {
+	return strings.NewReplacer(`\_`, "_", `\%`, "%", `\\`, `\`).Replace(name)
+}
+
+var (
+	grantSchemaPattern = regexp.MustCompile(`^[A-Za-z0-9_\\%]{1,128}$`)
+	granteePattern     = regexp.MustCompile(`^'[A-Za-z0-9_.\-]{1,80}'@'[A-Za-z0-9_.%:\-]{1,255}'$`)
+)
+
+// grantsOn: alle rechten (gebruiker + naam zoals in de GRANT) die bij deze database horen.
+func (m *MariaDB) grantsOn(database, grantee string) ([][2]string, error) {
+	rows, err := m.run("SELECT DISTINCT GRANTEE, TABLE_SCHEMA FROM information_schema.SCHEMA_PRIVILEGES;", "")
+	if err != nil {
+		return nil, err
+	}
+	var list [][2]string
+	for _, row := range rows {
+		if len(row) < 2 || unescapeGrantDB(row[1]) != database || !grantSchemaPattern.MatchString(row[1]) || !granteePattern.MatchString(row[0]) {
+			continue
+		}
+		if grantee != "" && row[0] != grantee {
+			continue
+		}
+		list = append(list, [2]string{row[0], row[1]})
+	}
+	return list, nil
+}
+
+// dropDatabase gooit de database weg, met alle rechten erop (anders gelden die weer voor een
+// nieuwe database met dezelfde naam) en de eigenaar van de import.
 func (m *MariaDB) dropDatabase(name string) error {
 	if err := checkDBName(name); err != nil {
 		return err
 	}
-	_, err := m.run(fmt.Sprintf("DROP DATABASE `%s`;", name), "")
-	return err
+	if _, err := m.run(fmt.Sprintf("DROP DATABASE `%s`;", name), ""); err != nil {
+		return err
+	}
+	if grants, err := m.grantsOn(name, ""); err == nil && len(grants) > 0 {
+		var sql strings.Builder
+		for _, grant := range grants {
+			fmt.Fprintf(&sql, "REVOKE ALL PRIVILEGES ON `%s`.* FROM %s;\n", grant[1], grant[0])
+		}
+		_, _ = m.run(sql.String()+"FLUSH PRIVILEGES;", "")
+	}
+	_, _ = m.run(fmt.Sprintf("DROP USER IF EXISTS '%s'@'localhost';\nFLUSH PRIVILEGES;", importUser(name)), "")
+	return nil
 }
 
 // createUser maakt een nieuwe gebruiker en geeft hem alle rechten op de database, als die is
@@ -320,7 +388,7 @@ func (m *MariaDB) createUser(name, host, password, database string, replace bool
 		if err := checkDBName(database); err != nil {
 			return err
 		}
-		sql += fmt.Sprintf("GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%s';\n", database, name, host)
+		sql += fmt.Sprintf("GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%s';\n", grantDB(database), name, host)
 	}
 	_, err = m.run(sql+"FLUSH PRIVILEGES;", "")
 	return err
@@ -345,10 +413,12 @@ func (m *MariaDB) grant(name, host, database string) error {
 	if err := checkDBName(database); err != nil {
 		return err
 	}
-	_, err := m.run(fmt.Sprintf("GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%s';\nFLUSH PRIVILEGES;", database, name, host), "")
+	_, err := m.run(fmt.Sprintf("GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%s';\nFLUSH PRIVILEGES;", grantDB(database), name, host), "")
 	return err
 }
 
+// revoke haalt alle rechten op de database weg, ook als die (van vroeger, of van buiten het
+// paneel) zonder \_ zijn gegeven.
 func (m *MariaDB) revoke(name, host, database string) error {
 	if err := checkDBUser(name, host); err != nil {
 		return err
@@ -356,7 +426,18 @@ func (m *MariaDB) revoke(name, host, database string) error {
 	if err := checkDBName(database); err != nil {
 		return err
 	}
-	_, err := m.run(fmt.Sprintf("REVOKE ALL PRIVILEGES ON `%s`.* FROM '%s'@'%s';\nFLUSH PRIVILEGES;", database, name, host), "")
+	grants, err := m.grantsOn(database, "'"+name+"'@'"+host+"'")
+	if err != nil {
+		return err
+	}
+	if len(grants) == 0 {
+		return errors.New("deze gebruiker heeft geen toegang tot die database")
+	}
+	var sql strings.Builder
+	for _, grant := range grants {
+		fmt.Fprintf(&sql, "REVOKE ALL PRIVILEGES ON `%s`.* FROM %s;\n", grant[1], grant[0])
+	}
+	_, err = m.run(sql.String()+"FLUSH PRIVILEGES;", "")
 	return err
 }
 
@@ -400,10 +481,43 @@ func (m *MariaDB) export(database, path string) error {
 	return closeErr
 }
 
+// importUser: per database één vaste eigenaar voor imports. Triggers, views en routines uit
+// een import krijgen hem als DEFINER, dus hij moet blijven bestaan; tussen imports door staat
+// hij op slot met een onbekend wachtwoord. Hij mag alleen bij zijn eigen database.
+func importUser(database string) string {
+	sum := sha256.Sum256([]byte(database))
+	return importUserPrefix + hex.EncodeToString(sum[:])[:12]
+}
+
+// lockImportUser zet de eigenaar op slot met een willekeurig wachtwoord. (ACCOUNT LOCK kan pas
+// vanaf MariaDB 10.4; ervoor is het onbekende wachtwoord genoeg.)
+func (m *MariaDB) lockImportUser(user string) error {
+	password := randomToken()[:32]
+	if _, err := m.run(fmt.Sprintf("ALTER USER IF EXISTS '%s'@'localhost' IDENTIFIED BY '%s' ACCOUNT LOCK;", user, password), ""); err == nil {
+		return nil
+	}
+	_, err := m.run(fmt.Sprintf("ALTER USER IF EXISTS '%s'@'localhost' IDENTIFIED BY '%s';", user, password), "")
+	return err
+}
+
+// unlockImportUser maakt de eigenaar aan (als hij er nog niet is), geeft hem alleen rechten op
+// deze ene database en een wachtwoord voor deze ene import.
+func (m *MariaDB) unlockImportUser(user, password, database string) error {
+	create := fmt.Sprintf("CREATE USER IF NOT EXISTS '%s'@'localhost' IDENTIFIED BY '%s';\n", user, password)
+	grant := fmt.Sprintf("GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'localhost';\nFLUSH PRIVILEGES;", grantDB(database), user)
+	if _, err := m.run(create+fmt.Sprintf("ALTER USER '%s'@'localhost' IDENTIFIED BY '%s' ACCOUNT UNLOCK;\n", user, password)+grant, ""); err == nil {
+		return nil
+	}
+	_, err := m.run(create+fmt.Sprintf("ALTER USER '%s'@'localhost' IDENTIFIED BY '%s';\n", user, password)+grant, "")
+	return err
+}
+
 // importFile leest een .sql-bestand in een database in. Niet als root: een .sql-bestand kan
-// van alles bevatten. Daarom een tijdelijke gebruiker die alleen bij deze database mag (geen
-// FILE- of SUPER-rechten), en de client zonder eigen opdrachten (\! of source) en zonder
-// LOAD DATA LOCAL. dir is een map van alleen root, voor het wachtwoordbestand.
+// van alles bevatten. Daarom als de eigenaar van deze database (alleen rechten op deze database,
+// geen FILE of SUPER), met een eigen optiebestand (--defaults-file: ~/.my.cnf telt dan niet
+// mee), zonder eigen opdrachten van de client (\! of source) en zonder LOAD DATA LOCAL.
+// DEFINER-regels worden weggehaald, zodat de eigenaar zelf de definer wordt (exports van het
+// paneel zelf noemen root). dir is een map van alleen root, voor het optiebestand.
 func (m *MariaDB) importFile(database, path, dir string, say func(string, ...any)) error {
 	if err := checkDBName(database); err != nil {
 		return err
@@ -418,17 +532,25 @@ func (m *MariaDB) importFile(database, path, dir string, say func(string, ...any
 	}
 	defer in.Close()
 
-	user := importUserPrefix + randomToken()[:12]
-	password := randomToken()[:32]
-	if _, err := m.run(fmt.Sprintf("CREATE USER '%s'@'localhost' IDENTIFIED BY '%s';\n"+
-		"GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'localhost';\nFLUSH PRIVILEGES;", user, password, database, user), ""); err != nil {
-		return err
+	socket := ""
+	if rows, err := m.run("SELECT @@socket;", ""); err == nil && len(rows) > 0 && len(rows[0]) > 0 {
+		socket = rows[0][0]
 	}
+	if strings.ContainsAny(socket, "\n\r") {
+		socket = ""
+	}
+
+	user := importUser(database)
+	password := randomToken()[:32]
+	// Eerst het weer-op-slot-zetten regelen, dan pas openzetten: zo blijft hij nooit open staan.
 	defer func() {
-		if _, err := m.run(fmt.Sprintf("DROP USER IF EXISTS '%s'@'localhost';\nFLUSH PRIVILEGES;", user), ""); err != nil {
-			say("Let op: de tijdelijke gebruiker %s kon niet worden verwijderd: %s", user, err.Error())
+		if err := m.lockImportUser(user); err != nil {
+			say("Let op: de importgebruiker kon niet op slot: %s", err.Error())
 		}
 	}()
+	if err := m.unlockImportUser(user, password, database); err != nil {
+		return err
+	}
 
 	// Het wachtwoord in een bestand dat alleen root kan lezen, niet op de opdrachtregel (ps).
 	options, err := os.CreateTemp(dir, "import-*.cnf")
@@ -436,36 +558,106 @@ func (m *MariaDB) importFile(database, path, dir string, say func(string, ...any
 		return err
 	}
 	defer os.Remove(options.Name())
-	_, writeErr := fmt.Fprintf(options, "[client]\nuser=%s\npassword=%s\n", user, password)
+	content := fmt.Sprintf("[client]\nuser=%s\npassword=%s\nprotocol=socket\n", user, password)
+	if socket != "" {
+		content += "socket=" + socket + "\n"
+	}
+	_, writeErr := options.WriteString(content)
 	if err := options.Close(); err != nil || writeErr != nil {
 		return errors.Join(writeErr, err)
 	}
 
-	args := []string{"--defaults-extra-file=" + options.Name(), "--protocol=socket", "--binary-mode",
-		"--local-infile=0", "--default-character-set=utf8mb4", "--database=" + database}
+	// --defaults-file moet het eerste argument zijn.
+	args := []string{"--defaults-file=" + options.Name(), "--binary-mode", "--local-infile=0",
+		"--default-character-set=utf8mb4", "--database=" + database}
 	if m.hasSandbox(client) {
 		args = append(args, "--sandbox")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, client, args...)
-	cmd.Stdin = in
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
 	var stderr bytes.Buffer
 	cmd.Stdout = io.Discard
 	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	filterErr := make(chan error, 1)
+	go func() {
+		err := stripDefiners(in, stdin)
+		stdin.Close()
+		filterErr <- err
+	}()
+	runErr := cmd.Wait()
+	if err := <-filterErr; err != nil && runErr == nil {
+		runErr = err
+	}
+	if runErr != nil {
 		message := strings.TrimSpace(stderr.String())
 		if message == "" {
-			message = err.Error()
+			message = runErr.Error()
 		}
 		message = cleanMariaDBError(message)
-		if strings.Contains(message, "SUPER") || strings.Contains(message, "SET USER") || strings.Contains(strings.ToLower(message), "definer") {
-			message += " (in het bestand staat een DEFINER van een andere gebruiker; haal die weg of exporteer zonder triggers/views)"
-		}
 		say("%s", message)
 		return errors.New(message)
 	}
 	return nil
+}
+
+// definerPattern: DEFINER=`root`@`localhost` (ook met '...' of zonder aanhalingstekens).
+var definerPattern = regexp.MustCompile("(?i)DEFINER\\s*=\\s*(`[^`]*`|'[^']*'|[^\\s@*/]+)\\s*@\\s*(`[^`]*`|'[^']*'|[^\\s*/]+)\\s*")
+
+// stripDefiners kopieert een .sql-bestand en haalt DEFINER weg uit regels die een object
+// aanmaken (die beginnen met CREATE of /*!). Gegevensregels (INSERT, ...) gaan ongewijzigd
+// door, hoe lang ze ook zijn.
+func stripDefiners(in io.Reader, out io.Writer) error {
+	const maxDDL = 4 << 20
+	reader := bufio.NewReaderSize(in, 64<<10)
+	writer := bufio.NewWriterSize(out, 64<<10)
+	for {
+		head, err := reader.Peek(6)
+		if len(head) == 0 {
+			if err == io.EOF {
+				return writer.Flush()
+			}
+			return err
+		}
+		ddl := bytes.HasPrefix(head, []byte("/*!")) || bytes.EqualFold(head, []byte("CREATE"))
+		var line []byte
+		for {
+			chunk, err := reader.ReadSlice('\n')
+			if ddl && len(line)+len(chunk) <= maxDDL {
+				line = append(line, chunk...)
+			} else {
+				if ddl {
+					// Te lang voor een gewone CREATE: ongewijzigd doorgeven.
+					if _, err := writer.Write(line); err != nil {
+						return err
+					}
+					line, ddl = nil, false
+				}
+				if _, err := writer.Write(chunk); err != nil {
+					return err
+				}
+			}
+			if err == bufio.ErrBufferFull {
+				continue
+			}
+			if err != nil && err != io.EOF {
+				return err
+			}
+			break
+		}
+		if ddl {
+			if _, err := writer.Write(definerPattern.ReplaceAll(line, nil)); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 // hasSandbox: kent deze client --sandbox (MariaDB 10.5.25, 10.6.18, 10.11.8 en nieuwer)?
@@ -477,7 +669,8 @@ func (m *MariaDB) hasSandbox(client string) bool {
 	return m.sandbox
 }
 
-// cleanupImportUsers ruimt tijdelijke importgebruikers op die zijn blijven staan (paneel gecrasht).
+// cleanupImportUsers zet bij het starten alle importgebruikers op slot (het paneel kan midden in
+// een import gestopt zijn) en ruimt die van verdwenen databases op.
 func (m *MariaDB) cleanupImportUsers() {
 	if !m.installed() {
 		return
@@ -486,8 +679,21 @@ func (m *MariaDB) cleanupImportUsers() {
 	if err != nil {
 		return
 	}
+	databases, err := m.databases()
+	if err != nil {
+		return
+	}
+	owners := map[string]bool{}
+	for _, db := range databases {
+		owners[importUser(db.Name)] = true
+	}
 	for _, row := range rows {
-		if len(row) >= 2 && strings.HasPrefix(row[0], importUserPrefix) && dbUserPattern.MatchString(row[0]) && row[1] == "localhost" {
+		if len(row) < 2 || !strings.HasPrefix(row[0], importUserPrefix) || !dbUserPattern.MatchString(row[0]) || row[1] != "localhost" {
+			continue
+		}
+		if owners[row[0]] {
+			_ = m.lockImportUser(row[0])
+		} else {
 			_, _ = m.run(fmt.Sprintf("DROP USER IF EXISTS '%s'@'localhost';", row[0]), "")
 		}
 	}

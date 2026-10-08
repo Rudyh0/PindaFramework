@@ -162,12 +162,12 @@ Voor een eigen VPS: een los webpaneel voor developers, naast het webpaneel voor 
 curl -fsSL https://github.com/Rudyh0/PindaFramework/releases/latest/download/install.sh | sudo bash
 ```
 
-De installer zet alle software neer (Java 25, MariaDB, Caddy, UFW en het dev-paneel) en vraagt één ding: hoe je het paneel wilt bereiken.
+De installer zet alle software neer (Java 25, MariaDB, nginx, UFW en het dev-paneel), alles uit Ubuntu zelf (alleen Java komt van Adoptium als Ubuntu het nog niet heeft), en vraagt één ding: hoe je het paneel wilt bereiken.
 
-- **Met een domein**, bijv. `dev.jouwdomein.nl`: HTTPS via Caddy. Loopt het via **Cloudflare** met de proxy aan (oranje wolk), zet dan bij SSL/TLS de modus op **Full**; de echte IP van bezoekers wordt dan gewoon herkend, en poort 80 en 443 staan in de firewall alleen open voor Cloudflare.
+- **Met een domein**, bijv. `dev.jouwdomein.nl`: HTTPS via nginx. Loopt het via **Cloudflare** met de proxy aan (oranje wolk), zet dan bij SSL/TLS de modus op **Full**: nginx heeft een eigen certificaat waarmee Cloudflare versleuteld naar je server praat. De echte IP van bezoekers wordt gewoon herkend, en poort 80 en 443 staan in de firewall alleen open voor Cloudflare. Zonder Cloudflare vraagt de installer een certificaat aan bij **Let's Encrypt** (dat wordt vanzelf verlengd); wijst het domein nog niet naar de server, draai de installer dan later nog een keer.
 - **Alleen IP:poort**, bijv. `https://1.2.3.4:8443`: met een eigen certificaat (je browser waarschuwt één keer; de installer toont de vingerafdruk om te controleren).
 
-De installer controleert de download van het dev-paneel met een controlegetal (SHA-256) en houdt SSH altijd open (ook op een andere poort dan 22). Aan het eind krijg je een **setupcode**. Open het paneel, vul de code in en maak de eerste beheerder, met verplichte **2FA** (authenticator-app). Daarna loop je de setup door: servernaam, adres voor spelers, **SQLite of MySQL**, en precies welke **DNS-records** je moet maken (A-records en het **SRV-record** voor `play.jouwdomein.nl`). Het adres voor spelers moet in Cloudflare op *DNS only* (grijze wolk): Minecraft-verkeer kan niet door de proxy.
+De installer controleert de download van het dev-paneel met een controlegetal (SHA-256), houdt SSH altijd open (ook op een andere poort dan 22) en werkt ook op een VPS zonder IPv6. Aan het eind krijg je een **setupcode**. Open het paneel, vul de code in en maak de eerste beheerder, met verplichte **2FA** (authenticator-app). Daarna loop je de setup door: servernaam, adres voor spelers, **SQLite of MySQL**, en precies welke **DNS-records** je moet maken (A-records en het **SRV-record** voor `play.jouwdomein.nl`). Het adres voor spelers moet in Cloudflare op *DNS only* (grijze wolk): Minecraft-verkeer kan niet door de proxy.
 
 Wat er nu in zit:
 

@@ -363,19 +363,27 @@ func (a *App) handleDBUserAction(q *Request) (any, error) {
 	switch action {
 	case "password":
 		password := randomPassword(24)
-		if err := a.mariadb.setPassword(name, host, password); err != nil {
+		if isPlugin {
+			// De plugin moet het nieuwe wachtwoord ook weten (na een herstart). Eerst database.yml,
+			// dan MariaDB; lukt MariaDB niet, dan database.yml weer terug.
+			old := plugin.Password
+			plugin.Password = password
+			if err := a.writePluginDB(plugin); err != nil {
+				return nil, fmt.Errorf("database.yml is niet bij te werken, het wachtwoord is niet veranderd: %w", err)
+			}
+			if err := a.mariadb.setPassword(name, host, password); err != nil {
+				plugin.Password = old
+				_ = a.writePluginDB(plugin)
+				return nil, dbError(err)
+			}
+		} else if err := a.mariadb.setPassword(name, host, password); err != nil {
 			return nil, dbError(err)
 		}
 		credentials = map[string]string{"user": name, "password": password}
-		q.log("databasewachtwoord gereset", name+"@"+host, "")
 		if isPlugin {
-			// De plugin moet het nieuwe wachtwoord ook weten; het geldt na een herstart.
-			plugin.Password = password
-			if err := a.writePluginDB(plugin); err != nil {
-				return nil, fmt.Errorf("het wachtwoord is veranderd, maar database.yml niet bij te werken: %w", err)
-			}
 			credentials["plugin"] = "true"
 		}
+		q.log("databasewachtwoord gereset", name+"@"+host, "")
 	case "grant":
 		if err := a.mariadb.grant(name, host, body.Database); err != nil {
 			return nil, dbError(err)

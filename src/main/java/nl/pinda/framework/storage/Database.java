@@ -1,6 +1,7 @@
 package nl.pinda.framework.storage;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -97,13 +98,12 @@ public final class Database {
                 plugin.getLogger().info("Omzetten naar MySQL: er is geen " + sqlite.getName() + ", dus er is niets om over te zetten.");
                 settings.conversionDone();
             } else {
+                SqliteConverter.Result result;
                 try {
-                    SqliteConverter.Result result = SqliteConverter.convert(sqlite, TranslatingConnection.unwrap(connection), plugin.getLogger());
-                    File backup = SqliteConverter.moveAway(sqlite);
+                    // Pas als alles over is én convert-from-sqlite op false staat, gaan we door op
+                    // MySQL. Gaat hier iets mis, dan is het SQLite-bestand nog helemaal intact.
+                    result = SqliteConverter.convert(sqlite, TranslatingConnection.unwrap(connection), plugin.getLogger());
                     settings.conversionDone();
-                    status.conversionDone(result, backup);
-                    plugin.getLogger().info("Omzetten naar MySQL gelukt: " + result.rows() + " rijen uit " + result.tables()
-                            + " tabellen. Het oude bestand staat nog als " + backup.getName() + ".");
                 } catch (Exception e) {
                     plugin.getLogger().log(Level.SEVERE, "Omzetten naar MySQL is mislukt. De server draait verder op SQLite; "
                             + "de volgende start wordt het opnieuw geprobeerd.", e);
@@ -113,6 +113,22 @@ public final class Database {
                     status.write(this, "Omzetten mislukt: " + e.getMessage());
                     return;
                 }
+                // Vanaf hier draait de server op MySQL. Wat nu nog misgaat, is alleen opruimen.
+                try {
+                    SqliteConverter.finish(TranslatingConnection.unwrap(connection));
+                } catch (SQLException e) {
+                    plugin.getLogger().log(Level.WARNING, "Omzetten gelukt, maar de markering in pinda_migrations kon niet weg.", e);
+                }
+                File backup = null;
+                try {
+                    backup = SqliteConverter.moveAway(sqlite);
+                } catch (IOException e) {
+                    plugin.getLogger().log(Level.WARNING, "Omzetten gelukt, maar " + sqlite.getName()
+                            + " kon niet opzij worden gezet. Het wordt niet meer gebruikt; je kunt het zelf weghalen.", e);
+                }
+                status.conversionDone(result, backup);
+                plugin.getLogger().info("Omzetten naar MySQL gelukt: " + result.rows() + " rijen uit " + result.tables() + " tabellen."
+                        + (backup != null ? " Het oude bestand staat nog als " + backup.getName() + "." : ""));
             }
         }
         status.write(this, null);
