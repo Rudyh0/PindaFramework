@@ -26,6 +26,10 @@ func TestWebsiteSiteConfig(t *testing.T) {
 	if _, err := exec.LookPath("nginx"); err != nil {
 		t.Skip("geen nginx")
 	}
+	if os.Geteuid() != 0 {
+		// nginx -t wil logbestanden van het systeem openen; dat kan alleen als root.
+		t.Skip("nginx -t alleen als root")
+	}
 	if _, err := exec.LookPath("openssl"); err != nil {
 		t.Skip("geen openssl")
 	}
