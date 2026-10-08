@@ -40,6 +40,7 @@ import nl.pinda.framework.modules.staff.StaffModule;
 import nl.pinda.framework.modules.tips.TipsModule;
 import nl.pinda.framework.modules.tpa.TpaModule;
 import nl.pinda.framework.modules.utility.UtilityModule;
+import nl.pinda.framework.modules.world.WorldControlModule;
 import nl.pinda.framework.player.DisplayNames;
 import nl.pinda.framework.player.PlayerManager;
 import nl.pinda.framework.player.SettingsService;
@@ -128,6 +129,7 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new ScoreboardModule(this));
             modules.register(new BroadcastsModule(this));
             modules.register(new AntilagModule(this));
+            modules.register(new WorldControlModule(this));
             modules.register(new DiscordModule(this));
             modules.register(new PanelModule(this));
             modules.enableAll();

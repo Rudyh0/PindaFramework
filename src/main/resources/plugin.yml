@@ -308,6 +308,11 @@ permissions:
     description: Geen wachttijd tussen twee bomen
     default: op
 
+  # Wereldbeheer
+  pinda.world.dragon:
+    description: /dragon, zien hoe het met de ender dragon gaat en hem terug laten komen
+    default: op
+
   # Slapen
   pinda.sleep.exempt:
     description: Telt niet mee bij het aantal spelers dat moet slapen

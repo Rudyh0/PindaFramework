@@ -1,0 +1,76 @@
+# ┌──────────────────────────────────────────────┐
+# │             PindaFramework - world           │
+# └──────────────────────────────────────────────┘
+# Wereldbeheer: explosies zonder blokschade, endermen en akkers, phantoms, hoeveel mobs er
+# spawnen en de ender dragon die vanzelf terugkomt. Alles is ook in het paneel in te stellen
+# (Beheer › Wereld). Spelregels (gamerules) per wereld staan in het paneel bij Server › Spelregels.
+
+explosions:
+  # Mag deze explosie blokken kapotmaken? false = alleen schade aan spelers en mobs, geen gaten.
+  block-damage:
+    creeper: false
+    tnt: false
+    tnt-minecart: false
+    # Vuurballen van ghasts
+    ghast: false
+    # De wither: zijn ontploffing, zijn schedels en blokken die hij kapotslaat
+    wither: false
+    end-crystal: true
+    # Een bed in de Nether of de End
+    bed: true
+    # Een respawn anchor buiten de Nether
+    respawn-anchor: true
+  # TNT laat andere TNT in de buurt nog wel afgaan (voor TNT-kanonnen en kettingen)
+  tnt-chain: true
+  # Itemframes, schilderijen, harnasstandaarden en items op de grond blijven ook heel
+  # (bij explosies die hierboven geen blokschade doen)
+  protect-entities: true
+  # Werelden waar alle explosies gewoon alles kapot mogen maken, bijv. een mijnwereld
+  worlds-with-damage: []
+
+griefing:
+  # Endermen mogen blokken oppakken (en ergens anders neerleggen)
+  enderman-pickup: false
+  # Akkers kapot lopen of erop springen (spelers en mobs)
+  trample-farmland: true
+
+phantoms:
+  # Phantoms komen als je een paar nachten niet slaapt
+  enabled: false
+  # Spelers kiezen zelf in /instellingen of ze phantoms willen (de regel hierboven is dan de standaard)
+  player-choice: false
+
+spawning:
+  # Hoeveel mobs er tegelijk mogen zijn, in procenten van normaal.
+  # 100 = normaal, 50 = de helft, 0 = geen enkele. Maximaal 500.
+  limits:
+    monsters: 100
+    animals: 100
+    # Inktvissen en dolfijnen
+    water-animals: 100
+    # Vissen
+    water-ambient: 100
+    # Gloei-inktvissen in grotten
+    underground-water: 100
+    # Vleermuizen
+    ambient: 100
+    axolotls: 100
+  # De kans (in procenten) dat een mob vanzelf spawnt: 0 = nooit, 100 = normaal.
+  # Geldt alleen voor mobs die vanzelf verschijnen; spawners, eieren en fokken gaan gewoon door.
+  mobs: {}
+  #   creeper: 50
+  #   bat: 0
+  # Werelden waar het spawnen gewoon blijft zoals Minecraft het doet
+  disabled-worlds: []
+
+dragon:
+  # De ender dragon komt vanzelf terug nadat hij verslagen is
+  respawn: true
+  # Na zoveel minuten. Is er dan niemand in de End, dan komt hij zodra er iemand komt.
+  respawn-minutes: 120
+  # Elke keer een drakenei (Minecraft legt er normaal alleen de eerste keer een)
+  egg-every-kill: true
+  # Iedereen laten weten wie de draak heeft verslagen
+  announce-kill: true
+  # Iedereen laten weten dat de draak terug is
+  announce-respawn: true

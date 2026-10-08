@@ -861,3 +861,19 @@ details.manual .chips { margin-top: 8px; }
 .bc-item + .bc-item { padding-top: 18px; border-top: 1px solid var(--border); }
 .type-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .type-chips .badge { font-size: 12px; }
+
+/* ----------------------------------------------------------------- wereld */
+
+.card-intro { margin: 0 0 4px; }
+.world-form { margin-top: 14px; border-top: 1px solid var(--border); }
+.pct-input { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.pct-input .input { width: 104px; }
+.pct-input > span { color: var(--muted); font-size: 14px; }
+.mob-list { display: grid; gap: 8px; }
+.mob-list:empty { display: none; }
+.mob-row { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2); }
+.mob-row .mob-name { flex: 1; min-width: 0; font-weight: 500; overflow-wrap: anywhere; }
+.mob-row .btn.icon-only { flex: none; }
+.mob-add { display: flex; gap: 8px; align-items: center; }
+.mob-add select { flex: 1 1 auto; width: auto; min-width: 0; }
+.mob-add .btn { flex: none; }

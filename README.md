@@ -14,7 +14,7 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 
 ## Wat zit erin
 
-Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, een rugtas, bomen in één keer omhakken, toplijsten met een scoreboard, automatische aankondigingen, antilag, een eigen MOTD, Discord-webhooks, PlaceholderAPI-placeholders en een webpaneel waarin je alles kunt instellen.
+Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, een rugtas, bomen in één keer omhakken, toplijsten met een scoreboard, automatische aankondigingen, antilag, wereldbeheer (explosies zonder gaten, phantoms, spawnen, ender dragon), een eigen MOTD, Discord-webhooks, PlaceholderAPI-placeholders en een webpaneel waarin je alles kunt instellen.
 
 ## To-do
 
@@ -22,7 +22,7 @@ Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/inst
 2. ~~Moderatie: kick, mute, tijdelijke en permanente ban, banlijst en logboek~~ ✅
 3. ~~Webpaneel: eigen webserver (IP + poort, later instelbare URL), eenmalige inloglink vanaf PindaMod, dashboard, spelers en rangen, moderatie, economy, shops, serverbeheer, statistieken, actielog~~ ✅
 4. ~~Overige basis: automatische broadcasts, scoreboard en leaderboards (+ PlaceholderAPI), antilag~~ ✅
-5. World control: creepers en TNT zonder blokschade, phantoms uit, spawnrates, ender dragon respawn
+5. ~~World control: creepers en TNT zonder blokschade, phantoms uit, spawnrates, ender dragon respawn~~ ✅
 6. ~~Backpack: tweede inventory die bij doodgaan blijft liggen~~ ✅
 7. ~~Skills: level 0-99 (RuneScape-curve), geld bij level-up, menu met voortgang~~ ✅
 8. ~~Bomen kappen (timber), naar het voorbeeld van UltimateTimber: hele boom om, valanimatie, sapling terugplanten, geen random loot~~ ✅
@@ -110,6 +110,17 @@ Om de zoveel minuten (standaard 10) een bericht in de chat voor iedereen, op vol
 - **`/lag`** laat TPS, ticktijd, chunks, entities en items zien; **`/lag chunks`** de drukste chunks; **`/lag clear [seconden|nu]`** ruimt items op.
 - In het paneel onder **Prestaties**: live TPS, drukste chunks, werelden, opruimen met één klik en de belangrijkste instellingen.
 
+## Wereld
+
+Alles hieronder stel je in het paneel in onder **Wereld** (of in `modules/world.yml`), en werkt meteen:
+
+- **Explosies zonder blokschade:** per soort aan of uit: creepers, TNT, mijnkarren met TNT, ghasts, de wither, end crystals, bedden en respawn anchors. Standaard maken creepers, TNT, ghasts en de wither geen gaten meer; spelers en mobs krijgen wel gewoon schade. TNT laat andere TNT nog wel afgaan (kanonnen blijven werken), en itemframes, schilderijen, harnasstandaarden en items op de grond blijven heel. Werelden waar alles gewoon kapot mag (bijv. een mijnwereld) zet je in een lijst.
+- **Gesloop:** endermen pakken standaard geen blokken meer op. Akkers kapot springen kun je uitzetten.
+- **Phantoms:** standaard uit. Je kunt spelers ook zelf laten kiezen in `/instellingen`.
+- **Mobs spawnen:** hoeveel mobs er tegelijk vanzelf rondlopen, per groep in procenten van normaal (monsters, dieren, waterdieren, vissen, gloei-inktvissen, vleermuizen, axolotls). Daarnaast een kans per mob, bijv. creepers 50% of vleermuizen 0%. Spawners, eieren en fokken gaan gewoon door.
+- **Ender dragon:** komt na het verslaan vanzelf terug (standaard na 2 uur). Minecraft laat de draak alleen terugkomen als er iemand bij het eiland in de End is; is daar niemand, dan gebeurt het zodra er iemand komt. Elke keer ligt er een drakenei, en iedereen hoort wie hem heeft verslagen. Met **`/dragon`** zie je hoe het met de draak gaat; **`/dragon respawn`** of de knop in het paneel laat hem meteen terugkomen.
+- **Spelregels** (gamerules) per wereld, zoals keepInventory of vuur dat zich verspreidt, staan in het paneel bij **Server › Spelregels**.
+
 ## PlaceholderAPI
 
 Optioneel. Staat [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) op de server, dan werken `%placeholders%` in de aankondigingen en op het scoreboard, en kunnen andere plugins (TAB, hologrammen, ...) deze placeholders van PindaFramework gebruiken:
@@ -142,6 +153,7 @@ Het idee: PindaFramework installeren en daarna alles in de browser inrichten.
 - **Server:** tijd, weer, mededelingen, whitelist, MOTD (met voorbeeld zoals in de serverlijst), `server.properties` (wat kan, werkt meteen) en spelregels per wereld.
 - **Rangen:** rangen maken en bewerken, met een lijst van alle bekende permissies om uit te kiezen.
 - **Toplijsten, Aankondigingen en Prestaties:** alle toplijsten en het scoreboard, de automatische aankondigingen en de antilag.
+- **Wereld:** explosies, phantoms, hoeveel mobs er spawnen en de ender dragon (status, terug laten komen).
 
 ## Webpaneel
 
@@ -248,6 +260,7 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | `/backpack <speler>` | | `pinda.backpack.others` (+ `.edit` om aan te passen) | Mod (bekijken) / op |
 | `/lag`, `/lag chunks` | `/antilag` | `pinda.antilag.use` | Mod |
 | `/lag clear [seconden\|nu]`, `/lag tp <wereld> <x> <z>` | | `pinda.antilag.admin` | op |
+| `/dragon [respawn]` | `/draak`, `/enderdragon` | `pinda.world.dragon` | op |
 
 Extra permissies:
 
@@ -316,6 +329,7 @@ plugins/PindaFramework/
     ├── scoreboard.yml  het scoreboard: wisselen, plekken, eigen plek, werelden
     ├── broadcasts.yml  automatische aankondigingen en hoe vaak
     ├── antilag.yml     items opruimen, maximum mobs per chunk, ingrijpen bij lag
+    ├── world.yml       explosies, endermen, akkers, phantoms, spawnen, ender dragon
     ├── discord.yml     webhooks voor het statusbericht en staffmeldingen
     └── panel.yml       webpaneel: poort, adres (public-url), hoe lang inloggen geldig is
 ```

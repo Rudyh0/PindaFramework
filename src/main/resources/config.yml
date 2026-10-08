@@ -38,6 +38,7 @@ modules:
   scoreboard: true
   broadcasts: true
   antilag: true
+  world: true
   discord: true
   panel: true
 

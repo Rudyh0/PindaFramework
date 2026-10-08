@@ -17,6 +17,7 @@ import nl.pinda.framework.modules.ranks.Rank;
 import nl.pinda.framework.modules.ranks.RankModule;
 import nl.pinda.framework.modules.scoreboard.ScoreboardModule;
 import nl.pinda.framework.modules.skills.SkillsModule;
+import nl.pinda.framework.modules.world.WorldControlModule;
 
 /**
  * Inloggen (eenmalige link + 2FA-code), uitloggen en "wie ben ik".
@@ -226,7 +227,8 @@ final class AuthApi extends PanelApi {
                         "scoreboard", enabled(ScoreboardModule.class) != null,
                         "broadcasts", enabled(BroadcastsModule.class) != null,
                         "antilag", enabled(AntilagModule.class) != null,
-                        "backpack", enabled(BackpackModule.class) != null),
+                        "backpack", enabled(BackpackModule.class) != null,
+                        "world", enabled(WorldControlModule.class) != null),
                 "ranks", ranks,
                 "currency", currency,
                 "maxTempBan", moderation == null ? 0 : moderation.maxTempBan(),

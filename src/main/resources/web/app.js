@@ -79,7 +79,11 @@
     sword: '<path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/>',
     ghost: '<path d="M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/>',
     tree: '<path d="M12 22v-6M9 22h6"/><path d="M12 2l5 7h-2.5l3.5 5h-3l3 4H6l3-4H6l3.5-5H7z"/>',
-    skull: '<circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2M12.5 17l-.5-1-.5 1z"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/>'
+    skull: '<circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2M12.5 17l-.5-1-.5 1z"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/>',
+    mountain: '<path d="M3 20 9.5 8l4 7 2.5-4 5 9z"/><path d="m7.6 11.5 1.9 1.5 1.6-1.4"/>',
+    bomb: '<circle cx="10.5" cy="13.5" r="7.5"/><path d="m15.8 8.2 2.2-2.2"/><path d="M18 3v1.5M21 6h-1.5M20.1 3.9l-1 1"/><path d="M7.5 12a3 3 0 0 1 3-3"/>',
+    egg: '<path d="M12 2.5c-3.6 0-7 6.2-7 11.3a7 7 0 0 0 14 0c0-5.1-3.4-11.3-7-11.3z"/><path d="m9 13 1.5 1.5L12 13l1.5 1.5L15 13"/>',
+    paw: '<circle cx="5.5" cy="11" r="2"/><circle cx="9.5" cy="6.5" r="2"/><circle cx="14.5" cy="6.5" r="2"/><circle cx="18.5" cy="11" r="2"/><path d="M8 18.2c0-2.6 1.8-5.2 4-5.2s4 2.6 4 5.2a2.3 2.3 0 0 1-2.3 2.3h-3.4A2.3 2.3 0 0 1 8 18.2z"/>'
   };
   const icon = (name, cls = '') => raw(`<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`);
 
@@ -352,6 +356,7 @@
     { path: 'straffen', title: 'Straffen', icon: 'shield', perm: P.players, feature: 'moderation', page: pagePunishments },
     { path: 'server', title: 'Server', icon: 'server', perm: [P.server, P.config], page: pageServer, group: 'Beheer' },
     { path: 'prestaties', title: 'Prestaties', icon: 'gauge', perm: P.server, feature: 'antilag', page: pagePerformance, group: 'Beheer' },
+    { path: 'wereld', title: 'Wereld', icon: 'mountain', perm: P.server, feature: 'world', page: pageWorld, group: 'Beheer' },
     { path: 'aankondigingen', title: 'Aankondigingen', icon: 'megaphone', perm: P.broadcasts, feature: 'broadcasts', page: pageBroadcasts, group: 'Beheer' },
     { path: 'instellingen', title: 'Instellingen', icon: 'cog', perm: P.config, page: pageSettings, group: 'Beheer' },
     { path: 'teksten', title: 'Teksten', icon: 'type', perm: P.texts, page: pageTexts, group: 'Beheer' },
@@ -666,7 +671,7 @@
     'modules/moderation.yml': 'Moderatie', 'modules/skills.yml': 'Skills', 'modules/sleep.yml': 'Slapen',
     'modules/motd.yml': 'MOTD', 'modules/discord.yml': 'Discord', 'modules/panel.yml': 'Webpaneel',
     'modules/leaderboards.yml': 'Toplijsten', 'modules/scoreboard.yml': 'Scoreboard', 'modules/broadcasts.yml': 'Aankondigingen',
-    'modules/antilag.yml': 'Antilag', 'modules/timber.yml': 'Bomen kappen', 'modules/backpack.yml': 'Rugtas'
+    'modules/antilag.yml': 'Antilag', 'modules/timber.yml': 'Bomen kappen', 'modules/backpack.yml': 'Rugtas', 'modules/world.yml': 'Wereld'
   };
   const fileName = path => FILE_NAMES[path] || path.replace(/^modules\//, '').replace(/\.yml$/, '');
   const prettyKey = key => {
@@ -814,7 +819,7 @@
     tpa: 'TPA', spawn: 'Spawn', back: 'Terug', msg: 'Privéberichten', gamemode: 'Spelmodus', afk: 'AFK', utility: 'Handige commando’s',
     vanish: 'Vanish', invsee: 'Invsee', economy: 'Economie', shop: 'Shops', lock: 'Sloten', partner: 'Partners', rank: 'Rangen',
     moderation: 'Moderatie', skills: 'Skills', sleep: 'Slapen', discord: 'Discord', panel: 'Webpaneel', admin: 'Beheer',
-    top: 'Toplijsten', scoreboard: 'Scoreboard', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen', backpack: 'Rugtas'
+    top: 'Toplijsten', scoreboard: 'Scoreboard', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen', backpack: 'Rugtas', world: 'Wereld'
   };
 
   async function pageTexts(main, tab, alive) {
@@ -1988,7 +1993,17 @@
     salmon: 'zalm', tropical_fish: 'tropische vis', drowned: 'drowned', piglin: 'piglin', zombified_piglin: 'zombiepiglin',
     magma_cube: 'magmakubus', item_frame: 'itemframe', glow_item_frame: 'itemframe', armor_stand: 'harnasstandaard',
     minecart: 'mijnkar', hopper_minecart: 'hopperkar', chest_minecart: 'kistkar', falling_block: 'vallend blok',
-    painting: 'schilderij', wandering_trader: 'handelaar', turtle: 'schildpad', axolotl: 'axolotl', camel: 'kameel'
+    painting: 'schilderij', wandering_trader: 'handelaar', turtle: 'schildpad', axolotl: 'axolotl', camel: 'kameel',
+    phantom: 'phantom', witch: 'heks', pillager: 'pillager', vindicator: 'vindicator', evoker: 'evoker', ravager: 'ravager',
+    vex: 'vex', guardian: 'guardian', elder_guardian: 'elder guardian', shulker: 'shulker', blaze: 'blaze', ghast: 'ghast',
+    hoglin: 'hoglin', zoglin: 'zoglin', piglin_brute: 'piglin-bruut', strider: 'strider', wither_skeleton: 'witherskelet',
+    stray: 'stray', husk: 'husk', bogged: 'bogged', breeze: 'breeze', creaking: 'creaking', warden: 'warden',
+    silverfish: 'zilvervisje', endermite: 'endermite', cave_spider: 'grotspin', llama: 'lama', trader_llama: 'handelaarslama',
+    donkey: 'ezel', mule: 'muilezel', panda: 'panda', polar_bear: 'ijsbeer', parrot: 'papegaai', ocelot: 'ocelot',
+    mooshroom: 'mooshroom', sniffer: 'sniffer', armadillo: 'gordeldier', dolphin: 'dolfijn', pufferfish: 'kogelvis',
+    tadpole: 'kikkervisje', allay: 'allay', snow_golem: 'sneeuwgolem', zombie_villager: 'zombievillager',
+    skeleton_horse: 'skeletpaard', zombie_horse: 'zombiepaard', happy_ghast: 'vrolijke ghast', copper_golem: 'koperen golem',
+    ender_dragon: 'ender dragon', wither: 'wither', illusioner: 'illusioner', giant: 'reus'
   };
   const entityName = key => ENTITY_NAMES[key] || key.replace(/_/g, ' ');
 
@@ -2064,6 +2079,169 @@
       ${row('Lag als de TPS lager is dan', '20 is perfect. 15 is een goede grens.', html`<input class="input cfg-number" type="number" min="1" max="19.5" step="0.5" name="tpsBelow" value="${s.tpsBelow}">`)}
       <div class="save-bar"><span></span><button class="btn primary">${icon('save')} Opslaan</button></div>
     </div></form>`;
+  }
+
+  // =============================================================== wereld
+
+  const EXPLOSIONS = {
+    creeper: ['Creepers', null],
+    tnt: ['TNT', 'Aangestoken TNT-blokken.'],
+    'tnt-minecart': ['Mijnkarren met TNT', null],
+    ghast: ['Ghasts', 'Hun vuurballen in de Nether.'],
+    wither: ['Wither', 'Zijn ontploffing, zijn schedels en blokken die hij kapotslaat.'],
+    'end-crystal': ['End crystals', 'Ook gebruikt bij PvP en bij het gevecht met de draak.'],
+    bed: ['Bedden', 'Als je slaapt in de Nether of de End.'],
+    'respawn-anchor': ['Respawn anchors', 'Als je er een gebruikt buiten de Nether.']
+  };
+  const SPAWN_GROUPS = {
+    monsters: ['Monsters', 'Zombies, skeletten, creepers, spinnen, …'],
+    animals: ['Dieren', 'Koeien, schapen, varkens, kippen, …'],
+    'water-animals': ['Waterdieren', 'Inktvissen en dolfijnen.'],
+    'water-ambient': ['Vissen', null],
+    'underground-water': ['Gloei-inktvissen', 'In grotten onder water.'],
+    ambient: ['Vleermuizen', null],
+    axolotls: ['Axolotls', null]
+  };
+  const mobLabel = type => {
+    const name = entityName(type);
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+  const cfgRow = (title, help, input) => html`<div class="cfg-row"><div class="cfg-text"><span class="cfg-label">${title}</span>${help ? html`<span class="cfg-help">${help}</span>` : ''}</div>${input}</div>`;
+  const cfgToggle = (name, checked, disabled = false) => html`<label class="switch"><input type="checkbox" name="${name}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}><span></span></label>`;
+  const saveBar = (extra = '') => html`<div class="save-bar">${extra || html`<span></span>`}<button class="btn primary">${icon('save')} Opslaan</button></div>`;
+  const worldList = value => String(value || '').split(',').map(w => w.trim()).filter(Boolean);
+
+  async function pageWorld(main, _, alive) {
+    const data = await api('/world');
+    if (!alive()) return;
+    renderWorld(main, data);
+  }
+
+  async function saveWorld(button, body, message) {
+    const result = await busy(button, () => post('/world/settings', body));
+    if (result) { toast(message); renderWorld($('#main'), result); }
+  }
+
+  function renderWorld(main, d) {
+    const edit = can(P.config);
+    render(main, html`${pageHead('Wereld', 'Explosies, mobs, phantoms en de ender dragon. Wat je opslaat, werkt meteen.',
+        can(P.config) ? html`<a class="btn" href="#/server/spelregels">${icon('cog')} Spelregels per wereld</a>` : '')}
+      <div class="grid two">${dragonCard(d.dragon, edit)}${explosionsCard(d.explosions, edit)}</div>
+      <div class="grid two">${spawningCard(d.spawning, edit)}${griefCard(d, edit)}</div>`);
+    main.onclick = event => {
+      const add = event.target.closest('[data-mob-add]');
+      const remove = event.target.closest('[data-mob-remove]');
+      const select = $('#mob-add-type', main);
+      if (add && select) {
+        const type = select.value;
+        if (!type) { toast('Kies eerst een mob.', 'error'); return; }
+        const holder = document.createElement('div');
+        render(holder, mobRow(type, 50, true));
+        $('#mob-list', main).append(...holder.childNodes);
+        select.querySelector(`option[value="${CSS.escape(type)}"]`)?.remove();
+        select.value = '';
+        $(`input[name="mob-${CSS.escape(type)}"]`, main)?.focus();
+      } else if (remove) {
+        const type = remove.dataset.mobRemove;
+        remove.closest('.mob-row')?.remove();
+        if (select) {
+          const option = document.createElement('option');
+          option.value = type;
+          option.textContent = mobLabel(type);
+          const after = [...select.options].slice(1).find(o => o.textContent.localeCompare(option.textContent, 'nl') > 0);
+          select.insertBefore(option, after || null);
+        }
+      }
+    };
+  }
+
+  function dragonCard(g, edit) {
+    if (!g.end) {
+      return card('Ender dragon', 'egg', html`<div class="card-body"><div class="empty">${icon('egg')}Deze server heeft geen End. Zet allow-end aan bij Server › Instellingen.</div></div>`);
+    }
+    const s = g.settings;
+    const now = Date.now();
+    const [label, cls] = g.alive ? ['Leeft', 'success'] : g.respawning ? ['Komt nu terug', 'info'] : ['Verslagen', 'warning'];
+    const health = !g.alive ? null : g.loaded ? `${num(g.health)} van ${num(g.maxHealth)} levenspunten` : 'Wacht in de End op de volgende spelers';
+    const back = g.alive || g.respawning ? null
+      : !g.respawnAt ? 'Niet vanzelf. Gebruik de knop hieronder.'
+        : g.forced || g.respawnAt <= now ? 'Zodra er iemand in de End is'
+          : `Over ${human(g.respawnAt - now)} (${dateTime(g.respawnAt)})`;
+    const near = g.playersNear === 1 ? '1 speler' : `${num(g.playersNear)} spelers`;
+    const disabled = edit ? '' : 'disabled';
+    return html`<section class="card"><div class="card-head"><h2>${icon('egg')}Ender dragon</h2><span class="badge ${cls}">${label}</span></div>
+      <div class="card-body">
+        <dl class="kv">
+          ${health ? html`<dt>Gezondheid</dt><dd>${health}</dd>` : ''}
+          ${!g.alive && g.killedAt ? html`<dt>Verslagen</dt><dd>${ago(g.killedAt)}${g.killer ? html` door <b>${g.killer}</b>` : ''}</dd>` : ''}
+          ${back ? html`<dt>Komt terug</dt><dd>${back}</dd>` : ''}
+          <dt>Bij het eiland</dt><dd>${near}</dd>
+          <dt>Totaal verslagen</dt><dd>${num(g.kills)}×</dd>
+        </dl>
+        ${can(P.server) && !g.alive && !g.respawning ? html`<div class="btn-row" style="margin-top:16px"><button class="btn" data-action="dragon-respawn">${icon('refresh')} Nu laten terugkomen</button></div>` : ''}
+        <p class="muted small" style="margin-top:12px">Minecraft laat de draak alleen terugkomen als er iemand bij het eiland in de End is. Is daar niemand, dan gebeurt het zodra er iemand komt. In-game: /dragon.</p>
+        <form data-form="world-dragon" class="world-form">
+          ${cfgRow('Vanzelf terugkomen', 'De draak komt een tijdje na het verslaan weer terug.', cfgToggle('dragonRespawn', s.respawn, !edit))}
+          ${cfgRow('Na hoeveel minuten', '120 = 2 uur, 1440 = een dag.', html`<input class="input cfg-number" type="number" min="1" max="43200" required name="respawnMinutes" value="${s.respawnMinutes}" ${disabled}>`)}
+          ${cfgRow('Elke keer een drakenei', 'Normaal krijg je alleen de eerste keer een ei.', cfgToggle('eggEveryKill', s.eggEveryKill, !edit))}
+          ${cfgRow('Melden wie hem versloeg', 'Een bericht aan iedereen die online is.', cfgToggle('announceKill', s.announceKill, !edit))}
+          ${cfgRow('Melden dat hij terug is', null, cfgToggle('announceRespawn', s.announceRespawn, !edit))}
+          ${edit ? saveBar(can(P.texts) ? html`<button type="button" class="btn ghost" data-action="world-texts">${icon('type')} Teksten aanpassen</button>` : '') : ''}
+        </form>
+      </div></section>`;
+  }
+
+  function explosionsCard(e, edit) {
+    const disabled = edit ? '' : 'disabled';
+    return html`<form class="card" data-form="world-explosions"><div class="card-head"><h2>${icon('bomb')}Explosies</h2><span class="count">blokschade</span></div><div class="card-body">
+      <p class="muted small card-intro">Staat een schakelaar uit, dan doet die explosie nog wel schade aan spelers en mobs, maar maakt hij geen gaten.</p>
+      ${e.sources.map(src => {
+        const [title, help] = EXPLOSIONS[src.id] || [src.id, null];
+        return cfgRow(title, help, cfgToggle(`damage-${src.id}`, src.damage, !edit));
+      })}
+      ${cfgRow('TNT laat TNT afgaan', 'Ook zonder blokschade gaat TNT in de buurt nog af, voor kanonnen en kettingen.', cfgToggle('tntChain', e.tntChain, !edit))}
+      ${cfgRow('Decoratie heel laten', 'Itemframes, schilderijen, harnasstandaarden en items op de grond blijven heel bij explosies zonder blokschade.', cfgToggle('protectEntities', e.protectEntities, !edit))}
+      <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Werelden met gewone explosies</span><span class="cfg-help">Hier maakt alles gewoon gaten, bijvoorbeeld in een mijnwereld. Namen gescheiden door komma's.</span></div>
+        <input class="input" name="worldsWithDamage" value="${e.worldsWithDamage.join(', ')}" placeholder="geen" ${disabled}></div>
+      ${edit ? saveBar() : ''}</div></form>`;
+  }
+
+  function mobRow(type, chance, edit) {
+    return html`<div class="mob-row"><span class="mob-name">${mobLabel(type)}</span>
+      <span class="pct-input"><input class="input" type="number" min="0" max="100" step="5" required name="mob-${type}" value="${chance}" aria-label="Kans voor ${mobLabel(type)}" ${edit ? '' : 'disabled'}><span>%</span></span>
+      ${edit ? html`<button type="button" class="btn sm ghost icon-only" data-mob-remove="${type}" aria-label="${mobLabel(type)} weghalen" title="Weghalen">${icon('x')}</button>` : ''}</div>`;
+  }
+
+  function spawningCard(s, edit) {
+    const disabled = edit ? '' : 'disabled';
+    const limits = s.limits.map(l => {
+      const [title, help] = SPAWN_GROUPS[l.id] || [l.id, null];
+      const info = `Normaal maximaal ${num(l.base)} tegelijk${l.current !== l.base ? `, nu ${num(l.current)}` : ''}.`;
+      return cfgRow(title, help ? `${help} ${info}` : info,
+        html`<span class="pct-input"><input class="input" type="number" min="0" max="${s.maxPercent}" step="5" required name="limit-${l.id}" value="${l.percent}" aria-label="${title} in procenten" ${disabled}><span>%</span></span>`);
+    });
+    const chosen = new Set(s.mobs.map(m => m.type));
+    const options = s.mobTypes.filter(t => !chosen.has(t)).map(t => [t, mobLabel(t)]).sort((a, b) => a[1].localeCompare(b[1], 'nl'));
+    return html`<form class="card" data-form="world-spawning"><div class="card-head"><h2>${icon('paw')}Mobs spawnen</h2><span class="count">100% = normaal</span></div><div class="card-body">
+      <p class="muted small card-intro">Hoeveel mobs er tegelijk vanzelf rondlopen, in procenten van normaal. Minder mobs betekent ook minder lag; 0% = geen enkele.</p>
+      ${limits}
+      <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Kans per mob</span><span class="cfg-help">0% = spawnt nooit vanzelf, 100% = normaal. Spawners, eieren en fokken gaan gewoon door.</span></div>
+        <div class="mob-list" id="mob-list">${s.mobs.map(m => mobRow(m.type, m.chance, edit))}</div>
+        ${edit ? html`<div class="mob-add"><select class="input" id="mob-add-type" aria-label="Mob kiezen"><option value="">Mob kiezen…</option>${options.map(([t, label]) => html`<option value="${t}">${label}</option>`)}</select>
+          <button type="button" class="btn" data-mob-add>${icon('plus')} Toevoegen</button></div>` : (s.mobs.length ? '' : html`<span class="muted small">Geen: alle mobs spawnen normaal.</span>`)}
+      </div>
+      <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Werelden zonder aanpassingen</span><span class="cfg-help">Hier spawnt alles zoals Minecraft het doet. Namen gescheiden door komma's.</span></div>
+        <input class="input" name="spawnDisabledWorlds" value="${s.disabledWorlds.join(', ')}" placeholder="geen" ${disabled}></div>
+      ${edit ? saveBar() : ''}</div></form>`;
+  }
+
+  function griefCard(d, edit) {
+    return html`<form class="card" data-form="world-grief"><div class="card-head"><h2>${icon('ghost')}Phantoms en gesloop</h2></div><div class="card-body">
+      ${cfgRow('Phantoms', 'Komen als je een paar nachten niet slaapt.', cfgToggle('phantoms', d.phantoms.enabled, !edit))}
+      ${cfgRow('Spelers kiezen zelf', 'Een schakelaar in /instellingen; de regel hierboven is dan de standaard.', cfgToggle('phantomChoice', d.phantoms.playerChoice, !edit))}
+      ${cfgRow('Endermen pakken blokken op', 'Uit = endermen halen geen blokken meer uit gebouwen en het landschap.', cfgToggle('endermanPickup', d.griefing.endermanPickup, !edit))}
+      ${cfgRow('Akkers kapot springen', 'Uit = akkers blijven heel als spelers of mobs erop springen.', cfgToggle('trampleFarmland', d.griefing.trampleFarmland, !edit))}
+      ${edit ? saveBar() : ''}</div></form>`;
   }
 
   // =============================================================== straffen
@@ -2292,6 +2470,16 @@
         } });
     },
 
+    async 'dragon-respawn'(button) {
+      const result = await busy(button, () => post('/world/dragon/respawn', {}));
+      if (result) { toast(result.message); renderWorld($('#main'), result); }
+    },
+
+    'world-texts'() {
+      state.textFilter = { section: 'world', query: '', changed: false };
+      location.hash = '#/teksten';
+    },
+
     async 'perf-clear'(button) {
       const result = await busy(button, () => post('/performance/clear', { seconds: Number(button.dataset.seconds || 30) }));
       if (result) { toast(`De items worden over ${result.seconds} seconden opgeruimd. Spelers krijgen een waarschuwing.`); navigate(); }
@@ -2429,6 +2617,32 @@
         intervalMinutes: Number(data.get('intervalMinutes')), minPlayers: Number(data.get('minPlayers')),
         random: form.random.checked, sound: form.sound.checked
       }));
+    },
+
+    async 'world-explosions'(form, data, button) {
+      const blockDamage = {};
+      $$('input[name^="damage-"]', form).forEach(input => { blockDamage[input.name.slice('damage-'.length)] = input.checked; });
+      await saveWorld(button, { blockDamage, tntChain: form.tntChain.checked, protectEntities: form.protectEntities.checked,
+        worldsWithDamage: worldList(data.get('worldsWithDamage')) }, 'Explosies opgeslagen.');
+    },
+
+    async 'world-spawning'(form, data, button) {
+      const limits = {};
+      $$('input[name^="limit-"]', form).forEach(input => { limits[input.name.slice('limit-'.length)] = Number(input.value); });
+      const mobs = {};
+      $$('input[name^="mob-"]', form).forEach(input => { mobs[input.name.slice('mob-'.length)] = Number(input.value); });
+      await saveWorld(button, { limits, mobs, spawnDisabledWorlds: worldList(data.get('spawnDisabledWorlds')) }, 'Spawninstellingen opgeslagen.');
+    },
+
+    async 'world-grief'(form, data, button) {
+      await saveWorld(button, { phantoms: form.phantoms.checked, phantomChoice: form.phantomChoice.checked,
+        endermanPickup: form.endermanPickup.checked, trampleFarmland: form.trampleFarmland.checked }, 'Opgeslagen.');
+    },
+
+    async 'world-dragon'(form, data, button) {
+      await saveWorld(button, { dragonRespawn: form.dragonRespawn.checked, respawnMinutes: Number(data.get('respawnMinutes')),
+        eggEveryKill: form.eggEveryKill.checked, announceKill: form.announceKill.checked, announceRespawn: form.announceRespawn.checked },
+      'Instellingen voor de ender dragon opgeslagen.');
     },
 
     async 'perf-settings'(form, data, button) {

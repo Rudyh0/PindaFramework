@@ -108,6 +108,11 @@ settings:
         - "<text>een boom om met een bijl,"
         - "<text>en de hele boom valt om."
 
+    phantoms:
+      name: "<primary>Phantoms"
+      description:
+        - "<text>Phantoms komen als je een"
+        - "<text>paar nachten niet slaapt."
   setup:
     done: "<prefix><success>Je voorkeuren zijn opgeslagen! <text>Veel plezier op <primary><server></primary>."
     done-title: "<gradient:#FFC857:#E9724C><bold><server>"
@@ -999,6 +1004,30 @@ backpack:
   label-owner-only: "<muted>Nog <time> alleen voor <player>"
   owner-only: "[actionbar]<error>Deze rugtas is nog <time> alleen van <player>."
   looted-money: "<prefix><success>Je hebt <amount> uit de rugtas van <player> gepakt."
+
+world:
+  # Eenheden voor tijden: dagen, uren, minuten
+  units: "d,u,m"
+  dragon:
+    killed: "<prefix><light_purple><bold>Ender dragon</bold></light_purple> <text>is verslagen door <primary><player></primary>!"
+    killed-unknown: "<prefix><text>De <light_purple>ender dragon</light_purple> is verslagen!"
+    respawn: "<prefix><text>De <light_purple>ender dragon</light_purple> komt terug! <muted>Durf jij hem te verslaan in de End?"
+    usage: "<prefix><text>Gebruik: <primary>/dragon</primary> <muted>of</muted> <primary>/dragon respawn</primary>"
+    no-end: "<prefix><error>Er is geen End op deze server."
+    status-alive: "<prefix><text>De ender dragon leeft. <muted>(<health> van <max> levenspunten)"
+    status-alive-unloaded: "<prefix><text>De ender dragon wacht in de End op de volgende spelers."
+    status-respawning: "<prefix><text>De ender dragon komt nu terug."
+    status-dead: "<prefix><text>De ender dragon is <time> geleden verslagen door <primary><player></primary>."
+    status-dead-unknown: "<prefix><text>De ender dragon is <time> geleden verslagen."
+    status-respawn-in: "<prefix><text>Hij komt vanzelf terug over <primary><time></primary>."
+    status-respawn-ready: "<prefix><text>Hij komt terug zodra er iemand in de End is."
+    status-respawn-off: "<prefix><muted>Vanzelf terugkomen staat uit. Met /dragon respawn komt hij terug."
+    status-kills: "<prefix><muted>Totaal <count>× verslagen."
+    respawn-started: "<prefix><success>De ender dragon komt terug."
+    respawn-waiting: "<prefix><success>De ender dragon komt terug zodra er iemand in de End is."
+    respawn-alive: "<prefix><error>De ender dragon leeft nog."
+    respawn-busy: "<prefix><error>De ender dragon komt al terug."
+    respawn-failed: "<prefix><error>Het lukte niet om de ender dragon terug te laten komen. <muted>Kijk in de console."
 
 discord:
   status:
