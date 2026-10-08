@@ -1,0 +1,35 @@
+# ┌──────────────────────────────────────────────┐
+# │             PindaFramework - rugtas          │
+# └──────────────────────────────────────────────┘
+# Een extra inventory: /backpack, /bp, /rugtas, /rugzak, /rt of /rz.
+# Het laatste vakje is een vaste gouden staaf die laat zien hoeveel contant geld je hebt
+# (klik erop voor de bank). Die kun je er niet uit halen.
+
+# Hoe groot de rugtas is (rijen van 9, 1 tot 6). Eén vakje is de gouden staaf.
+rows: 3
+
+# In welke spelmodus je de rugtas kunt openen
+allowed-gamemodes:
+  - SURVIVAL
+  - ADVENTURE
+
+# Werelden waar je je rugtas niet kunt openen
+disabled-worlds: []
+
+money:
+  # De gouden staaf met je contante geld laten zien
+  enabled: true
+  # Welk item het is
+  item: GOLD_INGOT
+
+death:
+  # Ga je dood, dan ligt je rugtas (met je contante geld) op die plek, voor iedereen te looten
+  drop: true
+  # Staat keepInventory aan, dan houd je je rugtas (en je geld)
+  honor-keep-inventory: true
+  # Zo lang (seconden) kan alleen de eigenaar de gevallen rugtas openen
+  owner-only-seconds: 120
+  # Na zoveel minuten verdwijnt een gevallen rugtas die niemand opende (alles is dan weg)
+  despawn-minutes: 15
+  # Hoe de gevallen rugtas eruitziet
+  icon: BUNDLE

@@ -14,7 +14,7 @@ Bij elke wijziging bouwt GitHub automatisch een nieuwe jar. Je vindt de nieuwste
 
 ## Wat zit erin
 
-Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, bomen in één keer omhakken, toplijsten met een scoreboard, automatische aankondigingen, antilag, een eigen MOTD, Discord-webhooks, PlaceholderAPI-placeholders en een webpaneel waarin je alles kunt instellen.
+Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, een rugtas, bomen in één keer omhakken, toplijsten met een scoreboard, automatische aankondigingen, antilag, een eigen MOTD, Discord-webhooks, PlaceholderAPI-placeholders en een webpaneel waarin je alles kunt instellen.
 
 ## To-do
 
@@ -23,7 +23,7 @@ Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/inst
 3. ~~Webpaneel: eigen webserver (IP + poort, later instelbare URL), eenmalige inloglink vanaf PindaMod, dashboard, spelers en rangen, moderatie, economy, shops, serverbeheer, statistieken, actielog~~ ✅
 4. ~~Overige basis: automatische broadcasts, scoreboard en leaderboards (+ PlaceholderAPI), antilag~~ ✅
 5. World control: creepers en TNT zonder blokschade, phantoms uit, spawnrates, ender dragon respawn
-6. Backpack: tweede inventory die bij doodgaan blijft liggen
+6. ~~Backpack: tweede inventory die bij doodgaan blijft liggen~~ ✅
 7. ~~Skills: level 0-99 (RuneScape-curve), geld bij level-up, menu met voortgang~~ ✅
 8. ~~Bomen kappen (timber), naar het voorbeeld van UltimateTimber: hele boom om, valanimatie, sapling terugplanten, geen random loot~~ ✅
 9. Live gaan: testopties uit, installatiehandleiding Ubuntu-VPS, automatische back-ups
@@ -66,6 +66,17 @@ Acht skills zoals in RuneScape: **Mijnbouw, Houthakken, Vissen, Vechten, Koken, 
 ## Slapen
 
 Als genoeg spelers in een wereld slapen (standaard **50%**), wordt de nacht of het onweer overgeslagen: de tijd spoelt in een paar seconden door en het weer klaart op. Iedereen in de wereld ziet wie er slaapt en hoeveel er nog nodig zijn. AFK-spelers, staff in vanish en spelers in creative/spectator tellen niet mee. Instellen in het paneel onder **Instellingen › Slapen**, of in `modules/sleep.yml`.
+
+## Rugtas
+
+Een extra inventory van 3 rijen, te openen met **`/backpack`**, `/bp`, `/rugtas`, `/rugzak`, `/rt` of `/rz`.
+
+- Het laatste vakje is een **vaste gouden staaf** die laat zien hoeveel contant geld je bij je hebt. Die kun je er niet uit halen; klik erop voor de bank.
+- **Doodgaan:** je rugtas (alles erin) en je contante geld liggen dan als zwevende rugtas op de plek waar je doodging, met je naam erboven. De eerste **2 minuten** kan alleen jij hem openen, daarna iedereen. Het geld pak je door op de gouden staaf te klikken.
+- **Wie hem opent en weer sluit, laat hem in rook opgaan:** wat er nog in zat, is dan weg. Opent niemand hem, dan verdwijnt hij na **15 minuten** met alles erin.
+- Staat keepInventory aan, dan houd je je rugtas en je geld.
+- Staff bekijkt rugtassen met `/backpack <speler>` (ook offline) en in het paneel op het spelersprofiel, waar je ook items kunt weghalen en ziet waar een gevallen rugtas ligt.
+- Instellingen in het paneel onder **Instellingen › Rugtas** (grootte, spelmodi, werelden, tijden).
 
 ## Bomen kappen
 
@@ -161,6 +172,7 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | Teksten | alle meldingen, menu's en tips bewerken met kleuren, verloop en opmaak (met voorbeeld), servernaam, prefix en themakleuren | `pinda.panel.texts` | Admin |
 | Rangen bewerken | rangen maken, kleuren, prefix, gewicht, erven en permissies, chatopmaak, standaardrang | `pinda.panel.ranks.edit` | Admin |
 | Speleracties | spelmodus, healen, eten, vliegen, naar spawn, teleporteren, items geven, bericht sturen, inventory en enderkist bekijken en items weghalen, homes verwijderen | `pinda.panel.players.manage` | Admin |
+| Rugtas | de rugtas van een speler bekijken (ook offline) en zien waar een gevallen rugtas ligt; items weghalen met `pinda.panel.players.manage` | `pinda.panel.players` | Mod |
 | 2FA resetten | de authenticator van iemand anders ontkoppelen | `pinda.panel.security` | Admin |
 | Shop sluiten | een shop dichtzetten | `pinda.panel.shops.manage` | Admin |
 | Server | tijd, weer, mededeling, whitelist, opslaan, `/pinda reload` | `pinda.panel.server` | Admin |
@@ -232,6 +244,8 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | `/skills set\|addxp\|reset <speler> ...`, `/skills boost <x> <duur>\|stop` | | `pinda.skills.admin` | op |
 | `/top [lijst]` | `/toplijst`, `/leaderboard`, `/lb` | `pinda.top.use` | iedereen |
 | `/timber` | `/bomenkappen`, `/treefeller` | `pinda.timber.use` | iedereen |
+| `/backpack` | `/bp`, `/rugtas`, `/rugzak`, `/rt`, `/rz` | `pinda.backpack.use` | iedereen |
+| `/backpack <speler>` | | `pinda.backpack.others` (+ `.edit` om aan te passen) | Mod (bekijken) / op |
 | `/lag`, `/lag chunks` | `/antilag` | `pinda.antilag.use` | Mod |
 | `/lag clear [seconden\|nu]`, `/lag tp <wereld> <x> <z>` | | `pinda.antilag.admin` | op |
 
@@ -296,6 +310,7 @@ plugins/PindaFramework/
     ├── skills.yml      XP per blok/mob/item, levelcurve, geld per level-up, meldingen
     ├── sleep.yml       percentage slapers, doorspoelen, meldingen
     ├── timber.yml      bomen kappen: wanneer, bijl, terugplanten, drops, animatie, boomsoorten
+    ├── backpack.yml    rugtas: grootte, spelmodi, gouden staaf, gevallen rugtas bij doodgaan
     ├── motd.yml        de MOTD in de serverlijst (meerdere varianten)
     ├── leaderboards.yml welke toplijsten, hoe vaak bijwerken, verborgen spelers
     ├── scoreboard.yml  het scoreboard: wisselen, plekken, eigen plek, werelden

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import nl.pinda.framework.modules.antilag.AntilagModule;
+import nl.pinda.framework.modules.backpack.BackpackModule;
 import nl.pinda.framework.modules.broadcasts.BroadcastsModule;
 import nl.pinda.framework.modules.discord.DiscordModule;
 import nl.pinda.framework.modules.economy.EconomyService;
@@ -224,7 +225,8 @@ final class AuthApi extends PanelApi {
                         "leaderboards", enabled(LeaderboardsModule.class) != null,
                         "scoreboard", enabled(ScoreboardModule.class) != null,
                         "broadcasts", enabled(BroadcastsModule.class) != null,
-                        "antilag", enabled(AntilagModule.class) != null),
+                        "antilag", enabled(AntilagModule.class) != null,
+                        "backpack", enabled(BackpackModule.class) != null),
                 "ranks", ranks,
                 "currency", currency,
                 "maxTempBan", moderation == null ? 0 : moderation.maxTempBan(),

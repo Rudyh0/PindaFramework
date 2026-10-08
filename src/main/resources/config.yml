@@ -28,6 +28,7 @@ modules:
   economy: true
   shop: true
   locks: true
+  backpack: true
   moderation: true
   skills: true
   sleep: true

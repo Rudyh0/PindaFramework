@@ -16,6 +16,7 @@ import nl.pinda.framework.module.ModuleManager;
 import nl.pinda.framework.modules.afk.AfkModule;
 import nl.pinda.framework.modules.antilag.AntilagModule;
 import nl.pinda.framework.modules.back.BackModule;
+import nl.pinda.framework.modules.backpack.BackpackModule;
 import nl.pinda.framework.modules.broadcasts.BroadcastsModule;
 import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.gamemode.GamemodeModule;
@@ -117,6 +118,7 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new EconomyModule(this));
             modules.register(new ShopModule(this));
             modules.register(new LockModule(this));
+            modules.register(new BackpackModule(this));
             modules.register(new ModerationModule(this));
             modules.register(new SkillsModule(this));
             modules.register(new SleepModule(this));

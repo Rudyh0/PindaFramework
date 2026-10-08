@@ -84,6 +84,8 @@ ranks:
       # Antilag: /lag bekijken en een melding bij lag
       - pinda.antilag.use
       - pinda.antilag.notify
+      # Rugtassen van anderen bekijken (niet aanpassen)
+      - pinda.backpack.others
       # Webpaneel: dashboard, spelers, straffen, saldo's en shops bekijken
       # (geld aanpassen, rangen, serverbeheer, console en logboek: alleen PindaAdmin)
       - pinda.panel.use

@@ -965,6 +965,37 @@ timber:
   cooldown: "[actionbar]<muted>Wait <seconds> s before the next tree."
   sapling-protected: "[actionbar]<muted>This sapling was just planted."
 
+backpack:
+  title: "<dark_gray>Backpack"
+  title-other: "<dark_gray>Backpack of <player>"
+  title-dropped: "<dark_gray>Backpack of <player> <gray>(dropped)"
+  money:
+    name: "<gold><bold>Cash: <amount>"
+    lore:
+      - "<text>The money you carry."
+      - "<muted>If you die, it lies together"
+      - "<muted>with your backpack at that spot."
+      - ""
+      - "<muted>» <text>Click for the bank"
+    lore-other:
+      - "<text>The cash of <player>."
+  loot-money:
+    name: "<gold><bold><amount> cash"
+    lore:
+      - "<muted>» <text>Click to take the money"
+    empty: "<muted>No cash"
+  not-allowed: "<prefix><error>You cannot open your backpack right now."
+  disabled-world: "<prefix><error>You cannot open your backpack in this world."
+  read-only: "[actionbar]<muted>You can only look at this backpack."
+  dropped: "<prefix><warning>Your backpack lies where you died: <highlight><x>, <y>, <z></highlight>. <muted>For the first <minutes> min only you can open it, after <despawn> min it is gone."
+  dropped-cash: "<prefix><warning>Your backpack and your <highlight><amount></highlight> cash lie where you died: <highlight><x>, <y>, <z></highlight>. <muted>For the first <minutes> min only you can open it, after <despawn> min it is gone."
+  lost: "<prefix><error>Your backpack fell into the void and is lost."
+  label: "<gradient:#FFC857:#E9724C><bold>Backpack of <player>"
+  label-hint: "<text>Right-click to open <muted>(<time> left)"
+  label-owner-only: "<muted>Only <player> for <time>"
+  owner-only: "[actionbar]<error>This backpack belongs only to <player> for <time>."
+  looted-money: "<prefix><success>You took <amount> from the backpack of <player>."
+
 discord:
   status:
     online: "🟢 **Online**"

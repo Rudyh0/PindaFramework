@@ -286,6 +286,20 @@ permissions:
     description: Een melding krijgen als de server laggt
     default: op
 
+  # Rugtas
+  pinda.backpack.use:
+    description: /backpack (/bp, /rugtas, /rugzak, /rt, /rz), je eigen rugtas
+    default: true
+  pinda.backpack.loot:
+    description: Een gevallen rugtas van iemand anders looten
+    default: true
+  pinda.backpack.others:
+    description: /backpack <speler>, de rugtas van iemand anders bekijken
+    default: op
+  pinda.backpack.others.edit:
+    description: Items in de rugtas van iemand anders aanpassen
+    default: op
+
   # Bomen kappen
   pinda.timber.use:
     description: Bomen in één keer omhakken, en /timber om het aan of uit te zetten

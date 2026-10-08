@@ -969,6 +969,37 @@ timber:
   cooldown: "[actionbar]<muted>Nog <seconds> s wachten voor de volgende boom."
   sapling-protected: "[actionbar]<muted>Deze sapling is net geplant."
 
+backpack:
+  title: "<dark_gray>Rugtas"
+  title-other: "<dark_gray>Rugtas van <player>"
+  title-dropped: "<dark_gray>Rugtas van <player> <gray>(gevallen)"
+  money:
+    name: "<gold><bold>Contant: <amount>"
+    lore:
+      - "<text>Het geld dat je bij je hebt."
+      - "<muted>Ga je dood, dan ligt het samen"
+      - "<muted>met je rugtas op die plek."
+      - ""
+      - "<muted>» <text>Klik voor de bank"
+    lore-other:
+      - "<text>Het contante geld van <player>."
+  loot-money:
+    name: "<gold><bold><amount> contant"
+    lore:
+      - "<muted>» <text>Klik om het geld te pakken"
+    empty: "<muted>Geen contant geld"
+  not-allowed: "<prefix><error>Je rugtas kun je nu niet openen."
+  disabled-world: "<prefix><error>In deze wereld kun je je rugtas niet openen."
+  read-only: "[actionbar]<muted>Je kunt deze rugtas alleen bekijken."
+  dropped: "<prefix><warning>Je rugtas ligt waar je doodging: <highlight><x>, <y>, <z></highlight>. <muted>De eerste <minutes> min kun alleen jij hem openen, na <despawn> min is hij weg."
+  dropped-cash: "<prefix><warning>Je rugtas en je <highlight><amount></highlight> contant liggen waar je doodging: <highlight><x>, <y>, <z></highlight>. <muted>De eerste <minutes> min kun alleen jij hem openen, na <despawn> min is hij weg."
+  lost: "<prefix><error>Je rugtas is in de leegte gevallen en kwijt."
+  label: "<gradient:#FFC857:#E9724C><bold>Rugtas van <player>"
+  label-hint: "<text>Rechtsklik om te openen <muted>(nog <time>)"
+  label-owner-only: "<muted>Nog <time> alleen voor <player>"
+  owner-only: "[actionbar]<error>Deze rugtas is nog <time> alleen van <player>."
+  looted-money: "<prefix><success>Je hebt <amount> uit de rugtas van <player> gepakt."
+
 discord:
   status:
     online: "🟢 **Online**"

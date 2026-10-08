@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiPredicate;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -490,6 +491,16 @@ public final class EconomyService implements Economy, Listener {
 
     // ============================================================ events
 
+    private volatile BiPredicate<PlayerDeathEvent, Long> deathCashHandler;
+
+    /**
+     * Laat een module het contante geld opvangen dat iemand verliest als hij doodgaat (de rugtas).
+     * Geeft de handler true terug, dan valt er geen geld-item en stuurt de handler zelf de melding.
+     */
+    public void setDeathCashHandler(BiPredicate<PlayerDeathEvent, Long> handler) {
+        this.deathCashHandler = handler;
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onDeath(PlayerDeathEvent event) {
         Player player = event.getPlayer();
@@ -509,6 +520,11 @@ public final class EconomyService implements Economy, Listener {
         save(account);
         log(player.getUniqueId(), "death", -lost, account, null);
 
+        // Een andere module (de rugtas) kan het verloren geld opvangen
+        BiPredicate<PlayerDeathEvent, Long> handler = deathCashHandler;
+        if (handler != null && handler.test(event, lost)) {
+            return;
+        }
         boolean drop = cfg().getBoolean("death.drop-as-item", true);
         if (drop) {
             player.getWorld().dropItemNaturally(player.getLocation(), moneyItem(lost));

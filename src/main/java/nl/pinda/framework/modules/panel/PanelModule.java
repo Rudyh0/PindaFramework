@@ -135,6 +135,7 @@ public final class PanelModule extends PindaModule {
         new LeaderboardsApi(this).register(created);
         new BroadcastsApi(this).register(created);
         new PerformanceApi(this).register(created);
+        new BackpackApi(this).register(created);
         String bind = bind();
         int port = port();
         try {

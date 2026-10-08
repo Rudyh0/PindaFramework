@@ -153,7 +153,7 @@
     death: 'Verloren bij dood', deposit: 'Gestort op bank', withdraw: 'Opgenomen van bank', pay: 'Betaald aan speler',
     'pay-received': 'Ontvangen van speler', pickup: 'Geld opgeraapt', playtime: 'Online-bonus', refund: 'Terugbetaling',
     'shop-buy': 'Aankoop in shop', 'shop-fee': 'Marketplace fee', 'shop-sale': 'Verkoop in shop', spend: 'Uitgegeven', income: 'Inkomsten',
-    'skill-level': 'Skill-beloning'
+    'skill-level': 'Skill-beloning', 'backpack-loot': 'Uit een rugtas gepakt'
   };
 
   const PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8" fill="#2a251f"/><rect x="2" y="2" width="4" height="4" fill="#3d352c"/></svg>');
@@ -666,7 +666,7 @@
     'modules/moderation.yml': 'Moderatie', 'modules/skills.yml': 'Skills', 'modules/sleep.yml': 'Slapen',
     'modules/motd.yml': 'MOTD', 'modules/discord.yml': 'Discord', 'modules/panel.yml': 'Webpaneel',
     'modules/leaderboards.yml': 'Toplijsten', 'modules/scoreboard.yml': 'Scoreboard', 'modules/broadcasts.yml': 'Aankondigingen',
-    'modules/antilag.yml': 'Antilag', 'modules/timber.yml': 'Bomen kappen'
+    'modules/antilag.yml': 'Antilag', 'modules/timber.yml': 'Bomen kappen', 'modules/backpack.yml': 'Rugtas'
   };
   const fileName = path => FILE_NAMES[path] || path.replace(/^modules\//, '').replace(/\.yml$/, '');
   const prettyKey = key => {
@@ -814,7 +814,7 @@
     tpa: 'TPA', spawn: 'Spawn', back: 'Terug', msg: 'Privéberichten', gamemode: 'Spelmodus', afk: 'AFK', utility: 'Handige commando’s',
     vanish: 'Vanish', invsee: 'Invsee', economy: 'Economie', shop: 'Shops', lock: 'Sloten', partner: 'Partners', rank: 'Rangen',
     moderation: 'Moderatie', skills: 'Skills', sleep: 'Slapen', discord: 'Discord', panel: 'Webpaneel', admin: 'Beheer',
-    top: 'Toplijsten', scoreboard: 'Scoreboard', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen'
+    top: 'Toplijsten', scoreboard: 'Scoreboard', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen', backpack: 'Rugtas'
   };
 
   async function pageTexts(main, tab, alive) {
@@ -1257,6 +1257,9 @@
     if (can(P.playersManage) && feature('homes')) {
       cards.push(card('Homes', 'list', html`<div id="homes-list"><div class="page-loading" style="min-height:80px"><div class="spinner"></div></div></div>`));
     }
+    if (can(P.players) && feature('backpack')) {
+      cards.push(card('Rugtas', 'box', html`<div id="backpack-view"><div class="page-loading" style="min-height:80px"><div class="spinner"></div></div></div>`));
+    }
     if (p.twoFactor) {
       cards.push(card('Tweestapsverificatie', 'lock', html`<div class="card-body">
         <p>${p.twoFactor.enabled ? html`<span class="badge success">gekoppeld</span> <span class="muted">sinds ${date(p.twoFactor.since)}</span>` : html`<span class="badge plain">niet gekoppeld</span>`}</p>
@@ -1283,6 +1286,41 @@
         if (alive()) render($('#homes-list', main), html`<div class="empty">${error.message}</div>`);
       }
     }
+    if (feature('backpack') && $('#backpack-view', main)) {
+      try {
+        const result = await api(`/players/${p.uuid}/backpack`);
+        if (!alive()) return;
+        renderBackpack(main, p, result);
+      } catch (error) {
+        if (alive()) render($('#backpack-view', main), html`<div class="empty">${error.message}</div>`);
+      }
+    }
+  }
+
+  function renderBackpack(main, p, data) {
+    const view = $('#backpack-view', main);
+    if (!view) return;
+    const bySlot = Object.fromEntries(data.items.map(item => [item.slot, item]));
+    const canEdit = can(P.playersManage);
+    const grid = html`<div class="inv-grid">${Array.from({ length: data.rows * 9 }, (_, slot) => {
+      if (slot === data.moneySlot) return html`<span class="inv-slot money" title="De gouden staaf met het contante geld (zit vast)">${icon('coin')}</span>`;
+      const item = bySlot[slot];
+      return item ? html`<button type="button" class="inv-slot filled ${item.enchanted ? 'ench' : ''}" title="${item.name} (${item.material})${canEdit ? ' · klik om te verwijderen' : ''}" data-bp-remove="${slot}" ${canEdit ? '' : 'disabled'}>
+          <span class="inv-name">${item.name}</span>${item.amount > 1 ? html`<span class="inv-amount">${item.amount}</span>` : ''}</button>`
+        : html`<span class="inv-slot"></span>`;
+    })}</div>`;
+    const d = data.dropped;
+    render(view, html`<div class="card-body">${grid}
+      <p class="muted small" style="margin-top:10px">${data.items.length ? `${num(data.items.length)} van de ${num(data.capacity)} vakjes gebruikt.` : 'De rugtas is leeg.'}${canEdit && data.items.length ? ' Klik op een item om het weg te halen.' : ''}</p>
+      ${d ? html`<div class="alert warning">Gevallen rugtas bij ${d.world} ${d.x}, ${d.y}, ${d.z}: ${num(d.items)} items${d.cash && d.cash.cents ? ` en ${d.cash.text} contant` : ''}.
+        ${d.ownerOnlyUntil > Date.now() ? `Nog ${human(d.ownerOnlyUntil - Date.now())} alleen voor ${p.name}, ` : ''}verdwijnt over ${human(Math.max(0, d.expiresAt - Date.now()))}.</div>` : ''}
+    </div>`);
+    view.onclick = async event => {
+      const slot = event.target.closest('[data-bp-remove]');
+      if (!slot || !canEdit) return;
+      const result = await busy(slot, () => post(`/players/${p.uuid}/backpack/remove`, { slot: slot.dataset.bpRemove }));
+      if (result) { toast('Item uit de rugtas gehaald.'); renderBackpack(main, p, result); }
+    };
   }
 
   function fillMaterials() {
@@ -1310,7 +1348,7 @@
     openModal(html`<div class="inventory-view">
       <div class="modal-head"><h3>Inventory van ${name}</h3><p>Klik op een item om het weg te halen.</p></div>
       <div class="modal-body">
-        <h4 class="inv-title">Rugzak en hotbar</h4>${grid(data.inventory.filter(i => i.slot < 36), 36, false)}
+        <h4 class="inv-title">Inventory en hotbar</h4>${grid(data.inventory.filter(i => i.slot < 36), 36, false)}
         <h4 class="inv-title">Harnas en tweede hand</h4>${grid(data.inventory.filter(i => i.slot >= 36).map(i => ({ ...i, slot: i.slot - 36 })), 5, false)}
         <h4 class="inv-title">Enderkist</h4>${grid(data.enderchest, 27, true)}
       </div>
