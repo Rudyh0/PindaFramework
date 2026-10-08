@@ -11,6 +11,8 @@ softdepend: [PlaceholderAPI]
 libraries:
   - org.xerial:sqlite-jdbc:3.46.1.2
   - com.google.zxing:core:3.5.3
+  # MySQL/MariaDB (alleen gebruikt als database.yml op mysql staat)
+  - org.mariadb.jdbc:mariadb-java-client:3.5.6
 
 permissions:
   pinda.admin:

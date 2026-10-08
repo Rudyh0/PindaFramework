@@ -28,7 +28,7 @@ public final class ServerData {
         try {
             values.putAll(plugin.database().query(connection -> {
                 Map<String, String> loaded = new ConcurrentHashMap<>();
-                try (PreparedStatement statement = connection.prepareStatement("SELECT key, value FROM pinda_server_data");
+                try (PreparedStatement statement = connection.prepareStatement("SELECT `key`, value FROM pinda_server_data");
                      ResultSet result = statement.executeQuery()) {
                     while (result.next()) {
                         loaded.put(result.getString(1), result.getString(2));
@@ -86,8 +86,8 @@ public final class ServerData {
         values.put(key, text);
         plugin.database().execute(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO pinda_server_data (key, value) VALUES (?, ?) "
-                            + "ON CONFLICT(key) DO UPDATE SET value = excluded.value")) {
+                    "INSERT INTO pinda_server_data (`key`, value) VALUES (?, ?) "
+                            + "ON CONFLICT(`key`) DO UPDATE SET value = excluded.value")) {
                 statement.setString(1, key);
                 statement.setString(2, text);
                 statement.executeUpdate();
@@ -101,7 +101,7 @@ public final class ServerData {
     public void remove(String key) {
         values.remove(key);
         plugin.database().execute(connection -> {
-            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM pinda_server_data WHERE key = ?")) {
+            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM pinda_server_data WHERE `key` = ?")) {
                 statement.setString(1, key);
                 statement.executeUpdate();
             }

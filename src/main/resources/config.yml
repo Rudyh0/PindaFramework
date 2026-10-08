@@ -113,6 +113,4 @@ commands:
     enabled: true
     aliases: [language, lang]
 
-database:
-  # SQLite-bestand in de pluginmap
-  file: data.db
+# De database (SQLite of MySQL) staat in database.yml en wordt beheerd via het dev-paneel.

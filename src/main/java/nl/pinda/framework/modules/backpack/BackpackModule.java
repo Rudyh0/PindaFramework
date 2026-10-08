@@ -64,7 +64,8 @@ public final class BackpackModule extends PindaModule implements Listener {
     public static final String OTHERS_EDIT = "pinda.backpack.others.edit";
     public static final String LOOT = "pinda.backpack.loot";
 
-    private static final List<List<String>> MIGRATIONS = List.of(
+    /** De databasetabellen van deze module (ook gebruikt bij het omzetten naar MySQL). */
+    public static final List<List<String>> MIGRATIONS = List.of(
             List.of(
                     """
                     CREATE TABLE IF NOT EXISTS pinda_backpacks (

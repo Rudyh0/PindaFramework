@@ -1,0 +1,29 @@
+# ┌──────────────────────────────────────────────┐
+# │           PindaFramework - database          │
+# └──────────────────────────────────────────────┘
+# Waar PindaFramework zijn gegevens bewaart. Dit bestand wordt beheerd door het dev-paneel
+# (PindaHost) en staat bewust niet in het webpaneel voor staff: er staat een wachtwoord in.
+# Pas het alleen met de hand aan als je weet wat je doet, en herstart daarna de server.
+
+# sqlite = alles in één bestand in deze map (prima voor de meeste servers)
+# mysql  = een MySQL- of MariaDB-server
+type: sqlite
+
+sqlite:
+  # Het bestand in de pluginmap
+  file: data.db
+
+mysql:
+  host: 127.0.0.1
+  port: 3306
+  database: pindacraft
+  user: pindacraft
+  password: ""
+  # Versleutelde verbinding (alleen nodig als de database op een andere server staat)
+  ssl: false
+
+# Eenmalig: zet bij de volgende start alles uit SQLite (het bestand hierboven) over naar MySQL.
+# Gaat het goed, dan wordt dit vanzelf weer false en blijft het oude bestand als backup bewaard.
+# Gaat het mis, dan draait de server gewoon op SQLite verder en wordt het de volgende start
+# opnieuw geprobeerd. Kijk dan in de console of in het dev-paneel wat er misging.
+convert-from-sqlite: false

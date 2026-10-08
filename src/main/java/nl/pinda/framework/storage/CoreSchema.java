@@ -45,7 +45,7 @@ public final class CoreSchema {
             List.of(
                     """
                     CREATE TABLE IF NOT EXISTS pinda_server_data (
-                        key TEXT PRIMARY KEY,
+                        `key` TEXT PRIMARY KEY,
                         value TEXT NOT NULL
                     )"""
             )

@@ -15,7 +15,8 @@ public final class LockModule extends PindaModule {
 
     public static final String PARTNER = "pinda.partner.use";
 
-    private static final List<List<String>> MIGRATIONS = List.of(
+    /** De databasetabellen van deze module (ook gebruikt bij het omzetten naar MySQL). */
+    public static final List<List<String>> MIGRATIONS = List.of(
             List.of(
                     """
                     CREATE TABLE IF NOT EXISTS pinda_locks (

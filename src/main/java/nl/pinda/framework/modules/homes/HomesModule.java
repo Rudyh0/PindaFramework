@@ -44,7 +44,8 @@ public final class HomesModule extends PindaModule implements Listener {
     private static final Pattern NAME = Pattern.compile("[a-z0-9_-]{1,16}");
     private static final long PRELOAD_TIMEOUT_MS = 60_000L;
 
-    private static final List<List<String>> MIGRATIONS = List.of(
+    /** De databasetabellen van deze module (ook gebruikt bij het omzetten naar MySQL). */
+    public static final List<List<String>> MIGRATIONS = List.of(
             List.of("""
                     CREATE TABLE IF NOT EXISTS pinda_homes (
                         uuid TEXT NOT NULL,

@@ -71,7 +71,7 @@ final class PlayersApi extends PanelApi {
         Page page = await(plugin.database().query(connection -> {
             List<Row> rows = new ArrayList<>();
             try (PreparedStatement statement = connection.prepareStatement("""
-                    SELECT p.uuid, p.name, p.first_join, p.last_seen, s.value AS rank
+                    SELECT p.uuid, p.name, p.first_join, p.last_seen, s.value AS rank_id
                     FROM pinda_players p
                     LEFT JOIN pinda_player_settings s ON s.uuid = p.uuid AND s.setting = 'rank'
                     WHERE p.name LIKE ? ESCAPE '\\'
@@ -82,7 +82,7 @@ final class PlayersApi extends PanelApi {
                 try (ResultSet result = statement.executeQuery()) {
                     while (result.next()) {
                         rows.add(new Row(result.getString("uuid"), result.getString("name"),
-                                result.getLong("first_join"), result.getLong("last_seen"), result.getString("rank")));
+                                result.getLong("first_join"), result.getLong("last_seen"), result.getString("rank_id")));
                     }
                 }
             }

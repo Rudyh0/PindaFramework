@@ -45,6 +45,7 @@ import nl.pinda.framework.player.DisplayNames;
 import nl.pinda.framework.player.PlayerManager;
 import nl.pinda.framework.player.SettingsService;
 import nl.pinda.framework.storage.CoreSchema;
+import nl.pinda.framework.storage.DatabaseSettings;
 import nl.pinda.framework.storage.Database;
 import nl.pinda.framework.storage.ServerData;
 import nl.pinda.framework.teleport.TeleportService;
@@ -86,8 +87,9 @@ public final class PindaFramework extends JavaPlugin {
             lang.load();
 
             database = new Database(this);
-            database.connect(mainConfig.get().getString("database.file", "data.db"));
+            database.open(new DatabaseSettings(this));
             database.migrate("core", CoreSchema.MIGRATIONS);
+            getLogger().info("Database: " + database.description());
             serverData = new ServerData(this);
             serverData.load();
 

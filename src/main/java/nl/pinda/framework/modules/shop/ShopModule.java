@@ -25,7 +25,8 @@ public final class ShopModule extends PindaModule implements Listener {
     public static final String SIGN = "pinda.shop.sign";
     public static final String ADMIN = "pinda.shop.admin";
 
-    private static final List<List<String>> MIGRATIONS = List.of(
+    /** De databasetabellen van deze module (ook gebruikt bij het omzetten naar MySQL). */
+    public static final List<List<String>> MIGRATIONS = List.of(
             List.of(
                     """
                     CREATE TABLE IF NOT EXISTS pinda_shops (

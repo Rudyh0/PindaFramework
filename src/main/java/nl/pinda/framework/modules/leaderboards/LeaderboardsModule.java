@@ -15,7 +15,8 @@ public final class LeaderboardsModule extends PindaModule {
 
     public static final String USE = "pinda.top.use";
 
-    private static final List<List<String>> MIGRATIONS = List.of(
+    /** De databasetabellen van deze module (ook gebruikt bij het omzetten naar MySQL). */
+    public static final List<List<String>> MIGRATIONS = List.of(
             List.of(
                     """
                     CREATE TABLE IF NOT EXISTS pinda_stats (

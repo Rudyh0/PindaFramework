@@ -19,7 +19,8 @@ public final class EconomyModule extends PindaModule {
     public static final String BALTOP = "pinda.eco.baltop";
     public static final String ADMIN = "pinda.eco.admin";
 
-    private static final List<List<String>> MIGRATIONS = List.of(
+    /** De databasetabellen van deze module (ook gebruikt bij het omzetten naar MySQL). */
+    public static final List<List<String>> MIGRATIONS = List.of(
             List.of(
                     """
                     CREATE TABLE IF NOT EXISTS pinda_economy (
