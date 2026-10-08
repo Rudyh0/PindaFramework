@@ -31,6 +31,8 @@ final class DroppedBackpack implements InventoryHolder {
     ItemStack[] items;
     long cash;
     Inventory inventory;
+    /** Het vakje met het geld in het geopende inventory, of -1. */
+    int moneySlot = -1;
     boolean removed;
 
     private ItemDisplay display;

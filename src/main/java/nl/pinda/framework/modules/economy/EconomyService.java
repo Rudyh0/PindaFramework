@@ -501,11 +501,12 @@ public final class EconomyService implements Economy, Listener {
         this.deathCashHandler = handler;
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onDeath(PlayerDeathEvent event) {
         Player player = event.getPlayer();
         double percent = Math.min(100, cfg().getDouble("death.lose-cash-percent", 100));
-        if (percent <= 0 || player.hasPermission(KEEP_CASH)) {
+        // Met keepInventory houd je alles, dus ook je contante geld
+        if (percent <= 0 || player.hasPermission(KEEP_CASH) || event.getKeepInventory()) {
             return;
         }
         Account account = account(player);

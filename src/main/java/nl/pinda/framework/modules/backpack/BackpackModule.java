@@ -2,8 +2,6 @@ package nl.pinda.framework.modules.backpack;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -12,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import net.kyori.adventure.text.Component;
 import nl.pinda.framework.PindaFramework;
@@ -54,6 +53,9 @@ import org.bukkit.persistence.PersistentDataType;
  * <p>Ga je dood, dan ligt je rugtas met je contante geld op die plek. De eerste minuten kan
  * alleen jij hem openen, daarna iedereen. Wie hem na het looten sluit, laat hem in rook
  * opgaan; wat erin bleef zitten is dan weg. Niemand geweest? Dan verdwijnt hij na een tijd.
+ *
+ * <p>Er gaat nooit iets verloren als de rugtas kleiner wordt ingesteld: een rugtas is altijd
+ * groot genoeg voor wat erin zit.
  */
 public final class BackpackModule extends PindaModule implements Listener {
 
@@ -77,13 +79,22 @@ public final class BackpackModule extends PindaModule implements Listener {
     public record DroppedInfo(String world, int x, int y, int z, long ownerOnlyUntil, long expiresAt, int items, long cash) {
     }
 
+    /** Hoe een rugtas wordt ingedeeld: hoe groot, waar de gouden staaf zit en wat waar ligt. */
+    private record Layout(int size, int moneySlot, ItemStack[] slots, List<ItemStack> leftover) {
+    }
+
     private BackpackStore store;
     private NamespacedKey moneyKey;
     private final Map<UUID, ItemStack[]> cache = new ConcurrentHashMap<>();
-    private final Map<UUID, Inventory> open = new HashMap<>();
-    private final Map<UUID, Long> pendingCash = new HashMap<>();
+    private final Map<UUID, Inventory> open = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> pendingCash = new ConcurrentHashMap<>();
     private final Map<UUID, DroppedBackpack> dropped = new LinkedHashMap<>();
+    /** Wanneer een rugtas voor het laatst is opgeslagen (oplopend nummer), tegen oude gegevens bij het inloggen. */
+    private final Map<UUID, Long> savedAt = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> preloadedAt = new ConcurrentHashMap<>();
+    private final AtomicLong version = new AtomicLong();
     private EconomyService hooked;
+    private int ticks;
 
     public BackpackModule(PindaFramework plugin) {
         super(plugin, "backpack");
@@ -144,7 +155,7 @@ public final class BackpackModule extends PindaModule implements Listener {
         return economy() != null && config().getBoolean("money.enabled", true);
     }
 
-    /** Het vakje van de gouden staaf (het laatste), of -1. */
+    /** Het vakje van de gouden staaf in een nieuwe rugtas (het laatste), of -1. */
     public int moneySlot() {
         return moneyShown() ? rows() * 9 - 1 : -1;
     }
@@ -166,12 +177,62 @@ public final class BackpackModule extends PindaModule implements Listener {
                 return false;
             }
         }
-        List<String> modes = config().getStringList("allowed-gamemodes");
-        if (!modes.isEmpty() && modes.stream().noneMatch(mode -> mode.equalsIgnoreCase(player.getGameMode().name()))) {
+        if (!isGameModeAllowed(player.getGameMode())) {
             plugin.lang().send(player, "backpack.not-allowed");
             return false;
         }
         return true;
+    }
+
+    /**
+     * Deelt een rugtas in. Hij is minstens zo groot als ingesteld, maar groter als er meer in zit
+     * (bijv. nadat de rugtas kleiner is ingesteld). Items houden hun vakje waar dat kan.
+     */
+    private Layout layout(ItemStack[] items, boolean money) {
+        int highest = -1;
+        int count = 0;
+        for (int slot = 0; slot < items.length; slot++) {
+            if (items[slot] != null && !items[slot].isEmpty()) {
+                highest = slot;
+                count++;
+            }
+        }
+        int needed = Math.max(rows() * 9, Math.max(highest + 1, count) + (money ? 1 : 0));
+        int size = Math.min(54, ((needed + 8) / 9) * 9);
+        int moneySlot = money ? size - 1 : -1;
+        ItemStack[] slots = new ItemStack[size];
+        List<ItemStack> overflow = new ArrayList<>();
+        for (int slot = 0; slot < items.length; slot++) {
+            ItemStack item = items[slot];
+            if (item == null || item.isEmpty()) {
+                continue;
+            }
+            if (slot < size && slot != moneySlot) {
+                slots[slot] = item;
+            } else {
+                overflow.add(item);
+            }
+        }
+        List<ItemStack> leftover = new ArrayList<>();
+        for (ItemStack item : overflow) {
+            int free = -1;
+            for (int slot = 0; slot < size; slot++) {
+                if (slot != moneySlot && slots[slot] == null) {
+                    free = slot;
+                    break;
+                }
+            }
+            if (free >= 0) {
+                slots[free] = item;
+            } else if (moneySlot >= 0) {
+                // Echt vol: dan deze keer geen gouden staaf, maar het item
+                slots[moneySlot] = item;
+                moneySlot = -1;
+            } else {
+                leftover.add(item);
+            }
+        }
+        return new Layout(size, moneySlot, slots, leftover);
     }
 
     // ============================================================ openen
@@ -187,8 +248,7 @@ public final class BackpackModule extends PindaModule implements Listener {
     void open(Player viewer, UUID owner, String ownerName) {
         Inventory live = open.get(owner);
         if (live != null) {
-            viewer.openInventory(live);
-            plugin.theme().play(viewer, "menu-open");
+            showLive(viewer, owner, live);
             return;
         }
         ItemStack[] items = cache.get(owner);
@@ -200,6 +260,11 @@ public final class BackpackModule extends PindaModule implements Listener {
             if (!viewer.isOnline() || !isEnabled()) {
                 return;
             }
+            Inventory now = open.get(owner);
+            if (now != null) {
+                showLive(viewer, owner, now);
+                return;
+            }
             ItemStack[] current = cache.get(owner);
             show(viewer, owner, ownerName, current != null ? current : loaded);
         })).exceptionally(error -> {
@@ -208,70 +273,71 @@ public final class BackpackModule extends PindaModule implements Listener {
         });
     }
 
-    private void show(Player viewer, UUID owner, String ownerName, ItemStack[] items) {
-        Inventory live = open.get(owner);
-        if (live == null) {
-            LanguageManager lang = plugin.lang();
-            boolean self = viewer.getUniqueId().equals(owner);
-            BackpackHolder holder = new BackpackHolder(owner, ownerName);
-            Component title = self ? lang.component(viewer, "backpack.title")
-                    : lang.component(viewer, "backpack.title-other", Text.p("player", ownerName));
-            live = plugin.getServer().createInventory(holder, rows() * 9, title);
-            holder.inventory(live);
-            int capacity = capacity();
-            List<ItemStack> overflow = new ArrayList<>();
-            for (int slot = 0; slot < items.length; slot++) {
-                if (items[slot] == null || items[slot].isEmpty()) {
-                    continue;
-                }
-                if (slot < capacity) {
-                    live.setItem(slot, items[slot]);
-                } else {
-                    overflow.add(items[slot]);
-                }
-            }
-            // De rugtas is kleiner geworden: wat niet meer past, past waarschijnlijk wel op een lege plek
-            for (ItemStack item : overflow) {
-                Map<Integer, ItemStack> left = addToBackpack(live, item);
-                Player ownerPlayer = plugin.getServer().getPlayer(owner);
-                for (ItemStack rest : left.values()) {
-                    if (ownerPlayer != null) {
-                        ownerPlayer.getInventory().addItem(rest).values()
-                                .forEach(drop -> ownerPlayer.getWorld().dropItemNaturally(ownerPlayer.getLocation(), drop));
-                    }
-                }
-            }
-            if (moneyShown()) {
-                live.setItem(moneySlot(), moneyItem(lang.languageOf(viewer), owner, ownerName, self));
-            }
-            open.put(owner, live);
+    private void showLive(Player viewer, UUID owner, Inventory live) {
+        if (viewer.getOpenInventory().getTopInventory() == live) {
+            return; // staat al open: niet opnieuw openen (dat zou hem eerst 'sluiten')
         }
         viewer.openInventory(live);
+        open.put(owner, live);
         plugin.theme().play(viewer, "menu-open");
     }
 
-    private Map<Integer, ItemStack> addToBackpack(Inventory inventory, ItemStack item) {
-        Map<Integer, ItemStack> left = new HashMap<>();
-        int capacity = capacity();
-        for (int slot = 0; slot < capacity; slot++) {
-            ItemStack current = inventory.getItem(slot);
-            if (current == null || current.isEmpty()) {
-                inventory.setItem(slot, item);
-                return left;
+    private void show(Player viewer, UUID owner, String ownerName, ItemStack[] items) {
+        LanguageManager lang = plugin.lang();
+        boolean self = viewer.getUniqueId().equals(owner);
+        Layout layout = layout(items, moneyShown());
+        BackpackHolder holder = new BackpackHolder(owner, ownerName, layout.moneySlot());
+        Component title = self ? lang.component(viewer, "backpack.title")
+                : lang.component(viewer, "backpack.title-other", Text.p("player", ownerName));
+        Inventory live = plugin.getServer().createInventory(holder, layout.size(), title);
+        holder.inventory(live);
+        for (int slot = 0; slot < layout.size(); slot++) {
+            if (layout.slots()[slot] != null) {
+                live.setItem(slot, layout.slots()[slot]);
             }
         }
-        left.put(0, item);
-        return left;
+        if (layout.moneySlot() >= 0) {
+            live.setItem(layout.moneySlot(), moneyItem(lang.languageOf(viewer), owner, ownerName, self));
+        }
+        if (!layout.leftover().isEmpty()) {
+            // Kan eigenlijk niet (een rugtas is nooit groter dan 54 vakjes), maar nooit iets weggooien
+            Player ownerPlayer = plugin.getServer().getPlayer(owner);
+            Player target = ownerPlayer != null ? ownerPlayer : viewer;
+            for (ItemStack item : layout.leftover()) {
+                target.getInventory().addItem(item).values().forEach(rest -> target.getWorld().dropItemNaturally(target.getLocation(), rest));
+            }
+            holder.dirty = true;
+        }
+        open.put(owner, live);
+        viewer.openInventory(live);
+        open.put(owner, live);
+        plugin.theme().play(viewer, "menu-open");
     }
 
     /** De inhoud van een open rugtas, zonder de gouden staaf. */
-    private ItemStack[] read(Inventory inventory) {
-        ItemStack[] items = new ItemStack[capacity()];
-        for (int slot = 0; slot < items.length && slot < inventory.getSize(); slot++) {
+    private static ItemStack[] read(Inventory inventory, int moneySlot) {
+        ItemStack[] items = new ItemStack[inventory.getSize()];
+        for (int slot = 0; slot < items.length; slot++) {
+            if (slot == moneySlot) {
+                continue;
+            }
             ItemStack item = inventory.getItem(slot);
             items[slot] = item == null || item.isEmpty() ? null : item.clone();
         }
         return items;
+    }
+
+    private static ItemStack[] read(Inventory inventory) {
+        return read(inventory, inventory.getHolder(false) instanceof BackpackHolder holder ? holder.moneySlot : -1);
+    }
+
+    /** Slaat een rugtas op en onthoudt wanneer (tegen oude gegevens bij het inloggen). */
+    private CompletableFuture<Void> persist(UUID uuid, ItemStack[] items) {
+        savedAt.put(uuid, version.incrementAndGet());
+        return store.save(uuid, items).exceptionally(error -> {
+            plugin.getLogger().log(Level.SEVERE, "Kon de rugtas van " + uuid + " niet opslaan", error);
+            return null;
+        });
     }
 
     // ============================================================ de gouden staaf
@@ -305,37 +371,66 @@ public final class BackpackModule extends PindaModule implements Listener {
         return item;
     }
 
-    /** Elke seconde: het geld in open rugtassen bijwerken en de gevallen rugtassen bijhouden. */
+    /** Elke seconde: geld bijwerken, open rugtassen tussendoor opslaan en de gevallen rugtassen bijhouden. */
     private void tick() {
-        if (moneyShown()) {
-            for (Map.Entry<UUID, Inventory> entry : open.entrySet()) {
-                Inventory inventory = entry.getValue();
-                if (inventory.getViewers().isEmpty() || !(inventory.getHolder(false) instanceof BackpackHolder holder)) {
-                    continue;
-                }
+        for (Map.Entry<UUID, Inventory> entry : open.entrySet()) {
+            Inventory inventory = entry.getValue();
+            if (!(inventory.getHolder(false) instanceof BackpackHolder holder)) {
+                continue;
+            }
+            if (holder.moneySlot >= 0 && !inventory.getViewers().isEmpty() && economy() != null) {
                 HumanEntity viewer = inventory.getViewers().get(0);
                 ItemStack fresh = moneyItem(plugin.lang().languageOf(viewer), holder.owner, holder.ownerName,
                         viewer.getUniqueId().equals(holder.owner));
-                if (!fresh.equals(inventory.getItem(moneySlot()))) {
-                    inventory.setItem(moneySlot(), fresh);
+                if (!fresh.equals(inventory.getItem(holder.moneySlot))) {
+                    inventory.setItem(holder.moneySlot, fresh);
                 }
+            }
+            if (holder.dirty) {
+                // Tussendoor opslaan: zo gaat er bij een crash niets verloren of dubbel
+                holder.dirty = false;
+                ItemStack[] items = read(inventory, holder.moneySlot);
+                cache.put(holder.owner, items);
+                persist(holder.owner, items);
             }
         }
         long now = System.currentTimeMillis();
         for (DroppedBackpack bag : new ArrayList<>(dropped.values())) {
-            if (now >= bag.expiresAt) {
-                poof(bag); // niemand geweest: alles is weg
-                continue;
+            try {
+                if (now >= bag.expiresAt) {
+                    poof(bag); // niemand geweest: alles is weg
+                    continue;
+                }
+                // Was de chunk even niet geladen? Dan zijn de zwevende rugtas en de naam weg: opnieuw neerzetten
+                World world = bag.location.getWorld();
+                if (bag.needsSpawn() && world != null
+                        && world.isChunkLoaded(bag.location.getBlockX() >> 4, bag.location.getBlockZ() >> 4)) {
+                    dropped.remove(bag.hitboxId());
+                    bag.spawn(icon());
+                    dropped.put(bag.hitboxId(), bag);
+                }
+                bag.tick(label(bag, now));
+            } catch (RuntimeException e) {
+                // Bijv. een wereld die er niet meer is: deze rugtas opgeven, de rest gaat gewoon door
+                plugin.getLogger().log(Level.WARNING, "Gevallen rugtas van " + bag.ownerName + " opgeruimd", e);
+                dropped.values().remove(bag);
+                bag.despawn();
             }
-            // Was de chunk even niet geladen? Dan zijn de zwevende rugtas en de naam weg: opnieuw neerzetten
-            World world = bag.location.getWorld();
-            if (bag.needsSpawn() && world != null
-                    && world.isChunkLoaded(bag.location.getBlockX() >> 4, bag.location.getBlockZ() >> 4)) {
-                dropped.remove(bag.hitboxId());
-                bag.spawn(icon());
-                dropped.put(bag.hitboxId(), bag);
+        }
+        if (++ticks % 60 == 0) {
+            cleanup();
+        }
+    }
+
+    /** Rugtassen van spelers die niet (meer) online zijn uit het geheugen halen. */
+    private void cleanup() {
+        long limit = System.currentTimeMillis() - 60_000L;
+        for (UUID uuid : new ArrayList<>(cache.keySet())) {
+            if (plugin.getServer().getPlayer(uuid) == null && !open.containsKey(uuid)
+                    && preloadedAt.getOrDefault(uuid, 0L) < limit) {
+                cache.remove(uuid);
+                preloadedAt.remove(uuid);
             }
-            bag.tick(label(bag, now));
         }
     }
 
@@ -350,6 +445,7 @@ public final class BackpackModule extends PindaModule implements Listener {
         }
         if (holder instanceof BackpackHolder bag) {
             clickOwn(event, viewer, bag, top);
+            bag.dirty = true;
         } else if (holder instanceof DroppedBackpack bag) {
             clickDropped(event, viewer, bag, top);
         }
@@ -359,7 +455,7 @@ public final class BackpackModule extends PindaModule implements Listener {
         int raw = event.getRawSlot();
         boolean inTop = raw >= 0 && raw < top.getSize();
         boolean self = viewer.getUniqueId().equals(bag.owner);
-        if (inTop && raw == moneySlot()) {
+        if (inTop && raw == bag.moneySlot) {
             event.setCancelled(true); // de gouden staaf zit vast
             if (self && viewer.hasPermission(EconomyModule.BANK)) {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
@@ -385,7 +481,7 @@ public final class BackpackModule extends PindaModule implements Listener {
             }
             return;
         }
-        if (raw == moneySlot()) {
+        if (raw == bag.moneySlot) {
             event.setCancelled(true);
             takeMoney(viewer, bag, top);
             return;
@@ -415,7 +511,7 @@ public final class BackpackModule extends PindaModule implements Listener {
         long amount = bag.cash;
         bag.cash = 0;
         economy.give(viewer.getUniqueId(), amount, false, "backpack-loot", "rugtas van " + bag.ownerName);
-        top.setItem(moneySlot(), lootMoneyItem(plugin.lang().languageOf(viewer), 0));
+        top.setItem(bag.moneySlot, lootMoneyItem(plugin.lang().languageOf(viewer), 0));
         plugin.lang().send(viewer, "backpack.looted-money", Text.p("amount", economy.format(amount)), Text.p("player", bag.ownerName));
         plugin.theme().play(viewer, "success");
     }
@@ -429,11 +525,15 @@ public final class BackpackModule extends PindaModule implements Listener {
         }
         boolean editable = holder instanceof BackpackHolder bag
                 && (event.getWhoClicked().getUniqueId().equals(bag.owner) || event.getWhoClicked().hasPermission(OTHERS_EDIT));
+        int moneySlot = holder instanceof BackpackHolder bag ? bag.moneySlot : ((DroppedBackpack) holder).moneySlot;
         for (int raw : event.getRawSlots()) {
-            if (raw < top.getSize() && (!editable || raw == moneySlot())) {
+            if (raw < top.getSize() && (!editable || raw == moneySlot)) {
                 event.setCancelled(true);
                 return;
             }
+        }
+        if (holder instanceof BackpackHolder bag) {
+            bag.dirty = true;
         }
     }
 
@@ -442,7 +542,7 @@ public final class BackpackModule extends PindaModule implements Listener {
         Inventory inventory = event.getInventory();
         InventoryHolder holder = inventory.getHolder(false);
         if (holder instanceof BackpackHolder bag) {
-            ItemStack[] items = read(inventory);
+            ItemStack[] items = read(inventory, bag.moneySlot);
             boolean last = inventory.getViewers().size() <= 1;
             Player owner = plugin.getServer().getPlayer(bag.owner);
             if (owner != null || !last) {
@@ -451,12 +551,10 @@ public final class BackpackModule extends PindaModule implements Listener {
                 cache.remove(bag.owner);
             }
             if (last) {
-                open.remove(bag.owner);
+                open.remove(bag.owner, inventory); // alleen als het echt deze rugtas is
             }
-            store.save(bag.owner, items).exceptionally(error -> {
-                plugin.getLogger().log(Level.SEVERE, "Kon de rugtas van " + bag.ownerName + " niet opslaan", error);
-                return null;
-            });
+            bag.dirty = false;
+            persist(bag.owner, items);
         } else if (holder instanceof DroppedBackpack bag && !bag.removed) {
             // Gelooted en weer dicht: de rugtas gaat in rook op (wat er nog in zat, is weg)
             plugin.getServer().getScheduler().runTask(plugin, () -> poof(bag));
@@ -485,13 +583,21 @@ public final class BackpackModule extends PindaModule implements Listener {
     public void onDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
         UUID uuid = player.getUniqueId();
-        long cash = pendingCash.getOrDefault(uuid, 0L);
-        pendingCash.remove(uuid);
-        if (!dropsOnDeath(event)) {
+        Long pending = pendingCash.remove(uuid);
+        long cash = pending == null ? 0 : pending;
+        if (event.isCancelled() || !dropsOnDeath(event)) {
+            // Een andere plugin heeft de dood tegengehouden of keepInventory aangezet: geld terug
+            refund(uuid, cash);
             return;
         }
-        ItemStack[] items = takeContents(uuid);
-        boolean any = Arrays.stream(items).anyMatch(item -> item != null && !item.isEmpty());
+        ItemStack[] items = takeContents(player);
+        boolean any = false;
+        for (ItemStack item : items) {
+            if (item != null && !item.isEmpty()) {
+                any = true;
+                break;
+            }
+        }
         if (!any && cash <= 0) {
             return;
         }
@@ -514,15 +620,45 @@ public final class BackpackModule extends PindaModule implements Listener {
                 Text.p("despawn", life / 60_000L));
     }
 
-    /** Haalt alles uit iemands rugtas (ook als die net open is) en geeft het terug. */
-    private ItemStack[] takeContents(UUID uuid) {
+    private void refund(UUID uuid, long cash) {
+        EconomyService economy = economy();
+        if (economy != null && cash > 0) {
+            economy.give(uuid, cash, false, "refund", "rugtas: dood tegengehouden of keepInventory");
+        }
+    }
+
+    /** Haalt alles uit iemands rugtas (ook als die net open is, bij hem of bij staff) en geeft het terug. */
+    private ItemStack[] takeContents(Player player) {
+        UUID uuid = player.getUniqueId();
+        List<Inventory> live = new ArrayList<>();
+        Inventory registered = open.get(uuid);
+        if (registered != null) {
+            live.add(registered);
+        }
+        Inventory top = player.getOpenInventory().getTopInventory();
+        if (top.getHolder(false) instanceof BackpackHolder holder && holder.owner.equals(uuid) && !live.contains(top)) {
+            live.add(top);
+        }
         ItemStack[] items;
-        Inventory live = open.get(uuid);
-        if (live != null) {
-            items = read(live);
-            for (int slot = 0; slot < capacity(); slot++) {
-                live.setItem(slot, null);
+        if (!live.isEmpty()) {
+            List<ItemStack> all = new ArrayList<>();
+            for (Inventory inventory : live) {
+                int moneySlot = inventory.getHolder(false) instanceof BackpackHolder holder ? holder.moneySlot : -1;
+                for (ItemStack item : read(inventory, moneySlot)) {
+                    if (item != null) {
+                        all.add(item);
+                    }
+                }
+                for (int slot = 0; slot < inventory.getSize(); slot++) {
+                    if (slot != moneySlot) {
+                        inventory.setItem(slot, null);
+                    }
+                }
+                if (inventory.getHolder(false) instanceof BackpackHolder holder) {
+                    holder.dirty = false;
+                }
             }
+            items = all.toArray(new ItemStack[0]);
         } else {
             items = cache.get(uuid);
             if (items == null) {
@@ -537,9 +673,9 @@ public final class BackpackModule extends PindaModule implements Listener {
                 }
             }
         }
-        ItemStack[] empty = new ItemStack[capacity()];
+        ItemStack[] empty = new ItemStack[0];
         cache.put(uuid, empty);
-        store.save(uuid, empty);
+        persist(uuid, empty);
         return items == null ? new ItemStack[0] : items;
     }
 
@@ -604,26 +740,27 @@ public final class BackpackModule extends PindaModule implements Listener {
         }
         if (bag.inventory == null) {
             String code = plugin.lang().languageOf(player);
-            bag.inventory = plugin.getServer().createInventory(bag, rows() * 9,
+            EconomyService economy = economy();
+            Layout layout = layout(bag.items, economy != null && (moneyShown() || bag.cash > 0));
+            bag.inventory = plugin.getServer().createInventory(bag, layout.size(),
                     plugin.lang().component(code, "backpack.title-dropped", Text.p("player", bag.ownerName)));
-            int capacity = capacity();
-            List<ItemStack> overflow = new ArrayList<>();
-            for (int slot = 0; slot < bag.items.length; slot++) {
-                ItemStack item = bag.items[slot];
-                if (item == null || item.isEmpty()) {
-                    continue;
-                }
-                if (slot < capacity) {
-                    bag.inventory.setItem(slot, item);
-                } else {
-                    overflow.add(item);
+            bag.moneySlot = layout.moneySlot();
+            for (int slot = 0; slot < layout.size(); slot++) {
+                if (layout.slots()[slot] != null) {
+                    bag.inventory.setItem(slot, layout.slots()[slot]);
                 }
             }
-            for (ItemStack item : overflow) {
-                addToBackpack(bag.inventory, item);
+            if (bag.moneySlot >= 0) {
+                bag.inventory.setItem(bag.moneySlot, lootMoneyItem(code, bag.cash));
             }
-            if (moneyShown()) {
-                bag.inventory.setItem(moneySlot(), lootMoneyItem(code, bag.cash));
+            // Wat er (in een uitzonderlijk geval) niet in past, en geld zonder vakje: gewoon op de grond
+            World world = bag.location.getWorld();
+            for (ItemStack item : layout.leftover()) {
+                world.dropItemNaturally(bag.location, item);
+            }
+            if (bag.moneySlot < 0 && bag.cash > 0 && economy != null) {
+                world.dropItemNaturally(bag.location, economy.moneyItem(bag.cash));
+                bag.cash = 0;
             }
         }
         player.openInventory(bag.inventory);
@@ -635,7 +772,7 @@ public final class BackpackModule extends PindaModule implements Listener {
         if (bag.removed) {
             return;
         }
-        dropped.remove(bag.hitboxId());
+        dropped.values().remove(bag);
         bag.despawn();
         Location location = bag.location.clone().add(0, 0.6, 0);
         World world = location.getWorld();
@@ -654,19 +791,19 @@ public final class BackpackModule extends PindaModule implements Listener {
 
     /** Bij een herstart: de spullen en het geld op de grond leggen in plaats van ze kwijt te raken. */
     private void spill(DroppedBackpack bag) {
-        World world = bag.location.getWorld();
         bag.despawn();
-        if (world == null) {
-            return;
-        }
         List<ItemStack> items = new ArrayList<>();
         if (bag.inventory != null) {
-            for (int slot = 0; slot < capacity() && slot < bag.inventory.getSize(); slot++) {
+            for (HumanEntity viewer : new ArrayList<>(bag.inventory.getViewers())) {
+                viewer.closeInventory(); // niemand houdt een werkend venster over
+            }
+            for (int slot = 0; slot < bag.inventory.getSize(); slot++) {
                 ItemStack item = bag.inventory.getItem(slot);
-                if (item != null && !item.isEmpty()) {
-                    items.add(item);
+                if (slot != bag.moneySlot && item != null && !item.isEmpty()) {
+                    items.add(item.clone());
                 }
             }
+            bag.inventory.clear();
         } else {
             for (ItemStack item : bag.items) {
                 if (item != null && !item.isEmpty()) {
@@ -677,9 +814,19 @@ public final class BackpackModule extends PindaModule implements Listener {
         EconomyService economy = economy();
         if (economy != null && bag.cash > 0) {
             items.add(economy.moneyItem(bag.cash));
+            bag.cash = 0;
         }
-        for (ItemStack item : items) {
-            world.dropItemNaturally(bag.location, item);
+        try {
+            World world = bag.location.getWorld();
+            if (world == null) {
+                return;
+            }
+            world.getChunkAt(bag.location); // zorgen dat de chunk geladen is, zodat de items ook bewaard worden
+            for (ItemStack item : items) {
+                world.dropItemNaturally(bag.location, item);
+            }
+        } catch (RuntimeException e) {
+            plugin.getLogger().log(Level.WARNING, "Kon de gevallen rugtas van " + bag.ownerName + " niet leeggooien", e);
         }
     }
 
@@ -690,9 +837,15 @@ public final class BackpackModule extends PindaModule implements Listener {
         if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
             return;
         }
+        UUID uuid = event.getUniqueId();
+        long before = version.get();
         try {
-            ItemStack[] items = store.load(event.getUniqueId()).get(10, TimeUnit.SECONDS);
-            cache.put(event.getUniqueId(), items);
+            ItemStack[] items = store.load(uuid).get(10, TimeUnit.SECONDS);
+            // Intussen opgeslagen (bijv. door staff) of nog open? Dan zijn deze gegevens al oud.
+            if (!open.containsKey(uuid) && savedAt.getOrDefault(uuid, 0L) <= before) {
+                cache.put(uuid, items);
+                preloadedAt.put(uuid, System.currentTimeMillis());
+            }
         } catch (Exception e) {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
@@ -704,10 +857,15 @@ public final class BackpackModule extends PindaModule implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        pendingCash.remove(uuid);
+        long quit = System.currentTimeMillis();
+        Long pending = pendingCash.remove(uuid);
+        if (pending != null) {
+            refund(uuid, pending);
+        }
         // Het sluiten (bij uitloggen) heeft de rugtas al opgeslagen; houd hem alleen vast als staff hem nog open heeft
         plugin.getServer().getScheduler().runTask(plugin, () -> {
-            if (!open.containsKey(uuid) && plugin.getServer().getPlayer(uuid) == null) {
+            if (!open.containsKey(uuid) && plugin.getServer().getPlayer(uuid) == null
+                    && preloadedAt.getOrDefault(uuid, 0L) < quit) {
                 cache.remove(uuid);
             }
         });
@@ -734,17 +892,20 @@ public final class BackpackModule extends PindaModule implements Listener {
 
     /** Haalt één item uit iemands rugtas. Geeft het weggehaalde item terug (of null). Aanroepen op de hoofdthread. */
     public CompletableFuture<ItemStack> removeItem(UUID uuid, int slot) {
-        if (slot < 0 || slot >= capacity() + 64) {
+        if (slot < 0 || slot >= 54) {
             return CompletableFuture.completedFuture(null);
         }
         Inventory live = open.get(uuid);
         if (live != null) {
-            if (slot >= capacity()) {
+            int moneySlot = live.getHolder(false) instanceof BackpackHolder holder ? holder.moneySlot : -1;
+            if (slot >= live.getSize() || slot == moneySlot) {
                 return CompletableFuture.completedFuture(null);
             }
             ItemStack item = live.getItem(slot);
             live.setItem(slot, null);
-            store.save(uuid, read(live));
+            ItemStack[] items = read(live, moneySlot);
+            cache.put(uuid, items);
+            persist(uuid, items);
             return CompletableFuture.completedFuture(item);
         }
         ItemStack[] cached = cache.get(uuid);
@@ -754,7 +915,7 @@ public final class BackpackModule extends PindaModule implements Listener {
             }
             ItemStack item = cached[slot];
             cached[slot] = null;
-            store.save(uuid, cached);
+            persist(uuid, cached);
             return CompletableFuture.completedFuture(item);
         }
         return store.load(uuid).thenCompose(items -> {
@@ -772,13 +933,22 @@ public final class BackpackModule extends PindaModule implements Listener {
         for (DroppedBackpack bag : dropped.values()) {
             if (bag.owner.equals(owner) && !bag.removed) {
                 int count = 0;
-                for (ItemStack item : bag.inventory != null ? bag.inventory.getContents() : bag.items) {
-                    if (item != null && !item.isEmpty() && (moneyKey == null || !item.hasItemMeta()
-                            || !item.getItemMeta().getPersistentDataContainer().has(moneyKey))) {
-                        count++;
+                if (bag.inventory != null) {
+                    for (int slot = 0; slot < bag.inventory.getSize(); slot++) {
+                        ItemStack item = bag.inventory.getItem(slot);
+                        if (slot != bag.moneySlot && item != null && !item.isEmpty()) {
+                            count++;
+                        }
+                    }
+                } else {
+                    for (ItemStack item : bag.items) {
+                        if (item != null && !item.isEmpty()) {
+                            count++;
+                        }
                     }
                 }
-                return new DroppedInfo(bag.location.getWorld().getName(), bag.location.getBlockX(), bag.location.getBlockY(),
+                World world = bag.location.getWorld();
+                return new DroppedInfo(world == null ? "?" : world.getName(), bag.location.getBlockX(), bag.location.getBlockY(),
                         bag.location.getBlockZ(), bag.ownerOnlyUntil, bag.expiresAt, count, bag.cash);
             }
         }

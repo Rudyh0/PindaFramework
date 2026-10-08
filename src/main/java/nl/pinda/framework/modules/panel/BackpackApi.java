@@ -44,7 +44,20 @@ final class BackpackApi extends PanelApi {
                     "amount", item.getAmount(),
                     "enchanted", !item.getEnchantments().isEmpty()));
         }
-        return map("rows", backpacks.rows(), "capacity", backpacks.capacity(), "moneySlot", backpacks.moneySlot(),
+        // Een rugtas kan groter zijn dan ingesteld (als hij kleiner is gemaakt terwijl er meer in zat)
+        int highest = -1;
+        for (int slot = 0; slot < items.length; slot++) {
+            if (items[slot] != null && !items[slot].isEmpty()) {
+                highest = slot;
+            }
+        }
+        int extra = backpacks.moneyShown() ? 2 : 1;
+        int rows = Math.max(backpacks.rows(), Math.min(6, (highest + extra + 8) / 9));
+        int moneySlot = backpacks.moneyShown() ? rows * 9 - 1 : -1;
+        if (moneySlot >= 0 && moneySlot < items.length && items[moneySlot] != null && !items[moneySlot].isEmpty()) {
+            moneySlot = -1;
+        }
+        return map("rows", rows, "capacity", rows * 9 - (moneySlot >= 0 ? 1 : 0), "moneySlot", moneySlot,
                 "items", list,
                 "dropped", dropped == null ? null : map("world", dropped.world(), "x", dropped.x(), "y", dropped.y(), "z", dropped.z(),
                         "ownerOnlyUntil", dropped.ownerOnlyUntil(), "expiresAt", dropped.expiresAt(),
