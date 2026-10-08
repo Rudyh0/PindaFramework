@@ -73,7 +73,7 @@ Naar het voorbeeld van UltimateTimber: hak met een **bijl** het onderste blok va
 
 - **Sapling terugplanten:** waar de boom stond komt meteen een nieuwe sapling (bij 2x2-bomen zoals dark oak vier stuks), die je de eerste seconden niet per ongeluk kapot kunt slaan.
 - **Geen extra loot:** je krijgt alleen wat de blokken in Minecraft zelf opleveren (hout, en uit bladeren af en toe een sapling, stokje of appel).
-- **Bouwwerken zijn veilig:** een boom heeft natuurlijke bladeren nodig (zelf geplaatste bladeren tellen niet), zelf geplaatst hout gaat nooit mee, en de bladeren van een boom ernaast blijven staan.
+- **Bouwwerken zijn veilig:** een boom heeft natuurlijke bladeren nodig (zelf geplaatste bladeren tellen niet), moet op natuurlijke grond staan, en zodra er zelf geplaatst hout of iets gebouwds (planken, trappen, glas, deuren, bordjes, ...) aan vastzit, valt er niets om. De bladeren van een boom ernaast blijven staan.
 - **De bijl slijt** per blok hout (unbreaking telt mee). Gaat je bijl daardoor kapot, dan valt de boom niet om.
 - Elk blok hout geeft **Houthakken-XP**, claims worden gerespecteerd en CoreProtect logt alles.
 - Alle boomsoorten: eik, berk, spar, jungle, acacia, dark oak, mangrove, kers, azalea en pale oak. Aan/uit per speler in `/instellingen` of met **`/timber`**. Alles instelbaar in het paneel onder **Instellingen › Bomen kappen** (gebukt of niet, creative, wachttijd, animatie, drops in je inventory, ...).

@@ -19,7 +19,7 @@ show-in-setup: false
 creative: false
 
 # Seconden wachten tussen twee bomen (0 = geen wachttijd)
-cooldown-seconds: 0
+cooldown-seconds: 1
 
 # Werelden waar bomen niet in één keer omgaan
 disabled-worlds: []
@@ -29,6 +29,8 @@ detection:
   max-logs: 250
   # Minimaal zoveel natuurlijke bladeren, anders is het geen boom
   min-leaves: 5
+  # Maximaal zoveel bladeren per boom (de rest blijft hangen en vergaat vanzelf)
+  max-leaves: 1000
   # Alleen het hout vanaf het gehakte blok en hoger. Hak je halverwege, dan blijft de stronk staan.
   only-upwards: true
   # De bladeren gaan ook weg
@@ -77,7 +79,7 @@ animation:
   # Hoe lang de gevallen boom blijft liggen voordat hij verdwijnt (ticks)
   linger-ticks: 20
   # Meer blokken dan dit laten we niet vallen (de rest verdwijnt meteen), voor de prestaties
-  max-blocks: 500
+  max-blocks: 400
   # Schade aan spelers en mobs waar de boom op valt (in halve hartjes, 0 = geen)
   damage: 2
   # Geluiden (namen: https://minecraft.wiki/w/Sounds.json, leeg = geen geluid)
@@ -90,7 +92,7 @@ animation:
 # CoreProtect logt alles en elk blok hout geeft Houthakken-XP.
 break-events: true
 
-# Wat aan een boom kan hangen en meegaat
+# Wat aan een boom hangt of erop ligt en meegaat (alleen als het echt aan de boom vastzit)
 attachments:
   - VINE
   - COCOA
@@ -101,63 +103,64 @@ attachments:
 
 # De boomsoorten. branch-distance = hoe ver takken van de stam af mogen zitten,
 # leaf-distance = hoe ver bladeren van het hout af mogen zitten.
+# Hout dat aan planken, trappen, glas, deuren, bordjes, ... vastzit, valt nooit om (dan is het een bouwwerk).
 trees:
   oak:
-    logs: [OAK_LOG, OAK_WOOD]
+    logs: [OAK_LOG]
     leaves: [OAK_LEAVES]
     sapling: OAK_SAPLING
     branch-distance: 6
     leaf-distance: 6
   azalea:
-    logs: [OAK_LOG, OAK_WOOD]
+    logs: [OAK_LOG]
     leaves: [AZALEA_LEAVES, FLOWERING_AZALEA_LEAVES]
     sapling: AZALEA
     branch-distance: 3
     leaf-distance: 4
   spruce:
-    logs: [SPRUCE_LOG, SPRUCE_WOOD]
+    logs: [SPRUCE_LOG]
     leaves: [SPRUCE_LEAVES]
     sapling: SPRUCE_SAPLING
     branch-distance: 2
     leaf-distance: 6
   birch:
-    logs: [BIRCH_LOG, BIRCH_WOOD]
+    logs: [BIRCH_LOG]
     leaves: [BIRCH_LEAVES]
     sapling: BIRCH_SAPLING
     branch-distance: 1
     leaf-distance: 4
   jungle:
-    logs: [JUNGLE_LOG, JUNGLE_WOOD]
+    logs: [JUNGLE_LOG]
     leaves: [JUNGLE_LEAVES]
     sapling: JUNGLE_SAPLING
     branch-distance: 6
     leaf-distance: 6
   acacia:
-    logs: [ACACIA_LOG, ACACIA_WOOD]
+    logs: [ACACIA_LOG]
     leaves: [ACACIA_LEAVES]
     sapling: ACACIA_SAPLING
     branch-distance: 5
     leaf-distance: 5
   dark_oak:
-    logs: [DARK_OAK_LOG, DARK_OAK_WOOD]
+    logs: [DARK_OAK_LOG]
     leaves: [DARK_OAK_LEAVES]
     sapling: DARK_OAK_SAPLING
     branch-distance: 4
     leaf-distance: 5
   mangrove:
-    logs: [MANGROVE_LOG, MANGROVE_WOOD]
+    logs: [MANGROVE_LOG]
     leaves: [MANGROVE_LEAVES]
     sapling: MANGROVE_PROPAGULE
     branch-distance: 8
     leaf-distance: 6
   cherry:
-    logs: [CHERRY_LOG, CHERRY_WOOD]
+    logs: [CHERRY_LOG]
     leaves: [CHERRY_LEAVES]
     sapling: CHERRY_SAPLING
     branch-distance: 10
     leaf-distance: 6
   pale_oak:
-    logs: [PALE_OAK_LOG, PALE_OAK_WOOD]
+    logs: [PALE_OAK_LOG]
     leaves: [PALE_OAK_LEAVES]
     sapling: PALE_OAK_SAPLING
     branch-distance: 4

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
 import nl.pinda.framework.PindaFramework;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -47,8 +48,12 @@ final class TreeFeller {
         return felling;
     }
 
-    void fell(Player player, TreeDetector.DetectedTree tree, TimberSettings settings) {
-        ItemStack tool = player.getInventory().getItemInMainHand();
+    /**
+     * @param slot het vak in de hotbar waarmee gehakt werd (de bijl, ook als de speler intussen wisselde)
+     */
+    void fell(Player player, TreeDetector.DetectedTree tree, TimberSettings settings, int slot) {
+        ItemStack held = player.getInventory().getItem(slot);
+        ItemStack tool = held == null ? new ItemStack(Material.AIR) : held;
         Block start = tree.start();
 
         // Wat er om moet (het blok dat de speler zelf hakte, doet Minecraft al)
@@ -73,17 +78,21 @@ final class TreeFeller {
                 if (before == null || block.getType() != before.getMaterial()) {
                     continue; // intussen veranderd
                 }
+                boolean dropItems = true;
                 if (settings.breakEvents) {
                     BlockBreakEvent event = new BlockBreakEvent(block, player);
                     plugin.getServer().getPluginManager().callEvent(event);
                     if (event.isCancelled()) {
                         continue; // bijv. een claim van iemand anders
                     }
+                    // Een andere plugin (bijv. auto-pickup) regelt de drops zelf: dan wij niet ook nog
+                    dropItems = event.isDropItems();
                 }
                 boolean log = tree.type().logs().contains(before.getMaterial());
                 boolean leaf = !log && tree.type().leaves().contains(before.getMaterial());
                 boolean survival = player.getGameMode() != GameMode.CREATIVE;
-                drops.put(block, survival && (!leaf || settings.leafDrops) ? new ArrayList<>(block.getDrops(tool, player)) : List.of());
+                drops.put(block, dropItems && survival && (!leaf || settings.leafDrops)
+                        ? new ArrayList<>(block.getDrops(tool, player)) : List.of());
                 removed.add(block);
                 if (log) {
                     logs++;
@@ -96,31 +105,42 @@ final class TreeFeller {
         for (Block block : removed) {
             BlockData before = tree.snapshot().get(block);
             boolean water = before instanceof Waterlogged waterlogged && waterlogged.isWaterlogged();
-            block.setType(water ? Material.WATER : Material.AIR, false);
+            // Hout met updates (fakkels en bordjes vallen eraf, losse bladeren gaan vergaan), de rest zonder (sneller)
+            boolean log = tree.type().logs().contains(before.getMaterial());
+            block.setType(water ? Material.WATER : Material.AIR, log);
         }
-
-        replant(tree, settings);
-        if (settings.realisticDamage && player.getGameMode() != GameMode.CREATIVE) {
-            damage(player, tool, logs);
-        }
-        module.record(player, logs + 1);
 
         BiConsumer<Location, List<ItemStack>> dropper = dropper(player, settings);
-        if (!settings.animate || removed.isEmpty()) {
-            if ("landing".equals(settings.dropMode)) {
-                for (Block block : removed) {
-                    dropper.accept(block.getLocation().add(0.5, 0.5, 0.5), drops.get(block));
-                }
-            } else {
-                List<ItemStack> all = new ArrayList<>();
-                for (Block block : removed) {
-                    all.addAll(drops.get(block));
-                }
-                dropper.accept(start.getLocation().add(0.5, 0.5, 0.5), all);
+        try {
+            replant(tree, settings);
+            if (settings.realisticDamage && player.getGameMode() != GameMode.CREATIVE) {
+                damage(player, slot, tool, logs, settings.protectTool);
             }
-            return;
+            module.record(player, logs + 1);
+            if (settings.animate && !removed.isEmpty()) {
+                animate(player, tree, settings, removed, drops, dropper);
+                return;
+            }
+        } catch (RuntimeException e) {
+            plugin.getLogger().log(Level.WARNING, "Fout bij het omhakken van een boom; de spullen vallen bij de stam", e);
         }
-        animate(player, tree, settings, removed, drops, dropper);
+        dropNow(start, removed, drops, settings, dropper);
+    }
+
+    /** Zonder animatie (of als die niet lukte): alles meteen laten vallen. */
+    private void dropNow(Block start, List<Block> removed, Map<Block, List<ItemStack>> drops, TimberSettings settings,
+                         BiConsumer<Location, List<ItemStack>> dropper) {
+        if ("landing".equals(settings.dropMode)) {
+            for (Block block : removed) {
+                dropper.accept(block.getLocation().add(0.5, 0.5, 0.5), drops.get(block));
+            }
+        } else {
+            List<ItemStack> all = new ArrayList<>();
+            for (Block block : removed) {
+                all.addAll(drops.get(block));
+            }
+            dropper.accept(start.getLocation().add(0.5, 0.5, 0.5), all);
+        }
     }
 
     // ============================================================ animatie
@@ -157,11 +177,11 @@ final class TreeFeller {
         Location pivot = new Location(world, cx + direction.x * half, baseY, cz + direction.z * half);
 
         List<FallAnimation.Piece> pieces = new ArrayList<>();
+        List<Block> overflow = new ArrayList<>();
         for (Block block : removed) {
             List<ItemStack> items = drops.get(block);
             if (pieces.size() >= settings.maxBlocks) {
-                // Te veel om te laten vallen: deze verdwijnen meteen
-                dropper.accept(block.getLocation().add(0.5, 0.5, 0.5), items);
+                overflow.add(block); // te veel om te laten vallen: deze verdwijnen meteen
                 continue;
             }
             Vector3f corner = new Vector3f((float) (block.getX() - pivot.getX()), (float) (block.getY() - pivot.getY()),
@@ -170,6 +190,7 @@ final class TreeFeller {
                     tree.type().logs().contains(tree.snapshot().get(block).getMaterial())));
         }
         if (pieces.isEmpty()) {
+            dropNow(start, removed, drops, settings, dropper);
             return;
         }
 
@@ -183,13 +204,25 @@ final class TreeFeller {
         Block above = top.getRelative(0, 1, 0);
         Display.Brightness brightness = new Display.Brightness(above.getLightFromBlocks(), above.getLightFromSky());
 
-        if (settings.soundFall != null && !settings.soundFall.isBlank()) {
-            world.playSound(start.getLocation().add(0.5, 1, 0.5), settings.soundFall, 1f, 0.6f);
+        if (!settings.soundFall.isBlank()) {
+            try {
+                world.playSound(start.getLocation().add(0.5, 1, 0.5), settings.soundFall, 1f, 0.6f);
+            } catch (RuntimeException ignored) {
+                // onbekend geluid: dan maar zonder
+            }
         }
         FallAnimation[] holder = new FallAnimation[1];
         holder[0] = new FallAnimation(plugin, settings, pivot, direction, pieces, player, dropper, () -> active.remove(holder[0]));
         active.add(holder[0]);
-        holder[0].start(brightness);
+        try {
+            holder[0].start(brightness);
+        } catch (RuntimeException e) {
+            plugin.getLogger().log(Level.WARNING, "De valanimatie lukte niet; de spullen vallen bij de stam", e);
+            holder[0].abort(); // ruimt op en laat de spullen van de vallende blokken vallen
+        }
+        for (Block block : overflow) {
+            dropper.accept(block.getLocation().add(0.5, 0.5, 0.5), drops.get(block));
+        }
     }
 
     /** De onderste blokken van de stam (het gehakte blok en wat op dezelfde hoogte staat). */
@@ -271,8 +304,8 @@ final class TreeFeller {
         return max - damageable.getDamage();
     }
 
-    /** Schade aan de bijl, met unbreaking zoals in Minecraft. */
-    private static void damage(Player player, ItemStack tool, int amount) {
+    /** Schade aan de bijl, met unbreaking zoals in Minecraft. Met 'protect' gaat de bijl nooit helemaal kapot. */
+    private static void damage(Player player, int slot, ItemStack tool, int amount, boolean protect) {
         int max = tool.getType().getMaxDurability();
         ItemMeta meta = tool.getItemMeta();
         if (amount <= 0 || max <= 0 || !(meta instanceof Damageable damageable) || meta.isUnbreakable()) {
@@ -286,13 +319,16 @@ final class TreeFeller {
             }
         }
         int total = damageable.getDamage() + applied;
+        if (protect && total >= max) {
+            total = max - 1;
+        }
         if (total >= max) {
-            player.getInventory().setItemInMainHand(null);
+            player.getInventory().setItem(slot, null);
             player.getWorld().playSound(player.getLocation(), "entity.item.break", 1f, 1f);
             return;
         }
         damageable.setDamage(total);
         tool.setItemMeta(meta);
-        player.getInventory().setItemInMainHand(tool);
+        player.getInventory().setItem(slot, tool);
     }
 }

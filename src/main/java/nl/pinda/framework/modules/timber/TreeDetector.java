@@ -3,11 +3,13 @@ package nl.pinda.framework.modules.timber;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -84,8 +86,11 @@ final class TreeDetector {
                             continue;
                         }
                         Block next = world.getBlockAt(x, y, z);
-                        if (!type.logs().contains(next.getType()) || logs.contains(next) || placed.test(next)) {
+                        if (!type.logs().contains(next.getType()) || logs.contains(next)) {
                             continue;
+                        }
+                        if (placed.test(next)) {
+                            return null; // er zit zelf geplaatst hout aan vast: dan laten we alles staan
                         }
                         logs.add(next);
                         if (logs.size() > settings.maxLogs) {
@@ -93,6 +98,18 @@ final class TreeDetector {
                         }
                         queue.add(next);
                     }
+                }
+            }
+        }
+
+        // Zit er iets gebouwds aan het hout vast (planken, trappen, glas, deuren, ...)? Dan is het geen gewone boom.
+        for (Block log : logs) {
+            for (int[] face : FACES) {
+                int x = log.getX() + face[0];
+                int y = log.getY() + face[1];
+                int z = log.getZ() + face[2];
+                if (loaded(world, x, y, z) && built(world.getBlockAt(x, y, z).getType())) {
+                    return null;
                 }
             }
         }
@@ -105,7 +122,7 @@ final class TreeDetector {
             distance.put(log, 0);
             leafQueue.add(log);
         }
-        int maxLeaves = settings.maxLogs * 10;
+        int maxLeaves = settings.maxLeaves;
         while (!leafQueue.isEmpty() && leaves.size() < maxLeaves) {
             Block block = leafQueue.poll();
             int next = distance.get(block) + 1;
@@ -136,25 +153,24 @@ final class TreeDetector {
             return null;
         }
 
-        // 3. Wat eraan hangt: lianen, cacaobonen, mos, ...
+        // 3. Wat er echt aan de boom hangt of erop ligt: lianen, cacaobonen, sneeuw, mos, ...
         Set<Block> extras = new LinkedHashSet<>();
         if (!settings.attachments.isEmpty()) {
-            ArrayDeque<Block> extraQueue = new ArrayDeque<>(logs);
-            extraQueue.addAll(leaves);
-            while (!extraQueue.isEmpty() && extras.size() < 400) {
-                Block block = extraQueue.poll();
+            Set<Block> tree = new HashSet<>(logs);
+            tree.addAll(leaves);
+            for (Block block : tree) {
+                // Erbovenop: sneeuw en mostapijt
+                attach(world, block, 0, 1, 0, settings, tree, extras, ON_TOP);
+                // Eronder: hangend mos, propagules en lianen (en wat daar weer onder hangt)
+                attach(world, block, 0, -1, 0, settings, tree, extras, HANGING);
+                // Ernaast: lianen en cacaobonen
                 for (int[] face : FACES) {
-                    int x = block.getX() + face[0];
-                    int y = block.getY() + face[1];
-                    int z = block.getZ() + face[2];
-                    if (!loaded(world, x, y, z)) {
-                        continue;
+                    if (face[1] == 0) {
+                        attach(world, block, face[0], 0, face[2], settings, tree, extras, SIDE);
                     }
-                    Block neighbour = world.getBlockAt(x, y, z);
-                    if (settings.attachments.contains(neighbour.getType()) && !logs.contains(neighbour)
-                            && !leaves.contains(neighbour) && extras.add(neighbour)) {
-                        extraQueue.add(neighbour);
-                    }
+                }
+                if (extras.size() >= 400) {
+                    break;
                 }
             }
         }
@@ -170,6 +186,53 @@ final class TreeDetector {
             snapshot.put(block, block.getBlockData());
         }
         return new DetectedTree(type, start, new ArrayList<>(logs), new ArrayList<>(leaves), new ArrayList<>(extras), snapshot);
+    }
+
+    private static final Set<String> ON_TOP = Set.of("SNOW", "MOSS_CARPET", "PALE_MOSS_CARPET");
+    private static final Set<String> HANGING = Set.of("PALE_HANGING_MOSS", "MANGROVE_PROPAGULE", "VINE");
+    private static final Set<String> SIDE = Set.of("VINE", "COCOA");
+
+    /** Neemt een aanhangsel mee als het van de juiste soort is; hangende dingen ook verder naar beneden. */
+    private static void attach(World world, Block from, int dx, int dy, int dz, TimberSettings settings, Set<Block> tree,
+                               Set<Block> extras, Set<String> kinds) {
+        int x = from.getX() + dx;
+        int y = from.getY() + dy;
+        int z = from.getZ() + dz;
+        if (!loaded(world, x, y, z)) {
+            return;
+        }
+        Block block = world.getBlockAt(x, y, z);
+        String name = block.getType().name();
+        if (!kinds.contains(name) || !settings.attachments.contains(block.getType()) || tree.contains(block) || !extras.add(block)) {
+            return;
+        }
+        if (HANGING.contains(name)) {
+            // Wat eronder hangt van dezelfde soort, bijv. een lange liaan
+            Block below = block.getRelative(0, -1, 0);
+            for (int step = 0; step < 32 && below.getType() == block.getType() && extras.add(below); step++) {
+                below = below.getRelative(0, -1, 0);
+            }
+        }
+    }
+
+    /** Gebouwde blokken: als die aan het hout vastzitten, is het geen gewone boom. */
+    static boolean built(Material material) {
+        String name = material.name();
+        if (name.equals("MOSS_CARPET") || name.equals("PALE_MOSS_CARPET")) {
+            return false;
+        }
+        return name.endsWith("_PLANKS") || name.endsWith("_STAIRS") || name.endsWith("_SLAB") || name.endsWith("_FENCE")
+                || name.endsWith("_FENCE_GATE") || name.endsWith("_DOOR") || name.endsWith("_TRAPDOOR") || name.endsWith("_SIGN")
+                || name.endsWith("_BUTTON") || name.endsWith("_PRESSURE_PLATE") || name.endsWith("_BED") || name.endsWith("_CARPET")
+                || name.endsWith("_WOOL") || name.endsWith("_BRICKS") || name.endsWith("_WALL") || name.endsWith("_CONCRETE")
+                || name.endsWith("_TERRACOTTA") || name.endsWith("_BANNER") || name.contains("GLASS") || name.startsWith("STRIPPED_")
+                || name.endsWith("_WOOD") || name.endsWith("_SHULKER_BOX")
+                || switch (name) {
+                    case "CHEST", "TRAPPED_CHEST", "BARREL", "CRAFTING_TABLE", "FURNACE", "BLAST_FURNACE", "SMOKER", "LADDER",
+                         "BOOKSHELF", "CHISELED_BOOKSHELF", "LECTERN", "ANVIL", "HAY_BLOCK", "COBBLESTONE", "STONE_BRICKS",
+                         "SMOOTH_STONE", "IRON_BARS", "CHAIN", "ENDER_CHEST" -> true;
+                    default -> false;
+                };
     }
 
     /** Staat de stam (onder het gehakte blok door) op natuurlijke grond? */

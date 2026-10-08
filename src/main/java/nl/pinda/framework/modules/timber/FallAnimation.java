@@ -33,7 +33,7 @@ final class FallAnimation {
     record Piece(BlockData data, Vector3f corner, List<ItemStack> drops, boolean log) {
     }
 
-    private static final int STEP = 3;
+    private static final int STEP = 4;
     private static final Vector3f ONE = new Vector3f(1, 1, 1);
     /** Net niet helemaal plat, dan zakt de kruin niet zo ver de grond in. */
     private static final float MAX_ANGLE = (float) Math.toRadians(86);
@@ -134,23 +134,35 @@ final class FallAnimation {
             return;
         }
         dropped = true;
+        // Wat er ook gebeurt: de boom wordt na het liggen opgeruimd
+        plugin.getServer().getScheduler().runTaskLater(plugin, this::finish, Math.max(1, settings.lingerTicks));
         World world = pivot.getWorld();
-        if (settings.soundLand != null && !settings.soundLand.isBlank()) {
-            world.playSound(landing(rotation, pieces.get(pieces.size() / 2)), settings.soundLand, 1.2f, 0.7f);
+        if (!settings.soundLand.isBlank()) {
+            try {
+                world.playSound(landing(rotation, pieces.get(pieces.size() / 2)), settings.soundLand, 1.2f, 0.7f);
+            } catch (RuntimeException ignored) {
+                // onbekend geluid
+            }
         }
         Set<LivingEntity> hit = new HashSet<>();
         int effects = 0;
         for (Piece piece : pieces) {
             Location location = landing(rotation, piece);
-            if (settings.particles && effects++ % 3 == 0) {
-                world.spawnParticle(Particle.BLOCK, location, 6, 0.35, 0.35, 0.35, 0, piece.data());
-            }
-            if (piece.log() && settings.damage > 0) {
-                for (LivingEntity entity : world.getNearbyLivingEntities(location, 0.9, 0.9, 0.9)) {
-                    if (entity != player && hit.add(entity)) {
-                        entity.damage(settings.damage);
+            boolean loaded = world.isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4);
+            try {
+                if (loaded && settings.particles && effects++ % 3 == 0) {
+                    world.spawnParticle(Particle.BLOCK, location, 6, 0.35, 0.35, 0.35, 0, piece.data());
+                }
+                if (loaded && piece.log() && settings.damage > 0) {
+                    for (LivingEntity entity : world.getNearbyLivingEntities(location, 0.9, 0.9, 0.9)) {
+                        if (entity != player && hit.add(entity)) {
+                            // Met de speler als bron: zo gelden PvP-instellingen en claims gewoon
+                            entity.damage(settings.damage, player);
+                        }
                     }
                 }
+            } catch (RuntimeException ignored) {
+                // effecten zijn bijzaak: de spullen moeten hoe dan ook vallen
             }
             if ("landing".equals(settings.dropMode) && !piece.drops().isEmpty()) {
                 dropper.accept(safe(location), piece.drops());
@@ -163,19 +175,22 @@ final class FallAnimation {
             }
             dropper.accept(pivot.clone().add(0, 0.5, 0), all);
         }
-        plugin.getServer().getScheduler().runTaskLater(plugin, this::finish, Math.max(1, settings.lingerTicks));
     }
 
     /** Een plek waar items kunnen liggen: niet in een blok, anders een stukje omhoog (of bij de stam). */
     private Location safe(Location location) {
+        World world = location.getWorld();
+        if (world == null || !world.isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4)) {
+            return pivot.clone().add(0, 0.5, 0);
+        }
         Block block = location.getBlock();
         for (int up = 0; up < 5; up++) {
-            if (!block.getType().isSolid()) {
+            if (!block.getType().isSolid() && !block.isLiquid() && block.getType() != org.bukkit.Material.FIRE) {
                 return block.getLocation().add(0.5, 0.2, 0.5);
             }
             block = block.getRelative(0, 1, 0);
         }
-        return pivot.clone().add(0, 0.5, 0);
+        return pivot.clone().add(0, 0.5, 0); // in lava of een muur: dan bij de stam
     }
 
     /** Ruimt de animatie op. */

@@ -32,6 +32,7 @@ final class TimberSettings {
 
     final int maxLogs;
     final int minLeaves;
+    final int maxLeaves;
     final boolean onlyUpwards;
     final boolean leaves;
     final boolean requireGround;
@@ -73,10 +74,11 @@ final class TimberSettings {
         for (String world : cfg.getStringList("disabled-worlds")) {
             disabledWorlds.add(world.toLowerCase(Locale.ROOT));
         }
-        cooldownMillis = Math.max(0, cfg.getLong("cooldown-seconds", 0)) * 1000L;
+        cooldownMillis = Math.max(0, cfg.getLong("cooldown-seconds", 1)) * 1000L;
 
         maxLogs = Math.max(1, cfg.getInt("detection.max-logs", 250));
         minLeaves = Math.max(0, cfg.getInt("detection.min-leaves", 5));
+        maxLeaves = Math.max(10, cfg.getInt("detection.max-leaves", 1000));
         onlyUpwards = cfg.getBoolean("detection.only-upwards", true);
         leaves = cfg.getBoolean("detection.leaves", true);
         requireGround = cfg.getBoolean("detection.require-ground", true);
@@ -104,10 +106,10 @@ final class TimberSettings {
         animate = !"none".equalsIgnoreCase(cfg.getString("animation.type", "fall"));
         durationTicks = Math.max(6, Math.min(200, cfg.getInt("animation.duration-ticks", 30)));
         lingerTicks = Math.max(0, Math.min(200, cfg.getInt("animation.linger-ticks", 20)));
-        maxBlocks = Math.max(0, cfg.getInt("animation.max-blocks", 500));
+        maxBlocks = Math.max(0, cfg.getInt("animation.max-blocks", 400));
         damage = Math.max(0, cfg.getDouble("animation.damage", 2));
-        soundFall = cfg.getString("animation.sound-fall", "");
-        soundLand = cfg.getString("animation.sound-land", "");
+        soundFall = sound(cfg.getString("animation.sound-fall", ""), logger);
+        soundLand = sound(cfg.getString("animation.sound-land", ""), logger);
         particles = cfg.getBoolean("animation.particles", true);
 
         breakEvents = cfg.getBoolean("break-events", true);
@@ -136,6 +138,19 @@ final class TimberSettings {
                 }
             }
         }
+    }
+
+    /** Een geluidsnaam zoals "block.wood.break". Een verkeerde naam wordt leeg (geen geluid) in plaats van een fout. */
+    private static String sound(String key, Logger logger) {
+        if (key == null || key.isBlank()) {
+            return "";
+        }
+        String value = key.trim();
+        if (!value.matches("([a-z0-9_.-]+:)?[a-z0-9_./-]+")) {
+            logger.warning("modules/timber.yml: '" + key + "' is geen geldige geluidsnaam (bijv. block.wood.break); geen geluid.");
+            return "";
+        }
+        return value;
     }
 
     private static void materials(List<String> names, Set<Material> target, Logger logger) {

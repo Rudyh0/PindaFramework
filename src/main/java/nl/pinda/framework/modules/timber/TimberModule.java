@@ -71,6 +71,11 @@ public final class TimberModule extends PindaModule implements Listener {
         listen(this);
         command(new TimberCommand(plugin, this));
         repeat(this::cleanup, 20L * 30, 20L * 30);
+        SkillsModule skills = plugin.modules().get(SkillsModule.class);
+        if (skills == null || !skills.isEnabled()) {
+            plugin.getLogger().warning("Timber: de skills-module staat uit, dus zelf geplaatst hout wordt niet herkend. "
+                    + "Bouwwerken blijven beschermd zolang er planken, glas, deuren, ... aan het hout vastzitten.");
+        }
     }
 
     @Override
@@ -114,6 +119,13 @@ public final class TimberModule extends PindaModule implements Listener {
         if (!allowed(player, block, current)) {
             return;
         }
+        if (current.cooldownMillis > 0 && !player.hasPermission(BYPASS_COOLDOWN)) {
+            long left = cooldowns.getOrDefault(player.getUniqueId(), 0L) - System.currentTimeMillis();
+            if (left > 0) {
+                plugin.lang().send(player, "timber.cooldown", Text.p("seconds", (left + 999) / 1000));
+                return;
+            }
+        }
         TreeDetector.DetectedTree tree = TreeDetector.detect(block, current, this::isPlaced);
         if (tree == null || tree.logs().size() + tree.leaves().size() <= 1) {
             return;
@@ -124,13 +136,7 @@ public final class TimberModule extends PindaModule implements Listener {
             plugin.lang().send(player, "timber.tool-protect");
             return;
         }
-        if (current.cooldownMillis > 0 && !player.hasPermission(BYPASS_COOLDOWN)) {
-            long left = cooldowns.getOrDefault(player.getUniqueId(), 0L) - System.currentTimeMillis();
-            if (left > 0) {
-                plugin.lang().send(player, "timber.cooldown", Text.p("seconds", (left + 999) / 1000));
-                return;
-            }
-        }
+        int slot = player.getInventory().getHeldItemSlot();
         busy.addAll(tree.logs());
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             try {
@@ -139,7 +145,7 @@ public final class TimberModule extends PindaModule implements Listener {
                     return;
                 }
                 cooldowns.put(player.getUniqueId(), System.currentTimeMillis() + current.cooldownMillis);
-                feller.fell(player, tree, current);
+                feller.fell(player, tree, current, slot);
             } catch (RuntimeException e) {
                 plugin.getLogger().log(Level.WARNING, "Kon een boom niet omhakken", e);
             } finally {
