@@ -419,6 +419,9 @@ func fakeRcon(t *testing.T, password string) int {
 							continue
 						}
 						rconWrite(conn, id, rconResponseValue, "§aJe typte: "+body)
+					default:
+						// Zoals Minecraft: een onbekend verzoek krijgt een antwoord.
+						rconWrite(conn, id, rconResponseValue, "Unknown request 64")
 					}
 				}
 			}(conn)

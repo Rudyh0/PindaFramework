@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"mime"
 	"net/http"
 	"os"
@@ -24,6 +25,9 @@ func (a *App) fileRoot(name string) (FileRoot, error) {
 		return FileRoot{Name: name, Base: config.serverDir(), UID: uid, GID: gid}, nil
 	case "website":
 		return FileRoot{Name: name, Base: config.websiteDir(), UID: -1, GID: -1}, nil
+	case "backups":
+		// Alleen om backups te uploaden (zie uploadRootFor).
+		return FileRoot{Name: name, Base: a.backupDir(), UID: -1, GID: -1}, nil
 	}
 	return FileRoot{}, notFound("Onbekende map.")
 }
@@ -84,7 +88,27 @@ func pathParam(q *Request, name string) (string, error) {
 }
 
 func (a *App) rootFor(q *Request) (FileRoot, error) {
+	if q.r.PathValue("root") == "backups" {
+		return FileRoot{}, notFound("Onbekende map.")
+	}
+	if a.restoring.Load() {
+		return FileRoot{}, &apiError{http.StatusConflict, "Er wordt een backup teruggezet. Probeer het zo weer."}
+	}
 	return a.fileRoot(q.r.PathValue("root"))
+}
+
+// uploadRootFor: zoals rootFor, maar uploaden kan ook naar de backups (alleen beheerders).
+func (a *App) uploadRootFor(q *Request) (FileRoot, error) {
+	if q.r.PathValue("root") != "backups" {
+		return a.rootFor(q)
+	}
+	if !q.user.Admin {
+		return FileRoot{}, forbidden("Alleen beheerders kunnen backups uploaden.")
+	}
+	if _, err := a.ensureBackupDir(); err != nil {
+		return FileRoot{}, err
+	}
+	return a.fileRoot("backups")
 }
 
 func (a *App) handleFilesList(q *Request) (any, error) {
@@ -448,7 +472,7 @@ func (u *Uploads) remove(id string) {
 }
 
 func (a *App) handleUploadStart(q *Request) (any, error) {
-	root, err := a.rootFor(q)
+	root, err := a.uploadRootFor(q)
 	if err != nil {
 		return nil, err
 	}
@@ -471,6 +495,16 @@ func (a *App) handleUploadStart(q *Request) (any, error) {
 	}
 	if body.Size < 0 || body.Size > maxUpload {
 		return nil, badRequest("Een bestand is hooguit %s.", humanBytes(maxUpload))
+	}
+	if root.Name == "backups" {
+		// Een backup: alleen een .zip, direct in de map, en nooit over een bestaande heen.
+		if dir != "." || !backupNamePattern.MatchString(name) || strings.HasPrefix(name, ".") {
+			return nil, badRequest("Een backup is een .zip-bestand met een eenvoudige naam (letters, cijfers, . - _).")
+		}
+		if _, err := root.Stat(name); err == nil {
+			return nil, &apiError{http.StatusConflict, "Er is al een backup met de naam " + name + "."}
+		}
+		body.Overwrite = false
 	}
 	if free := root.Free(); free >= 0 && body.Size > free-(256<<20) {
 		return nil, badRequest("Daar is niet genoeg ruimte voor op de schijf (nog %s vrij).", humanBytes(free))
@@ -504,7 +538,7 @@ func (a *App) handleUploadStart(q *Request) (any, error) {
 		err = root.chown(file)
 	}
 	if err == nil {
-		err = file.Chmod(0o644)
+		err = file.Chmod(map[bool]fs.FileMode{true: 0o600, false: 0o644}[root.Name == "backups"])
 	}
 	if err != nil {
 		file.Close()
@@ -520,7 +554,7 @@ func (a *App) handleUploadStart(q *Request) (any, error) {
 }
 
 func (a *App) handleUploadChunk(q *Request) (any, error) {
-	root, err := a.rootFor(q)
+	root, err := a.uploadRootFor(q)
 	if err != nil {
 		return nil, err
 	}
@@ -553,7 +587,7 @@ func (a *App) handleUploadChunk(q *Request) (any, error) {
 }
 
 func (a *App) handleUploadFinish(q *Request) (any, error) {
-	root, err := a.rootFor(q)
+	root, err := a.uploadRootFor(q)
 	if err != nil {
 		return nil, err
 	}
@@ -570,10 +604,28 @@ func (a *App) handleUploadFinish(q *Request) (any, error) {
 		return nil, badRequest("Het bestand is nog niet helemaal binnen (%s van %s).", humanBytes(up.Written), humanBytes(up.Size))
 	}
 	target := joinPath(up.Dir, up.Name)
+	var manifest *BackupManifest
+	if root.Name == "backups" {
+		// Alleen backups van het paneel: anders weer weg.
+		reader, err := openZip(up.file, up.Size, maxBackupEntries)
+		if err == nil {
+			manifest, err = manifestFrom(reader)
+		}
+		if err != nil {
+			a.uploads.remove(up.ID)
+			up.discard(root)
+			return nil, badRequest("Dit is geen backup van het dev-paneel (%s).", err.Error())
+		}
+	}
 	if err := a.finishUpload(root, up); err != nil {
 		return nil, fileError(err)
 	}
 	a.uploads.remove(up.ID)
+	if root.Name == "backups" {
+		_ = writeSidecar(root.Base, up.Name, backupSidecar{Manifest: manifest, Uploaded: true})
+		q.log("backup geüpload", up.Name, humanBytes(up.Size))
+		return map[string]bool{"ok": true}, nil
+	}
 	q.log("geüpload", root.Name+": "+target, humanBytes(up.Size))
 	return map[string]bool{"ok": true}, nil
 }
@@ -615,7 +667,7 @@ func (a *App) finishUpload(root FileRoot, up *upload) error {
 }
 
 func (a *App) handleUploadCancel(q *Request) (any, error) {
-	root, err := a.rootFor(q)
+	root, err := a.uploadRootFor(q)
 	if err != nil {
 		return nil, err
 	}

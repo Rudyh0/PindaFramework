@@ -345,10 +345,11 @@
     return out;
   }
 
-  function queueUploads(items) {
-    const root = fm.root;
+  /** Uploads in de rij zetten. onDone komt als ze klaar zijn (voor andere pagina's, zoals backups). */
+  function queueUploads(items, root = fm.root, onDone = null) {
     for (const item of items) {
       item.root = root;
+      item.onDone = onDone;
       item.loaded = 0;
       item.status = 'wachten';
       uploads.queue.push(item);
@@ -474,6 +475,9 @@
       renderUploads();
     }
     uploads.running = false;
+    const callbacks = new Set(uploads.queue.map(item => item.onDone).filter(Boolean));
+    uploads.queue.forEach(item => { item.onDone = null; });
+    callbacks.forEach(callback => callback());
     if (changed && fm.root && location.hash.startsWith(`#/${fm.route}`) && !location.hash.includes('?bewerken')) reloadList();
   }
 
@@ -800,6 +804,7 @@
   });
 
   window.PH.fileBrowser = fileBrowser;
+  window.PH.queueUploads = queueUploads;
   window.PH.listHash = listHash;
   window.PH.editHash = editHash;
 })();

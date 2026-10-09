@@ -75,7 +75,11 @@
     sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
     players: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.4-3.6 3.2-6 6.5-6s6.1 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3.3 2.6 3.5 6"/>',
     external: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
-    save: '<path d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v6h8V3M7 21v-7h10v7"/>'
+    save: '<path d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v6h8V3M7 21v-7h10v7"/>',
+    backup: '<path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    pin: '<path d="M12 17v5M6 17h12l-2-5V5h1V3H7v2h1v7z"/>',
+    undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>'
   };
   const icon = (name, cls = '') => raw(`<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`);
 
@@ -410,7 +414,7 @@
         <h2>Klaar om te beginnen</h2>
         <dl class="kv"><dt>Server</dt><dd>${info.serverName}</dd><dt>Adres voor spelers</dt><dd class="mono">${info.gameAddress}${info.gamePort !== 25565 ? `:${info.gamePort}` : ''}</dd>
           <dt>Website</dt><dd class="mono">${info.siteDomain || '—'}</dd><dt>Database</dt><dd>${info.database === 'mysql' ? 'MySQL (MariaDB)' : 'SQLite'}</dd></dl>
-        <p class="muted">Op het dashboard zie je wat er draait. De Minecraft-server installeren, bestanden, backups en de website komen in een volgende versie van het dev-paneel.</p>
+        <p class="muted">Op het dashboard zie je wat er draait. Bij Server installeer je daarna de Minecraft-server; bestanden, de website en backups (elke nacht automatisch) staan in het menu.</p>
         <div class="wizard-foot"><button class="btn ghost" data-action="wizard-step" data-step="2">Terug</button>
           <button class="btn primary" data-action="wizard-finish">${icon('check')} Naar het dashboard</button></div>
       </div>`;
@@ -431,6 +435,7 @@
     { path: 'server', title: 'Server', icon: 'cube', page: external('server') },
     { path: 'bestanden', title: 'Bestanden', icon: 'folder', page: external('files') },
     { path: 'website', title: 'Website', icon: 'web', page: external('website') },
+    { path: 'backups', title: 'Backups', icon: 'backup', page: external('backups') },
     { path: 'databases', title: 'Databases', icon: 'database', page: pageDatabases },
     { path: 'gebruikers', title: 'Gebruikers', icon: 'users', page: pageUsers, admin: true, group: 'Beheer' },
     { path: 'logboek', title: 'Logboek', icon: 'log', page: pageAudit, admin: true, group: 'Beheer' },

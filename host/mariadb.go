@@ -451,6 +451,20 @@ func (m *MariaDB) dropUser(name, host string) error {
 
 // export schrijft een .sql-dump van de database naar een bestand.
 func (m *MariaDB) export(database, path string) error {
+	out, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+	runErr := m.dumpTo(database, out)
+	closeErr := out.Close()
+	if runErr != nil {
+		return runErr
+	}
+	return closeErr
+}
+
+// dumpTo schrijft een .sql-dump van de database naar out (bijv. in een zip voor een backup).
+func (m *MariaDB) dumpTo(database string, out io.Writer) error {
 	if err := checkDBName(database); err != nil {
 		return err
 	}
@@ -458,27 +472,31 @@ func (m *MariaDB) export(database, path string) error {
 	if dumper == "" {
 		return errors.New("mariadb-dump is niet geïnstalleerd")
 	}
-	out, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
-	if err != nil {
-		return err
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, dumper, "--protocol=socket", "-uroot", "--single-transaction", "--quick",
 		"--routines", "--triggers", "--default-character-set=utf8mb4", database)
 	var stderr bytes.Buffer
 	cmd.Stdout = out
 	cmd.Stderr = &stderr
-	runErr := cmd.Run()
-	closeErr := out.Close()
-	if runErr != nil {
+	if err := cmd.Run(); err != nil {
 		message := strings.TrimSpace(stderr.String())
 		if message == "" {
-			message = runErr.Error()
+			message = err.Error()
 		}
 		return errors.New(cleanMariaDBError(message))
 	}
-	return closeErr
+	return nil
+}
+
+// recreateDatabase maakt een database leeg (weggooien en opnieuw maken). Rechten blijven staan:
+// die horen bij de naam.
+func (m *MariaDB) recreateDatabase(name string) error {
+	if err := checkDBName(name); err != nil {
+		return err
+	}
+	_, err := m.run(fmt.Sprintf("DROP DATABASE IF EXISTS `%[1]s`;\nCREATE DATABASE `%[1]s` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;", name), "")
+	return err
 }
 
 // importUser: per database één vaste eigenaar voor imports. Triggers, views en routines uit

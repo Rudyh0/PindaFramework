@@ -3,6 +3,8 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/binary"
+	"fmt"
 	"net"
 	"net/url"
 	"os"
@@ -47,12 +49,50 @@ func TestZipDirectoryGuard(t *testing.T) {
 		w.Write([]byte("x"))
 	}
 	writer.Close()
-	entries, directory, err := zipDirectory(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	entries, directory, err := zipDirectory(bytes.NewReader(buf.Bytes()), int64(buf.Len()), 10)
 	if err != nil || entries != 3 || directory == 0 {
 		t.Fatalf("zip: %d %d %v", entries, directory, err)
 	}
-	if _, _, err := zipDirectory(bytes.NewReader([]byte("geen zip")), 8); err == nil {
+	if _, _, err := zipDirectory(bytes.NewReader([]byte("geen zip")), 8, 10); err == nil {
 		t.Error("geen zip geaccepteerd")
+	}
+	if _, _, err := zipDirectory(bytes.NewReader(buf.Bytes()), int64(buf.Len()), 2); err == nil {
+		t.Error("meer onderdelen dan toegestaan geaccepteerd")
+	}
+	// Het eindrecord liegt (1 onderdeel, kleine inhoudsopgave) terwijl er veel meer staan:
+	// zip.NewReader zou ze toch allemaal laden.
+	var many bytes.Buffer
+	manyWriter := zip.NewWriter(&many)
+	for i := 0; i < 500; i++ {
+		manyWriter.CreateHeader(&zip.FileHeader{Name: fmt.Sprintf("f%d", i), Method: zip.Store})
+	}
+	manyWriter.Close()
+	lying := append([]byte{}, many.Bytes()...)
+	eocd := bytes.LastIndex(lying, []byte{0x50, 0x4b, 0x05, 0x06})
+	binary.LittleEndian.PutUint16(lying[eocd+8:], 1)
+	binary.LittleEndian.PutUint16(lying[eocd+10:], 1)
+	realSize := binary.LittleEndian.Uint32(lying[eocd+12:])
+	realOffset := binary.LittleEndian.Uint32(lying[eocd+16:])
+	binary.LittleEndian.PutUint32(lying[eocd+12:], 100)
+	binary.LittleEndian.PutUint32(lying[eocd+16:], realOffset+realSize-100)
+	if _, err := openZip(bytes.NewReader(lying), int64(len(lying)), 10); err == nil {
+		t.Error("liegend eindrecord geaccepteerd")
+	}
+	if reader, err := openZip(bytes.NewReader(many.Bytes()), int64(many.Len()), 1000); err != nil || len(reader.File) != 500 {
+		t.Errorf("gewone zip met 500 onderdelen: %v", err)
+	}
+	// Zip64 (meer dan 65535 onderdelen, zoals een grote backup).
+	var big bytes.Buffer
+	bigWriter := zip.NewWriter(&big)
+	for i := 0; i < 70_000; i++ {
+		bigWriter.CreateHeader(&zip.FileHeader{Name: fmt.Sprintf("d/%d", i), Method: zip.Store})
+	}
+	bigWriter.Close()
+	if reader, err := openZip(bytes.NewReader(big.Bytes()), int64(big.Len()), 100_000); err != nil || len(reader.File) != 70_000 {
+		t.Errorf("zip64: %v", err)
+	}
+	if _, err := openZip(bytes.NewReader(big.Bytes()), int64(big.Len()), 60_000); err == nil {
+		t.Error("zip64 met te veel onderdelen geaccepteerd")
 	}
 	// Een jar die alleen uit een gigantische inhoudsopgave bestaat: weigeren zonder te laden.
 	app, _ := testApp(t)
@@ -87,9 +127,9 @@ func TestRconFlood(t *testing.T) {
 		defer conn.Close()
 		rconRead(conn)
 		rconWrite(conn, 1, rconAuthResponse, "")
-		rconRead(conn)
+		id, _, _, _ := rconRead(conn)
 		for {
-			if rconWrite(conn, 2, rconResponseValue, strings.Repeat("x", rconMaxBody)) != nil {
+			if rconWrite(conn, id, rconResponseValue, strings.Repeat("x", rconMaxBody)) != nil {
 				return
 			}
 		}

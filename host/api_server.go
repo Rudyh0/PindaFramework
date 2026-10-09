@@ -173,11 +173,16 @@ func (a *App) handleServerPower(q *Request) (any, error) {
 		if err != nil {
 			return nil, badRequest("%s", capitalize(err.Error())+".")
 		}
+		// Niet terwijl er iets met de server loopt (terugzetten vervangt de bestanden).
+		if !a.lockServerJob() {
+			return nil, errServerBusy
+		}
 		if body.Action == "start" {
 			err = a.process.Start(command)
 		} else {
 			err = a.process.Restart(command)
 		}
+		a.unlockServerJob()
 		if err != nil {
 			return nil, badRequest("Starten lukte niet: %s", err.Error())
 		}

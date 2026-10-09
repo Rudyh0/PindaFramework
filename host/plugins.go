@@ -1,7 +1,6 @@
 package main
 
 import (
-	"archive/zip"
 	"bytes"
 	"context"
 	"errors"
@@ -92,14 +91,9 @@ func jarPluginInfo(root *os.Root, rel string) (string, string, string, error) {
 	if info.Size() > 512<<20 {
 		return "", "", "", errors.New("te groot")
 	}
-	if entries, directory, err := zipDirectory(file, info.Size()); err != nil {
-		return "", "", "", errors.New("geen geldig jar-bestand")
-	} else if entries > 100_000 || directory > 32<<20 {
-		return "", "", "", errors.New("vreemd jar-bestand (te veel onderdelen)")
-	}
-	reader, err := zip.NewReader(file, info.Size())
+	reader, err := openZip(file, info.Size(), 100_000)
 	if err != nil {
-		return "", "", "", errors.New("geen geldig jar-bestand")
+		return "", "", "", errors.New("geen geldig jar-bestand (of te veel onderdelen)")
 	}
 	for _, wanted := range []string{"paper-plugin.yml", "plugin.yml"} {
 		for _, entry := range reader.File {

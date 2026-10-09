@@ -208,6 +208,7 @@ func (a *App) routes() http.Handler {
 	a.registerFiles(mux)
 	a.registerServer(mux)
 	a.registerWebsite(mux)
+	a.registerBackups(mux)
 
 	static, err := fs.Sub(webFiles, "web")
 	if err != nil {
@@ -216,7 +217,7 @@ func (a *App) routes() http.Handler {
 	files := http.FileServer(http.FS(static))
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/", "/app.js", "/files.js", "/server.js", "/app.css", "/favicon.svg":
+		case "/", "/app.js", "/files.js", "/server.js", "/backups.js", "/app.css", "/favicon.svg":
 			w.Header().Set("Cache-Control", "no-cache")
 			files.ServeHTTP(w, r)
 		default:
@@ -251,6 +252,8 @@ func (a *App) serve() error {
 		log.Printf("Nog geen gebruikers. Maak de eerste beheerder met de setupcode: sudo pinda-host setup-code")
 	}
 	go a.mariadb.cleanupImportUsers()
+	a.cleanupBackupTemp()
+	go a.runScheduler()
 	server := &http.Server{
 		Addr:              config.Listen,
 		Handler:           a.routes(),

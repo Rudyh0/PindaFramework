@@ -3,6 +3,7 @@ package main
 import (
 	"archive/tar"
 	"archive/zip"
+	"bufio"
 	"compress/gzip"
 	"encoding/binary"
 	"errors"
@@ -32,13 +33,17 @@ func archiveKind(name string) string {
 	return ""
 }
 
-// zipDirectory leest uit het einde van een zip-bestand hoeveel onderdelen erin zitten en hoe
-// groot de inhoudsopgave is, zonder die te laden. zip.NewReader houdt de hele inhoudsopgave in
-// het geheugen; een kwaadaardig bestand kan daar gigabytes van maken.
-func zipDirectory(reader io.ReaderAt, size int64) (entries, directory uint64, err error) {
+// zipDirectory telt de onderdelen van een zip-bestand zonder de inhoudsopgave in het geheugen
+// te laden, en controleert dat die precies vóór het eindrecord ligt. zip.NewReader houdt de hele
+// inhoudsopgave in het geheugen en leest door zolang er onderdelen staan (wat het eindrecord
+// zegt, telt daarbij niet); een kwaadaardig bestand kan daar gigabytes van maken. Na deze
+// controle leest zip.NewReader alleen de onderdelen die hier geteld zijn. Geeft het aantal
+// onderdelen en de grootte van de inhoudsopgave.
+func zipDirectory(reader io.ReaderAt, size int64, maxEntries uint64) (entries, directory uint64, err error) {
 	const eocdLength = 22
+	invalid := errors.New("geen geldig zip-bestand")
 	if size < eocdLength {
-		return 0, 0, errors.New("geen geldig zip-bestand")
+		return 0, 0, invalid
 	}
 	tail := int64(eocdLength + 65535)
 	if tail > size {
@@ -56,29 +61,61 @@ func zipDirectory(reader io.ReaderAt, size int64) (entries, directory uint64, er
 		}
 	}
 	if at < 0 {
-		return 0, 0, errors.New("geen geldig zip-bestand")
+		return 0, 0, invalid
 	}
+	end := size - tail + int64(at) // waar de inhoudsopgave moet ophouden
 	entries = uint64(binary.LittleEndian.Uint16(buf[at+10:]))
 	directory = uint64(binary.LittleEndian.Uint32(buf[at+12:]))
-	if entries != 0xffff && directory != 0xffffffff {
-		return entries, directory, nil
+	offset := uint64(binary.LittleEndian.Uint32(buf[at+16:]))
+	if entries == 0xffff || directory == 0xffffffff || offset == 0xffffffff {
+		// Zip64: de echte getallen staan in een eigen record (de "locator" staat er vlak voor).
+		if at < 20 || binary.LittleEndian.Uint32(buf[at-20:]) != 0x07064b50 {
+			return 0, 0, errors.New("ongeldig zip64-bestand")
+		}
+		recordAt := int64(binary.LittleEndian.Uint64(buf[at-20+8:]))
+		record := make([]byte, 56)
+		if recordAt < 0 || recordAt+56 > size {
+			return 0, 0, errors.New("ongeldig zip64-bestand")
+		}
+		if _, err := reader.ReadAt(record, recordAt); err != nil {
+			return 0, 0, err
+		}
+		if binary.LittleEndian.Uint32(record) != 0x06064b50 {
+			return 0, 0, errors.New("ongeldig zip64-bestand")
+		}
+		entries = binary.LittleEndian.Uint64(record[32:])
+		directory = binary.LittleEndian.Uint64(record[40:])
+		offset = binary.LittleEndian.Uint64(record[48:])
+		end = recordAt
 	}
-	// Zip64: de echte getallen staan in een eigen record (de "locator" staat er vlak voor).
-	if at < 20 || binary.LittleEndian.Uint32(buf[at-20:]) != 0x07064b50 {
-		return 0, 0, errors.New("ongeldig zip64-bestand")
+	if entries > maxEntries || directory > maxEntries*1024 {
+		return 0, 0, fmt.Errorf("het archief heeft te veel onderdelen (%d)", entries)
 	}
-	offset := int64(binary.LittleEndian.Uint64(buf[at-20+8:]))
-	record := make([]byte, 56)
-	if offset < 0 || offset+56 > size {
-		return 0, 0, errors.New("ongeldig zip64-bestand")
+	// De inhoudsopgave moet precies tot het eindrecord lopen (geen data ervoor of ertussen).
+	if offset > uint64(end) || offset+directory != uint64(end) {
+		return 0, 0, errors.New("geen geldig zip-bestand (de inhoudsopgave klopt niet)")
 	}
-	if _, err := reader.ReadAt(record, offset); err != nil {
-		return 0, 0, err
+	// Tellen, kop voor kop.
+	section := bufio.NewReaderSize(io.NewSectionReader(reader, int64(offset), int64(directory)), 64<<10)
+	header := make([]byte, 46)
+	var counted, read uint64
+	for read < directory {
+		if _, err := io.ReadFull(section, header); err != nil || binary.LittleEndian.Uint32(header) != 0x02014b50 {
+			return 0, 0, errors.New("geen geldig zip-bestand (kapotte inhoudsopgave)")
+		}
+		rest := uint64(binary.LittleEndian.Uint16(header[28:])) + uint64(binary.LittleEndian.Uint16(header[30:])) + uint64(binary.LittleEndian.Uint16(header[32:]))
+		if _, err := section.Discard(int(rest)); err != nil {
+			return 0, 0, errors.New("geen geldig zip-bestand (kapotte inhoudsopgave)")
+		}
+		read += 46 + rest
+		if counted++; counted > maxEntries {
+			return 0, 0, fmt.Errorf("het archief heeft te veel onderdelen (meer dan %d)", maxEntries)
+		}
 	}
-	if binary.LittleEndian.Uint32(record) != 0x06064b50 {
-		return 0, 0, errors.New("ongeldig zip64-bestand")
+	if read != directory {
+		return 0, 0, errors.New("geen geldig zip-bestand (kapotte inhoudsopgave)")
 	}
-	return binary.LittleEndian.Uint64(record[32:]), binary.LittleEndian.Uint64(record[40:]), nil
+	return counted, directory, nil
 }
 
 // ExtractResult: wat er is uitgepakt.
@@ -89,124 +126,160 @@ type ExtractResult struct {
 	Skipped int   `json:"skipped"`
 }
 
-// Extract pakt een archief uit in dest. Paden met .., absolute paden, symlinks en apparaten
-// worden overgeslagen; meer dan 20 GB (of meer dan er vrij is) of 200.000 bestanden stopt het.
-// Bestaande bestanden worden overschreven.
-func (fr FileRoot) Extract(archiveRel, dest string, say func(string, ...any)) (ExtractResult, error) {
-	var result ExtractResult
-	kind := archiveKind(archiveRel)
-	if kind == "" {
-		return result, errors.New("alleen .zip, .tar en .tar.gz kunnen worden uitgepakt")
-	}
-	root, err := fr.open()
-	if err != nil {
-		return result, err
-	}
-	defer root.Close()
-	file, info, err := openRegular(root, archiveRel)
-	if err != nil {
-		return result, err
-	}
-	defer file.Close()
+// extractor zet onderdelen van een archief veilig neer in een FileRoot: paden met .., absolute
+// paden, symlinks en apparaten worden overgeslagen, en er geldt een grens voor de grootte en het
+// aantal bestanden. Bestaande bestanden worden overschreven.
+type extractor struct {
+	fr       FileRoot
+	root     *os.Root
+	dest     string
+	limit    int64
+	maxFiles int
+	result   ExtractResult
+	say      func(string, ...any)
+}
+
+// newExtractor: limit = hooguit zoveel bytes (en nooit meer dan er vrij is, min 512 MB).
+func (fr FileRoot) newExtractor(root *os.Root, dest string, limit int64, maxFiles int, say func(string, ...any)) (*extractor, error) {
 	if err := fr.mkdirAll(root, dest); err != nil {
-		return result, err
+		return nil, err
 	}
-	limit := int64(maxExtractBytes)
 	if free := fr.Free(); free >= 0 && free-(512<<20) < limit {
 		limit = free - (512 << 20)
 	}
 	if limit <= 0 {
-		return result, errors.New("de schijf is (bijna) vol")
+		return nil, errors.New("de schijf is (bijna) vol")
 	}
+	return &extractor{fr: fr, root: root, dest: dest, limit: limit, maxFiles: maxFiles, say: say}, nil
+}
 
-	add := func(name string, isDir bool, mode fs.FileMode, content io.Reader) error {
-		name = strings.TrimLeft(strings.ReplaceAll(name, `\`, "/"), "/")
-		rel, err := cleanPath(name)
-		if err != nil || rel == "." {
-			result.Skipped++
-			return nil
-		}
-		target := rel
-		if dest != "." {
-			target = dest + "/" + rel
-		}
-		// Ook mappen tellen mee (anders kan een archief de schijf vullen met lege mappen).
-		if result.Files+result.Dirs >= maxExtractFiles {
-			return fmt.Errorf("meer dan %d bestanden en mappen in het archief", maxExtractFiles)
-		}
-		if isDir {
-			result.Dirs++
-			return fr.mkdirAll(root, target)
-		}
-		dir, base := splitPath(target)
-		if err := fr.mkdirAll(root, dir); err != nil {
-			return err
-		}
-		perm := fs.FileMode(0o644)
-		if mode&0o111 != 0 {
-			perm = 0o755
-		}
-		remaining := limit - result.Bytes
-		counted := &countingReader{reader: io.LimitReader(content, remaining+1)}
-		if info, err := root.Lstat(target); err == nil && info.IsDir() {
-			result.Skipped++
-			return nil
-		}
-		if _, err := fr.writeInto(root, dir, base, counted, perm); err != nil {
-			return fmt.Errorf("%s: %w", rel, err)
-		}
-		result.Bytes += counted.n
-		if result.Bytes > limit {
-			_ = root.Remove(target)
-			return fmt.Errorf("het archief is uitgepakt groter dan %s", humanBytes(limit))
-		}
-		result.Files++
-		if result.Files%500 == 0 {
-			say("%d bestanden uitgepakt (%s)…", result.Files, humanBytes(result.Bytes))
-		}
+func (e *extractor) add(name string, isDir bool, mode fs.FileMode, content io.Reader) error {
+	name = strings.TrimLeft(strings.ReplaceAll(name, `\`, "/"), "/")
+	rel, err := cleanPath(name)
+	if err != nil || rel == "." {
+		e.result.Skipped++
 		return nil
 	}
+	target := rel
+	if e.dest != "." {
+		target = e.dest + "/" + rel
+	}
+	// Ook mappen tellen mee (anders kan een archief de schijf vullen met lege mappen).
+	if e.result.Files+e.result.Dirs >= e.maxFiles {
+		return fmt.Errorf("meer dan %d bestanden en mappen in het archief", e.maxFiles)
+	}
+	if isDir {
+		e.result.Dirs++
+		return e.fr.mkdirAll(e.root, target)
+	}
+	dir, base := splitPath(target)
+	if err := e.fr.mkdirAll(e.root, dir); err != nil {
+		return err
+	}
+	perm := fs.FileMode(0o644)
+	if mode&0o111 != 0 {
+		perm = 0o755
+	}
+	remaining := e.limit - e.result.Bytes
+	counted := &countingReader{reader: io.LimitReader(content, remaining+1)}
+	if info, err := e.root.Lstat(target); err == nil && info.IsDir() {
+		e.result.Skipped++
+		return nil
+	}
+	if _, err := e.fr.writeInto(e.root, dir, base, counted, perm); err != nil {
+		return fmt.Errorf("%s: %w", rel, err)
+	}
+	e.result.Bytes += counted.n
+	if e.result.Bytes > e.limit {
+		_ = e.root.Remove(target)
+		return fmt.Errorf("het archief is uitgepakt groter dan %s", humanBytes(e.limit))
+	}
+	e.result.Files++
+	if e.result.Files%1000 == 0 {
+		e.say("%d bestanden uitgepakt (%s)…", e.result.Files, humanBytes(e.result.Bytes))
+	}
+	return nil
+}
 
+// zipEntries pakt alle onderdelen uit die met prefix beginnen (prefix eraf).
+func (e *extractor) zip(reader *zip.Reader, prefix string) error {
+	for _, entry := range reader.File {
+		if !strings.HasPrefix(entry.Name, prefix) {
+			continue
+		}
+		name := strings.TrimPrefix(entry.Name, prefix)
+		mode := entry.Mode()
+		switch {
+		case mode.IsDir() || strings.HasSuffix(entry.Name, "/"):
+			if err := e.add(name, true, 0, nil); err != nil {
+				return err
+			}
+		case mode.IsRegular():
+			content, err := entry.Open()
+			if err != nil {
+				return fmt.Errorf("%s: %w", entry.Name, err)
+			}
+			err = e.add(name, false, mode, content)
+			content.Close()
+			if err != nil {
+				return err
+			}
+		default:
+			e.result.Skipped++
+		}
+	}
+	return nil
+}
+
+// openZip opent een zip-bestand, maar alleen als de inhoudsopgave niet absurd groot is.
+func openZip(file io.ReaderAt, size int64, maxEntries uint64) (*zip.Reader, error) {
+	entries, _, err := zipDirectory(file, size, maxEntries)
+	if err != nil {
+		return nil, err
+	}
+	reader, err := zip.NewReader(file, size)
+	if err != nil {
+		return nil, fmt.Errorf("geen geldig zip-bestand: %w", err)
+	}
+	if uint64(len(reader.File)) != entries {
+		return nil, errors.New("geen geldig zip-bestand (de inhoudsopgave klopt niet)")
+	}
+	return reader, nil
+}
+
+// Extract pakt een archief uit in dest: hooguit 20 GB (of wat er vrij is) en 200.000 bestanden.
+func (fr FileRoot) Extract(archiveRel, dest string, say func(string, ...any)) (ExtractResult, error) {
+	kind := archiveKind(archiveRel)
+	if kind == "" {
+		return ExtractResult{}, errors.New("alleen .zip, .tar en .tar.gz kunnen worden uitgepakt")
+	}
+	root, err := fr.open()
+	if err != nil {
+		return ExtractResult{}, err
+	}
+	defer root.Close()
+	file, info, err := openRegular(root, archiveRel)
+	if err != nil {
+		return ExtractResult{}, err
+	}
+	defer file.Close()
+	e, err := fr.newExtractor(root, dest, maxExtractBytes, maxExtractFiles, say)
+	if err != nil {
+		return ExtractResult{}, err
+	}
 	switch kind {
 	case "zip":
-		entries, directory, err := zipDirectory(file, info.Size())
+		reader, err := openZip(file, info.Size(), maxExtractFiles)
 		if err != nil {
-			return result, fmt.Errorf("geen geldig zip-bestand: %w", err)
+			return e.result, err
 		}
-		if entries > maxExtractFiles || directory > 128<<20 {
-			return result, fmt.Errorf("het archief heeft te veel onderdelen (%d)", entries)
-		}
-		reader, err := zip.NewReader(file, info.Size())
-		if err != nil {
-			return result, fmt.Errorf("geen geldig zip-bestand: %w", err)
-		}
-		for _, entry := range reader.File {
-			mode := entry.Mode()
-			switch {
-			case mode.IsDir() || strings.HasSuffix(entry.Name, "/"):
-				if err := add(entry.Name, true, 0, nil); err != nil {
-					return result, err
-				}
-			case mode.IsRegular():
-				content, err := entry.Open()
-				if err != nil {
-					return result, fmt.Errorf("%s: %w", entry.Name, err)
-				}
-				err = add(entry.Name, false, mode, content)
-				content.Close()
-				if err != nil {
-					return result, err
-				}
-			default:
-				result.Skipped++
-			}
-		}
+		return e.result, e.zip(reader, "")
 	default:
 		var stream io.Reader = file
 		if kind == "tar.gz" {
 			gz, err := gzip.NewReader(file)
 			if err != nil {
-				return result, fmt.Errorf("geen geldig .tar.gz-bestand: %w", err)
+				return e.result, fmt.Errorf("geen geldig .tar.gz-bestand: %w", err)
 			}
 			defer gz.Close()
 			stream = gz
@@ -218,22 +291,22 @@ func (fr FileRoot) Extract(archiveRel, dest string, say func(string, ...any)) (E
 				break
 			}
 			if err != nil {
-				return result, fmt.Errorf("het archief is beschadigd: %w", err)
+				return e.result, fmt.Errorf("het archief is beschadigd: %w", err)
 			}
 			switch header.Typeflag {
 			case tar.TypeDir:
-				err = add(header.Name, true, 0, nil)
+				err = e.add(header.Name, true, 0, nil)
 			case tar.TypeReg, tar.TypeRegA:
-				err = add(header.Name, false, fs.FileMode(header.Mode), reader)
+				err = e.add(header.Name, false, fs.FileMode(header.Mode), reader)
 			default:
-				result.Skipped++
+				e.result.Skipped++
 			}
 			if err != nil {
-				return result, err
+				return e.result, err
 			}
 		}
 	}
-	return result, nil
+	return e.result, nil
 }
 
 type countingReader struct {

@@ -149,9 +149,15 @@
     return '';
   }
 
+  // De verbinding van het paneel zelf (RCON vanaf 127.0.0.1): Minecraft logt die bij elke start
+  // van de server; dat is geen fout en hoort niet tussen de rest.
+  const RCON_NOISE = /^(\[[^\]]*\] )?\[RCON (Listener|Client)[^\]]*\]:? Thread RCON Client \/127\.0\.0\.1 (started|shutting down)\s*$/;
+  const hideNoise = text => text.split('\n').filter(line => !RCON_NOISE.test(line)).join('\n');
+
   function appendConsole(text, reset, extraClass = '') {
     const box = $('#console');
     if (!box) return;
+    if (!extraClass) text = hideNoise(text);
     const atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
     if (reset) { box.textContent = ''; srv.console.lines = 0; }
     const fragment = document.createDocumentFragment();

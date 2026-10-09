@@ -126,6 +126,12 @@ type App struct {
 	// Eén installatie of plugin-update tegelijk.
 	serverJob     sync.Mutex
 	serverRunning atomic.Bool
+	// Eén backup of terugzetten tegelijk.
+	backupJob     sync.Mutex
+	backupRunning atomic.Bool
+	// Tijdens het terugzetten van een backup blijven de bestandsbrowsers even dicht.
+	restoring atomic.Bool
+	schedule  *ScheduleStore
 }
 
 func openApp(configPath string) (*App, error) {
@@ -154,6 +160,9 @@ func openApp(configPath string) (*App, error) {
 	}
 	app.uploads = newUploads(app)
 	if app.server, err = openServerStore(filepath.Join(dataDir, "server.json")); err != nil {
+		return nil, err
+	}
+	if app.schedule, err = openSchedule(filepath.Join(dataDir, "schedule.json")); err != nil {
 		return nil, err
 	}
 	app.process = newServerProcess()
