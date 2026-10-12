@@ -210,10 +210,11 @@ final class ItemLimitsApi extends PanelApi {
         editor.write(FILE, yaml);
         String ruleId = id;
         boolean created = isNew;
+        Enchantment chosen = enchantment;
         sync(() -> {
             // Ander item of andere betovering: de oude nummers horen niet meer bij deze regel.
             LimitRule old = created ? null : limits.rule(ruleId);
-            if (old != null && (old.material() != material || !java.util.Objects.equals(old.enchantment(), enchantment))) {
+            if (old != null && (old.material() != material || !java.util.Objects.equals(old.enchantment(), chosen))) {
                 limits.forget(ruleId, "regel aangepast");
             }
             editor.reload(FILE);
