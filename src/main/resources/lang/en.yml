@@ -1038,6 +1038,29 @@ itemlimits:
     entity: "with a <type> at <x>, <y>, <z>"
     unknown: "unknown"
 
+modpack:
+  link: "<prefix><text>Our modpack: <url>"
+  no-link: "<prefix><muted>No modpack link has been set (yet)."
+  disabled: "<prefix><muted>The modpack is not required here."
+  ok: "<prefix><success>You have all the mods you need."
+  missing: "<prefix><warning>You are still missing: <highlight><missing>"
+  no-mod: "<prefix><warning>The server cannot see your mods: play with our modpack (it includes the PindaCraft mod)."
+  checking: "<prefix><muted>Your mods are still being checked..."
+  checking-bar: "[actionbar]<muted>Checking your mods..."
+  exempt: "<prefix><muted>You may play without the modpack."
+  # <url> in the messages when no link has been set
+  no-url-text: "(no link yet)"
+  # /modpack <player>
+  other:
+    header: "<primary><bold>Modpack</bold></primary> <muted>· <text><player>"
+    client: "<muted>Client: <text><client></text> · <highlight><count></highlight> mods <muted>(<time>)"
+    ok: "<success>Has all required mods."
+    missing: "<warning>Missing: <highlight><missing>"
+    no-mod: "<warning>Plays without the PindaCraft mod."
+    checking: "<muted>Still being checked..."
+    exempt: "<muted>Exempt: does not need the modpack."
+    never: "<prefix><muted><player> has never played with the PindaCraft mod."
+
 world:
   # Time units: days, hours, minutes
   units: "d,h,m"

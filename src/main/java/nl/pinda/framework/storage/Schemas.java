@@ -9,6 +9,7 @@ import nl.pinda.framework.modules.homes.HomesModule;
 import nl.pinda.framework.modules.itemlimits.ItemLimitModule;
 import nl.pinda.framework.modules.leaderboards.LeaderboardsModule;
 import nl.pinda.framework.modules.locks.LockModule;
+import nl.pinda.framework.modules.modpack.ModpackModule;
 import nl.pinda.framework.modules.moderation.ModerationModule;
 import nl.pinda.framework.modules.panel.PanelModule;
 import nl.pinda.framework.modules.shop.ShopModule;
@@ -35,6 +36,7 @@ public final class Schemas {
         all.put("locks", LockModule.MIGRATIONS);
         all.put("backpack", BackpackModule.MIGRATIONS);
         all.put("itemlimits", ItemLimitModule.MIGRATIONS);
+        all.put("modpack", ModpackModule.MIGRATIONS);
         all.put("homes", HomesModule.MIGRATIONS);
         all.put("moderation", ModerationModule.MIGRATIONS);
         all.put("skills", SkillsModule.MIGRATIONS);

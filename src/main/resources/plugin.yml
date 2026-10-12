@@ -339,6 +339,17 @@ permissions:
     description: Geen limiet op beperkte items (ze worden wel bijgehouden)
     default: false
 
+  # Modpack-lock
+  pinda.modpack.use:
+    description: /modpack, de link naar de modpack en of je alle mods hebt
+    default: true
+  pinda.modpack.others:
+    description: /modpack <speler>, zien welke mods iemand mist
+    default: op
+  pinda.modpack.bypass:
+    description: Altijd mogen spelen, ook zonder de mods van de modpack
+    default: false
+
   # Webpaneel (/panel)
   pinda.panel.*:
     description: Alles in het webpaneel

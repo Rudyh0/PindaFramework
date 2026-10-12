@@ -39,8 +39,8 @@ final class SettingsApi extends PanelApi {
         List<Map<String, Object>> files = new ArrayList<>();
         for (String path : editor.settingsFiles()) {
             if (path.equals("modules/ranks.yml") || path.equals("modules/bossbar.yml") || path.equals("modules/itemlimits.yml")
-                    || (path.equals("modules/panel.yml") && !request.user().operator())) {
-                continue; // Rangen, bossbars en de item-limiet hebben een eigen pagina; het paneel zelf alleen voor operators
+                    || path.equals("modules/modpack.yml") || (path.equals("modules/panel.yml") && !request.user().operator())) {
+                continue; // Rangen, bossbars, de item-limiet en de modpack hebben een eigen pagina; het paneel zelf alleen voor operators
             }
             if (path.startsWith("modules/") && plugin.getResource(path) == null) {
                 continue; // Een oud bestand van een module die er niet meer is (bijv. scoreboard.yml)
@@ -55,7 +55,7 @@ final class SettingsApi extends PanelApi {
     }
 
     /**
-     * ranks.yml, bossbar.yml en itemlimits.yml hebben een eigen pagina met controles; panel.yml
+     * ranks.yml, bossbar.yml, itemlimits.yml en modpack.yml hebben een eigen pagina met controles; panel.yml
      * (o.a. 2FA) mag alleen een operator aanpassen.
      */
     private static void guard(String path, PanelUser user) throws ApiException {
@@ -67,6 +67,9 @@ final class SettingsApi extends PanelApi {
         }
         if ("modules/itemlimits.yml".equals(path)) {
             throw ApiException.forbidden("De item-limiet pas je aan op de pagina Item-limiet.");
+        }
+        if ("modules/modpack.yml".equals(path)) {
+            throw ApiException.forbidden("De modpack-lock pas je aan op de pagina Modpack.");
         }
         if ("modules/panel.yml".equals(path) && !user.operator()) {
             throw ApiException.forbidden("De instellingen van het webpaneel kan alleen een operator aanpassen.");

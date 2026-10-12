@@ -1,0 +1,47 @@
+# ┌──────────────────────────────────────────────┐
+# │       PindaFramework - modpack-lock          │
+# └──────────────────────────────────────────────┘
+# Laat spelers alleen (of liever) spelen met de mods die nodig zijn, zoals Simple Voice Chat.
+# Alles is ook in te stellen in het webpaneel (Modpack).
+#
+# Hoe het werkt:
+#  - De server kan zelf niet zien welke mods iemand heeft. Daarvoor is er de PindaCraft-mod
+#    (Fabric, client-side; te vinden bij elke release van PindaFramework). Zet die in je
+#    modpack op Modrinth: hij vertelt de server welke mods de speler heeft.
+#  - Spelen mensen met een eigen modpack? Dan moeten ze de PindaCraft-mod en de verplichte
+#    mods daar zelf in zetten.
+#  - De PindaCraft-mod stuurt alleen iets naar servers die erom vragen.
+#  - Een aangepaste client kan liegen over zijn mods. Dit is dus om spelers aan de juiste mods
+#    te helpen (bijv. voicechat), niet tegen cheaters.
+#  - Spelers met pinda.modpack.bypass, of in de lijst 'exempt', mogen altijd spelen.
+
+# off  = geen lock: iedereen mag spelen (de modlijsten worden wel bijgehouden, handig om te
+#        zien wat spelers gebruiken)
+# soft = wie mods mist, krijgt een melding (zie messages.soft), maar mag spelen
+# hard = wie mods mist, wordt tegengehouden (zie messages.kick)
+mode: "off"
+
+# De link naar de modpack, bijvoorbeeld https://modrinth.com/modpack/jouw-modpack
+# In de meldingen is dit <url>.
+modpack-url: ""
+
+# De mods die spelers moeten hebben: mod-ID (zoals in de mod zelf) en de naam in meldingen.
+# De PindaCraft-mod is altijd nodig en hoeft hier niet bij.
+required:
+  voicechat: Simple Voice Chat
+
+# Spelers die altijd mogen spelen, ook zonder de mods (UUID: naam).
+exempt: {}
+
+# Zo veel seconden na het joinen wachten we op de modlijst. Komt hij niet, dan heeft de
+# speler de PindaCraft-mod niet.
+timeout-seconds: 8
+
+# Bij de softlock: herinner spelers elke zoveel minuten (0 = alleen bij het joinen).
+remind-minutes: 0
+
+# De meldingen. Placeholders: <player>, <missing> (de mods die ontbreken), <count> (hoeveel)
+# en <url> (de link naar de modpack; in de chat aanklikbaar).
+messages:
+  soft: "<prefix><warning>Je speelt zonder (alle) mods van onze modpack.<newline><muted>Je mist: <highlight><missing></highlight><newline><muted>Download de modpack: <primary><url>"
+  kick: "<primary><bold>Speel met onze modpack</bold></primary><newline><newline><text>Je mist: <highlight><missing></highlight><newline><newline><muted>Download de modpack:<newline><primary><url>"

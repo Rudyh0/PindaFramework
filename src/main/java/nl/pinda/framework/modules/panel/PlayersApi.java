@@ -16,6 +16,7 @@ import nl.pinda.framework.modules.economy.Account;
 import nl.pinda.framework.modules.economy.EconomyService;
 import nl.pinda.framework.modules.economy.Money;
 import nl.pinda.framework.modules.itemlimits.ItemLimitModule;
+import nl.pinda.framework.modules.modpack.ModpackModule;
 import nl.pinda.framework.modules.moderation.Durations;
 import nl.pinda.framework.modules.moderation.ModerationModule;
 import nl.pinda.framework.modules.moderation.ModerationService;
@@ -193,6 +194,11 @@ final class PlayersApi extends PanelApi {
         ItemLimitModule limits = enabled(ItemLimitModule.class);
         if (limits != null) {
             profile.put("itemLimits", sync(() -> ItemLimitsApi.profile(this, limits, uuid)));
+        }
+
+        ModpackModule modpack = enabled(ModpackModule.class);
+        if (modpack != null) {
+            profile.put("modpack", ModpackApi.profile(this, modpack, uuid));
         }
 
         ShopModule shops = shops();

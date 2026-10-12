@@ -1,0 +1,22 @@
+{
+	"schemaVersion": 1,
+	"id": "pindacraft",
+	"version": "${version}",
+	"name": "PindaCraft",
+	"description": "Laat de PindaCraft-server zien welke mods je hebt, zodat je met de juiste modpack speelt. Stuurt alleen iets naar servers die erom vragen.",
+	"authors": [
+		"Rudyh0"
+	],
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"nl.pinda.pindacraft.PindaCraftClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=25",
+		"fabric-networking-api-v1": "*"
+	}
+}

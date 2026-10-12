@@ -981,3 +981,70 @@ details.manual .chips { margin-top: 8px; }
   .il-owners tr.il-over { box-shadow: inset 3px 0 0 var(--error); }
 }
 .il-table tr.off td { opacity: .55; }
+
+/* ----------------------------------------------------------------- modpack */
+
+.alert.success { border-color: rgba(123, 228, 149, .3); background: rgba(123, 228, 149, .07); color: #bdf2c9; }
+.alert .i { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
+.mp-modes { display: grid; gap: 8px; }
+.mp-mode { display: block; cursor: pointer; }
+.mp-mode input { position: absolute; opacity: 0; pointer-events: none; }
+.mp-mode span { display: grid; gap: 2px; padding: 11px 14px 11px 40px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--bg-2); position: relative; transition: border-color .15s, background .15s; }
+.mp-mode span::before { content: ''; position: absolute; left: 14px; top: 14px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border-strong); box-sizing: border-box; }
+.mp-mode b { font-weight: 650; color: var(--text); }
+.mp-mode small { color: var(--text-2); font-size: 13px; line-height: 1.45; }
+.mp-mode input:checked + span { border-color: var(--primary); background: var(--surface-2); }
+.mp-mode input:checked + span::before { border: 4px solid var(--primary); }
+.mp-mode.hard input:checked + span { border-color: var(--success); }
+.mp-mode.hard input:checked + span::before { border-color: var(--success); }
+.mp-mode.soft input:checked + span { border-color: var(--warning); }
+.mp-mode.soft input:checked + span::before { border-color: var(--warning); }
+.mp-mode input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: 2px; }
+.mp-mode input:disabled + span { cursor: default; }
+.mp-mode input:disabled:not(:checked) + span { opacity: .6; }
+.mp-note { margin: 12px 0 0; line-height: 1.5; }
+.mp-required td b { font-weight: 650; }
+.mp-required tr.mp-fixed td { color: var(--text-2); }
+.mp-required .actions .btn + .btn { margin-left: 6px; }
+.mp-add { border-top: 1px solid var(--border); }
+.mp-suggest { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 14px; }
+.mp-suggest > span:first-child { flex-basis: 100%; }
+.mp-suggest .te-chip { display: inline-flex; align-items: center; gap: 5px; }
+.mp-suggest .te-chip .i { width: 13px; height: 13px; }
+.mp-message + .mp-message { margin-top: 16px; }
+.mp-message-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.mp-message-head b { font-weight: 650; }
+.mp-message .mc-preview { white-space: pre-wrap; }
+.mp-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.mp-badges.end { justify-content: flex-end; }
+.mp-exempt { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mp-exempt li { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mp-first { margin-top: 0; margin-bottom: 12px; }
+.mp-filter { margin-bottom: 10px; }
+.mp-mods { list-style: none; margin: 0; padding: 0; display: grid; }
+.mp-mods li { display: flex; align-items: center; gap: 8px 10px; padding: 7px 2px; border-bottom: 1px solid var(--border); font-size: 14px; flex-wrap: wrap; }
+.mp-mods li:last-child { border-bottom: 0; }
+.mp-mods li[hidden] { display: none; }
+.mp-mods li.req { box-shadow: inset 3px 0 0 var(--success); padding-left: 10px; }
+.mp-mod-name { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; }
+.mp-mod-version { overflow-wrap: anywhere; }
+.mp-inner { margin-top: 12px; }
+.mp-inner summary { cursor: pointer; color: var(--text-2); font-weight: 600; font-size: 13.5px; padding: 6px 0; }
+@media (max-width: 720px) {
+  .mp-message-head { flex-wrap: wrap; }
+  .mp-players td:nth-child(5) { min-width: 120px; }
+}
+@media (max-width: 720px) {
+  /* Per speler een blok: naam en knop boven, status en wat ontbreekt eronder. */
+  .mp-players thead { display: none; }
+  .mp-players, .mp-players tbody { display: block; width: 100%; }
+  .mp-players tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "who act" "status status" "miss miss"; gap: 6px 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .mp-players tr:last-child { border-bottom: 0; }
+  .mp-players td { display: block; border: 0; padding: 0; }
+  .mp-players td.hide-sm { display: none; }
+  .mp-players td:nth-child(1) { grid-area: who; }
+  .mp-players td:nth-child(2) { grid-area: status; }
+  .mp-players td:nth-child(5) { grid-area: miss; font-size: 13.5px; }
+  .mp-players td:nth-child(5)::before { content: 'Ontbreekt: '; color: var(--muted); }
+  .mp-players td:nth-child(6) { grid-area: act; align-self: center; }
+}

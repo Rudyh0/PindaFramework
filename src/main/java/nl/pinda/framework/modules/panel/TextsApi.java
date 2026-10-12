@@ -53,7 +53,9 @@ final class TextsApi extends PanelApi {
             Map.entry("description", "Contant geld en bank samen."), Map.entry("tps", "14,2"), Map.entry("mspt", "70,4"),
             Map.entry("chunks", "1.204"), Map.entry("entities", "3.410"), Map.entry("items", "212"),
             Map.entry("location", "world 120, -340"), Map.entry("types", "cow 120, item 40"), Map.entry("mob", "Koe"),
-            Map.entry("cx", "7"), Map.entry("cz", "-22"));
+            Map.entry("cx", "7"), Map.entry("cz", "-22"),
+            Map.entry("missing", "Simple Voice Chat, Sodium"), Map.entry("url", "https://modrinth.com/modpack/pindacraft"),
+            Map.entry("client", "fabric 0.19.5"));
 
     private final ConfigEditor editor;
 

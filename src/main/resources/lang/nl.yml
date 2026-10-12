@@ -1042,6 +1042,29 @@ itemlimits:
     entity: "bij een <type> bij <x>, <y>, <z>"
     unknown: "onbekend"
 
+modpack:
+  link: "<prefix><text>Onze modpack: <url>"
+  no-link: "<prefix><muted>Er is (nog) geen link naar de modpack ingesteld."
+  disabled: "<prefix><muted>De modpack is hier niet verplicht."
+  ok: "<prefix><success>Je hebt alle mods die nodig zijn."
+  missing: "<prefix><warning>Je mist nog: <highlight><missing>"
+  no-mod: "<prefix><warning>De server ziet je mods niet: speel met onze modpack (daar zit de PindaCraft-mod in)."
+  checking: "<prefix><muted>Je mods worden nog gecontroleerd..."
+  checking-bar: "[actionbar]<muted>Je mods worden gecontroleerd..."
+  exempt: "<prefix><muted>Jij mag ook zonder de modpack spelen."
+  # <url> in de meldingen als er geen link is ingesteld
+  no-url-text: "(nog geen link)"
+  # /modpack <speler>
+  other:
+    header: "<primary><bold>Modpack</bold></primary> <muted>· <text><player>"
+    client: "<muted>Client: <text><client></text> · <highlight><count></highlight> mods <muted>(<time>)"
+    ok: "<success>Heeft alle verplichte mods."
+    missing: "<warning>Mist: <highlight><missing>"
+    no-mod: "<warning>Speelt zonder de PindaCraft-mod."
+    checking: "<muted>Wordt nog gecontroleerd..."
+    exempt: "<muted>Uitzondering: hoeft de modpack niet te hebben."
+    never: "<prefix><muted><player> heeft nog nooit met de PindaCraft-mod gespeeld."
+
 world:
   # Eenheden voor tijden: dagen, uren, minuten
   units: "d,u,m"

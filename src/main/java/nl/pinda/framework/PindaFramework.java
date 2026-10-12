@@ -22,6 +22,7 @@ import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.gamemode.GamemodeModule;
 import nl.pinda.framework.modules.homes.HomesModule;
 import nl.pinda.framework.modules.itemlimits.ItemLimitModule;
+import nl.pinda.framework.modules.modpack.ModpackModule;
 import nl.pinda.framework.modules.leaderboards.LeaderboardsModule;
 import nl.pinda.framework.modules.locks.LockModule;
 import nl.pinda.framework.modules.moderation.ModerationModule;
@@ -125,6 +126,7 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new LockModule(this));
             modules.register(new BackpackModule(this));
             modules.register(new ItemLimitModule(this));
+            modules.register(new ModpackModule(this));
             modules.register(new ModerationModule(this));
             modules.register(new SkillsModule(this));
             modules.register(new SleepModule(this));

@@ -9,7 +9,50 @@ permissions:
   contents: write
 
 jobs:
+  # De PindaCraft-mod (Fabric, client-side) voor de modpack-lock: één jar per Minecraft-versie.
+  client:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - minecraft: '26.2'
+            fabric_api: '0.161.0+26.2'
+          - minecraft: '26.3'
+            fabric_api: '0.162.0+26.3'
+    steps:
+      - name: Code ophalen
+        uses: actions/checkout@v5
+
+      - name: Java 25 installeren
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+          cache-dependency-path: |
+            client/*.gradle
+            client/gradle.properties
+            client/gradle/wrapper/gradle-wrapper.properties
+
+      - name: PindaCraft-mod bouwen (Minecraft ${{ matrix.minecraft }})
+        working-directory: client
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon --stacktrace -Pminecraft_version=${{ matrix.minecraft }} -Pfabric_api_version=${{ matrix.fabric_api }}
+          ls -l build/libs
+
+      - name: Jar bewaren
+        uses: actions/upload-artifact@v4
+        with:
+          name: pindacraft-${{ matrix.minecraft }}
+          path: client/build/libs/pindacraft-*.jar
+          if-no-files-found: error
+
   build:
+    # Wacht op de mod, maar bouwt en publiceert de plugin ook als de mod niet lukt.
+    needs: client
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - name: Code ophalen
@@ -69,6 +112,14 @@ jobs:
           name: PindaFramework-build-${{ github.run_number }}
           path: build/libs/*.jar
 
+      - name: PindaCraft-mod ophalen
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: pindacraft-*
+          path: build/client
+          merge-multiple: true
+
       - name: Release maken
         if: github.event_name == 'push'
         env:
@@ -78,8 +129,11 @@ jobs:
           # Controlegetal van de plugin: het dev-paneel controleert de download hiermee.
           (cd "$(dirname "$JAR")" && sha256sum "$(basename "$JAR")" > "$(basename "$JAR").sha256")
           git log -1 --pretty=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.txt
+          # De PindaCraft-mod (als die gebouwd is): voor in de modpack op Modrinth.
+          CLIENT=$(ls build/client/pindacraft-*.jar 2>/dev/null || true)
+          if [ -z "$CLIENT" ]; then echo "::warning::De PindaCraft-mod is niet gebouwd; de release heeft hem niet."; fi
           gh release create "build-${{ github.run_number }}" "$JAR" "$JAR.sha256" build/host/pinda-host-linux-amd64 build/host/pinda-host-linux-arm64 \
-            build/host/pinda-host-linux-amd64.sha256 build/host/pinda-host-linux-arm64.sha256 build/host/install.sh \
+            build/host/pinda-host-linux-amd64.sha256 build/host/pinda-host-linux-arm64.sha256 build/host/install.sh $CLIENT \
             --title "PindaFramework build #${{ github.run_number }}" \
             --notes-file notes.txt \
             --target "${{ github.sha }}"

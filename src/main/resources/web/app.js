@@ -69,6 +69,7 @@
     check: '<path d="M20 6L9 17l-5-5"/>',
     reload: '<path d="M3 12a9 9 0 0 1 15.4-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.4 6.4L3 16M3 21v-5h5"/>',
     box: '<path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+    puzzle: '<path d="M5 7h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4h-4a2 2 0 1 0-4 0H5v-4a2 2 0 1 0 0-4z"/>',
     trending: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>',
     award: '<circle cx="12" cy="8" r="6"/><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5"/>',
     zap: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
@@ -359,6 +360,7 @@
     { path: 'toplijsten', title: 'Toplijsten', icon: 'trophy', perm: P.players, feature: 'leaderboards', page: pageLeaderboards },
     { path: 'straffen', title: 'Straffen', icon: 'shield', perm: P.players, feature: 'moderation', page: pagePunishments },
     { path: 'itemlimiet', title: 'Item-limiet', icon: 'box', perm: P.players, feature: 'itemlimits', page: pageItemLimits },
+    { path: 'modpack', title: 'Modpack', icon: 'puzzle', perm: P.players, feature: 'modpack', page: pageModpack },
     { path: 'server', title: 'Server', icon: 'server', perm: [P.server, P.config], page: pageServer, group: 'Beheer' },
     { path: 'prestaties', title: 'Prestaties', icon: 'gauge', perm: P.server, feature: 'antilag', page: pagePerformance, group: 'Beheer' },
     { path: 'wereld', title: 'Wereld', icon: 'mountain', perm: P.server, feature: 'world', page: pageWorld, group: 'Beheer' },
@@ -677,7 +679,8 @@
     'modules/moderation.yml': 'Moderatie', 'modules/skills.yml': 'Skills', 'modules/sleep.yml': 'Slapen',
     'modules/motd.yml': 'MOTD', 'modules/discord.yml': 'Discord', 'modules/panel.yml': 'Webpaneel',
     'modules/leaderboards.yml': 'Toplijsten', 'modules/bossbar.yml': 'Bossbars', 'modules/broadcasts.yml': 'Aankondigingen',
-    'modules/antilag.yml': 'Antilag', 'modules/timber.yml': 'Bomen kappen', 'modules/backpack.yml': 'Rugtas', 'modules/world.yml': 'Wereld', 'modules/itemlimits.yml': 'Item-limiet'
+    'modules/antilag.yml': 'Antilag', 'modules/timber.yml': 'Bomen kappen', 'modules/backpack.yml': 'Rugtas', 'modules/world.yml': 'Wereld', 'modules/itemlimits.yml': 'Item-limiet',
+    'modules/modpack.yml': 'Modpack'
   };
   const fileName = path => FILE_NAMES[path] || path.replace(/^modules\//, '').replace(/\.yml$/, '');
   const prettyKey = key => {
@@ -825,7 +828,7 @@
     tpa: 'TPA', spawn: 'Spawn', back: 'Terug', msg: 'Privéberichten', gamemode: 'Spelmodus', afk: 'AFK', utility: 'Handige commando’s',
     vanish: 'Vanish', invsee: 'Invsee', economy: 'Economie', shop: 'Shops', lock: 'Sloten', partner: 'Partners', rank: 'Rangen',
     moderation: 'Moderatie', skills: 'Skills', sleep: 'Slapen', discord: 'Discord', panel: 'Webpaneel', admin: 'Beheer',
-    top: 'Toplijsten', bossbar: 'Bossbars', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen', backpack: 'Rugtas', world: 'Wereld', itemlimits: 'Item-limiet'
+    top: 'Toplijsten', bossbar: 'Bossbars', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen', backpack: 'Rugtas', world: 'Wereld', itemlimits: 'Item-limiet', modpack: 'Modpack'
   };
 
   async function pageTexts(main, tab, alive) {
@@ -1653,6 +1656,16 @@
           <div class="il-row"><a href="#/itemlimiet/${esc(r.id)}">${ilName(r)}</a>${r.enabled ? ilCount(r.count, r.max) : html`<span class="badge plain">uit</span>`}</div>
           ${r.items.length ? html`<ul class="il-items">${r.items.map(i => html`<li><span class="mono">#${i.serial}</span><span class="muted">${i.where}</span></li>`)}</ul>` : ''}</li>`)}</ul></div>`));
     }
+    if (p.modpack) {
+      const m = p.modpack;
+      sections.push(card('Modpack', 'puzzle', html`<div class="card-body"><dl class="kv">
+        <dt>Status</dt><dd><div class="mp-badges end">${mpBadges(m)}</div></dd>
+        <dt>Client</dt><dd>${m.loader || m.brand || '—'}</dd>
+        ${m.mods !== null && m.mods !== undefined ? html`<dt>Mods</dt><dd>${num(m.mods)}</dd>` : ''}
+        ${m.missing.length ? html`<dt>Ontbreekt</dt><dd>${m.missing.join(', ')}</dd>` : ''}
+        ${m.online ? '' : html`<dt>Gemeld</dt><dd>${dateTime(m.updated)}</dd>`}</dl>
+        ${m.mods !== null && m.mods !== undefined ? html`<p style="margin-top:14px"><button class="btn sm" data-action="modpack-mods" data-uuid="${p.uuid}">${icon('puzzle')} Mods bekijken</button></p>` : ''}</div>`));
+    }
     if (p.shop) {
       sections.push(card('Shop', 'shop', html`<div class="card-body"><dl class="kv">
         <dt>Naam</dt><dd>${p.shop.name}</dd>
@@ -2016,6 +2029,224 @@
       const result = await busy(release, () => post(`/itemlimits/items/${encodeURIComponent(serial)}/release`));
       if (result) { toast('Vrijgegeven.'); navigate(); }
     };
+  }
+
+  // =============================================================== modpack
+
+  const MP_MODES = {
+    off: ['Geen lock', 'Iedereen mag spelen, met of zonder modpack. Je ziet hier wel wie welke mods heeft.'],
+    soft: ['Softlock', 'Wie mods mist, mag spelen maar krijgt een melding.'],
+    hard: ['Hardlock', 'Wie mods mist, komt er niet in.']
+  };
+  const MP_STATUS = { ok: ['Compleet', 'success'], missing: ['Mist mods', 'warning'], no_mod: ['Geen PindaCraft-mod', 'error'], checking: ['Controleren…', 'info'] };
+  const MP_PLACEHOLDERS = ['player', 'missing', 'count', 'url'];
+  const MP_RELEASES = 'https://github.com/Rudyh0/PindaFramework/releases/latest';
+  const mpBadges = p => html`${(s => html`<span class="badge ${s[1]}">${s[0]}</span>`)(MP_STATUS[p.status] || [p.status, 'plain'])}${p.exempt ? html` <span class="badge plain" title="Mag ook zonder de modpack spelen">uitzondering</span>` : ''}`;
+
+  async function pageModpack(main, _, alive) {
+    const data = await api('/modpack');
+    if (!alive()) return;
+    state.modpack = data;
+    renderModpack(main, data);
+    // Alleen de spelers verversen, zodat half ingevulde velden blijven staan.
+    every(10000, async () => {
+      try {
+        const fresh = await api('/modpack');
+        if (!alive()) return;
+        state.modpack = fresh;
+        const players = $('#mp-players', main);
+        if (players) render(players, mpPlayers(fresh));
+        const stats = $('#mp-stats', main);
+        if (stats) render(stats, mpStats(fresh));
+      } catch { /* volgende keer opnieuw */ }
+    });
+  }
+
+  function mpStats(d) {
+    const withMod = d.players.filter(p => p.status === 'ok' || p.status === 'missing').length;
+    const complete = d.players.filter(p => p.status === 'ok').length;
+    const without = d.players.filter(p => p.status === 'no_mod').length;
+    return html`${stat('Lock', MP_MODES[d.mode][0], d.mode === 'off' ? 'iedereen mag spelen' : d.mode === 'soft' ? 'een melding bij missende mods' : 'zonder de mods kom je er niet in', 'lock', d.mode === 'hard' ? 'success' : d.mode === 'soft' ? 'warning' : '')}
+      ${stat('Compleet', html`${num(complete)}<small> / ${num(d.players.length)}</small>`, 'online spelers met alle mods', 'check')}
+      ${stat('Met PindaCraft-mod', html`${num(withMod)}<small> / ${num(d.players.length)}</small>`, without ? `${num(without)} zonder: hun mods zijn niet te zien` : 'van wie er online zijn', 'puzzle', without ? 'warning' : '')}
+      ${stat('Verplichte mods', num(d.required.length + 1), 'inclusief de PindaCraft-mod', 'box')}`;
+  }
+
+  function mpPlayers(d) {
+    const rows = d.players.length ? d.players.map(p => html`<tr>
+        <td>${who(p.name, p.uuid, null)}</td>
+        <td><div class="mp-badges">${mpBadges(p)}</div></td>
+        <td class="hide-sm">${p.loader || p.brand || '—'}</td>
+        <td class="num hide-sm">${p.mods === null || p.mods === undefined ? '—' : num(p.mods)}</td>
+        <td>${p.missing.length ? p.missing.join(', ') : html`<span class="muted">—</span>`}</td>
+        <td class="actions">${p.mods !== null && p.mods !== undefined ? html`<button class="btn sm" data-mp-player="${p.uuid}">Mods</button>` : ''}</td></tr>`)
+      : emptyRow(6, 'Er is nu niemand online.');
+    return html`<div class="table-wrap"><table class="mp-players"><thead><tr><th>Speler</th><th>Status</th><th class="hide-sm">Client</th><th class="num hide-sm">Mods</th><th>Ontbreekt</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  }
+
+  function renderModpack(main, d) {
+    const withMod = d.players.filter(p => p.status === 'ok' || p.status === 'missing').length;
+    const required = new Set(d.required.map(r => r.id));
+    const suggestions = (d.seen || []).filter(m => !required.has(m.id) && m.id !== 'pindacraft' && m.id !== 'fabric-api').slice(0, 12);
+    const phase = d.configPhase === 'works' ? html`<div class="alert success">${icon('check')} Spelers worden al gecontroleerd vóór ze de wereld in gaan.</div>`
+      : d.configPhase === 'broken' ? html`<div class="alert info">Deze server krijgt de modlijst pas na het joinen. Bij de hardlock staan spelers daarom een paar seconden stil tot hun mods gecontroleerd zijn.</div>` : '';
+    const lock = html`<form class="card" data-form="modpack-mode"><div class="card-head"><h2>${icon('lock')}Lock</h2></div><div class="card-body">
+        <div class="mp-modes" role="radiogroup" aria-label="Lock">${Object.entries(MP_MODES).map(([key, [title, help]]) => html`<label class="mp-mode ${key}">
+          <input type="radio" name="mode" value="${key}" ${d.mode === key ? 'checked' : ''} ${d.canEdit ? '' : 'disabled'}><span><b>${title}</b><small>${help}</small></span></label>`)}</div>
+        <p class="muted small mp-note">Een andere lock geldt vanaf de volgende keer dat iemand joint: wie nu online is, blijft. Spelers met <span class="mono">pinda.modpack.bypass</span> of een uitzondering mogen altijd.</p>
+        ${phase}</div></form>`;
+    const link = d.canEdit ? html`<form class="card" data-form="modpack-settings"><div class="card-head"><h2>${icon('globe')}Modpack</h2></div><div class="card-body">
+        <label class="field">${label('Link naar de modpack', '(komt in de meldingen als <url>)')}<input class="input" type="url" name="url" value="${d.url}" placeholder="https://modrinth.com/modpack/jouw-modpack" maxlength="300" spellcheck="false"></label>
+        <div class="row">
+          <label class="field">${label('Wachttijd', '(seconden)')}<input class="input" type="number" name="timeout" min="3" max="60" step="1" value="${d.timeout}" required></label>
+          <label class="field">${label('Herinneren', '(minuten)')}<input class="input" type="number" name="remind" min="0" max="1440" step="1" value="${d.remind}" required></label>
+        </div>
+        <p class="muted small mp-note">Wachttijd: komt de modlijst niet binnen zoveel seconden na het joinen, dan heeft de speler de PindaCraft-mod niet. Herinneren: bij de softlock de melding elke zoveel minuten opnieuw (0 = alleen bij het joinen).</p>
+        <div class="save-bar"><span></span><button class="btn primary">${icon('save')} Opslaan</button></div></div></form>`
+      : card('Modpack', 'globe', html`<div class="card-body"><dl class="kv"><dt>Link</dt><dd>${d.url ? html`<a href="${d.url}" target="_blank" rel="noopener">${d.url}</a>` : '—'}</dd>
+          <dt>Wachttijd</dt><dd>${num(d.timeout)} s</dd><dt>Herinneren</dt><dd>${d.remind ? `elke ${num(d.remind)} min` : 'alleen bij joinen'}</dd></dl></div>`);
+    const requiredRows = html`<tr class="mp-fixed"><td><b>PindaCraft</b><div class="muted small mono">pindacraft · altijd nodig</div></td><td class="num">${num(withMod)} / ${num(d.players.length)}</td><td></td></tr>
+      ${d.required.map(r => html`<tr><td><b>${r.name || r.id}</b><div class="muted small mono">${r.id}</div></td>
+        <td class="num">${num(r.online)} / ${num(d.players.length)}</td>
+        <td class="actions">${d.canEdit ? html`<button class="btn sm ghost" data-mp-edit-required="${r.id}" title="Naam aanpassen">${icon('edit')}</button><button class="btn sm danger" data-mp-remove-required="${r.id}" title="Niet meer verplicht">${icon('trash')}</button>` : ''}</td></tr>`)}`;
+    const requiredCard = card('Verplichte mods', 'puzzle', html`<div class="table-wrap"><table class="mp-required"><thead><tr><th>Mod</th><th class="num" title="Online spelers die hem hebben">Online</th><th></th></tr></thead>
+        <tbody>${requiredRows}</tbody></table></div>
+      ${d.canEdit ? html`<div class="card-body mp-add">
+        <form data-form="modpack-required" class="row">
+          <label class="field">${label('Mod-ID', '(bijv. voicechat)')}<input class="input mono" name="id" list="mp-seen" placeholder="voicechat" autocomplete="off" spellcheck="false" required maxlength="64"></label>
+          <label class="field">${label('Naam', '(in meldingen)')}<input class="input" name="name" placeholder="Simple Voice Chat" maxlength="48"></label>
+          <button class="btn primary">${icon('plus')} Toevoegen</button></form>
+        ${suggestions.length ? html`<div class="mp-suggest"><span class="muted small">Veel gebruikt door spelers (klik om verplicht te maken):</span>
+          ${suggestions.map(m => html`<button type="button" class="te-chip" data-mp-suggest="${m.id}" title="${m.id} ${m.version || ''} · ${m.players === 1 ? '1 speler' : `${num(m.players)} spelers`}">${icon('plus')}${m.name || m.id} <span class="muted">${num(m.players)}</span></button>`)}</div>`
+          : html`<p class="muted small" style="margin-top:12px">Join één keer met de modpack: dan staan je mods hier om er met één klik een verplicht te maken.</p>`}
+        <datalist id="mp-seen">${(d.seen || []).map(m => html`<option value="${m.id}">${m.name}</option>`)}</datalist></div>` : ''}`,
+      html`<span class="count">${num(d.required.length + 1)}</span>`);
+    const message = (kind, title, where) => html`<div class="mp-message">
+        <div class="mp-message-head"><div><b>${title}</b><span class="muted small">${where}</span></div>${d.canEdit ? html`<button type="button" class="btn sm" data-mp-message="${kind}">${icon('edit')} Bewerken</button>` : ''}</div>
+        <div class="mc-preview sm">${d.messages[kind] ? mc(d.messages[kind]) : html`<span class="muted">(geen melding)</span>`}</div></div>`;
+    const messages = card('Meldingen', 'chat', html`<div class="card-body">
+        ${message('soft', 'Softlock', d.remind ? ` · in de chat bij het joinen en elke ${num(d.remind)} min` : ' · in de chat bij het joinen')}
+        ${message('kick', 'Hardlock', ' · op het scherm als iemand wordt tegengehouden')}
+        <p class="muted small mp-note">Te gebruiken: <span class="mono">&lt;missing&gt;</span> (wat ontbreekt), <span class="mono">&lt;url&gt;</span> (de link), <span class="mono">&lt;player&gt;</span> en <span class="mono">&lt;count&gt;</span>.</p></div>`);
+    const exempt = card('Uitzonderingen', 'shield', html`<div class="card-body">
+        ${d.exempt.length ? html`<ul class="mp-exempt">${d.exempt.map(e => html`<li>${who(e.name, e.uuid, null)}${d.canEdit ? html`<button class="btn sm ghost" data-mp-remove-exempt="${e.uuid}" data-name="${e.name}" title="Geen uitzondering meer">${icon('x')}</button>` : ''}</li>`)}</ul>`
+          : html`<p class="muted small">Nog geen uitzonderingen.</p>`}
+        ${d.canEdit ? html`<form data-form="modpack-exempt" class="row" style="margin-top:12px">
+          <label class="field">${label('Speler')}<input class="input" name="name" placeholder="Naam" autocomplete="off" spellcheck="false" required maxlength="16"></label>
+          <button class="btn">${icon('plus')} Toevoegen</button></form>` : ''}
+        <p class="muted small mp-note">Of geef een rang de permissie <span class="mono">pinda.modpack.bypass</span>.</p></div>`, html`<span class="count">${num(d.exempt.length)}</span>`);
+    const help = card('Zo zet je het op', 'list', html`<div class="card-body"><ol class="il-help">
+        <li>Download de <b>PindaCraft-mod</b> (Fabric) bij de nieuwste release en zet hem in je modpack op Modrinth, samen met de mods die verplicht worden. Er is een versie per Minecraft-versie.</li>
+        <li>Zet die mods hierboven bij <b>Verplichte mods</b>. Join je één keer met de modpack, dan kun je ze aanklikken.</li>
+        <li>Vul de link naar je modpack in: die komt in de meldingen.</li>
+        <li>Kies een lock. Begin met de <b>softlock</b> om te zien wie wat mist, en zet daarna eventueel de <b>hardlock</b> aan.</li>
+      </ol><p class="muted small mp-note">Spelen mensen met een eigen modpack? Dan moeten ze de PindaCraft-mod en de verplichte mods daar zelf in zetten. De mod stuurt alleen iets naar servers die erom vragen. Een aangepaste client kan liegen over zijn mods: dit helpt spelers aan de juiste mods, maar is geen anti-cheat.</p></div>`);
+
+    render(main, html`${pageHead('Modpack', 'Laat spelers alleen spelen met de mods die nodig zijn, zoals Simple Voice Chat.',
+        html`<a class="btn" href="${MP_RELEASES}" target="_blank" rel="noopener">${icon('box')} PindaCraft-mod downloaden</a>`)}
+      <div class="grid stats" id="mp-stats">${mpStats(d)}</div>
+      <div class="grid two" style="margin-top:16px">${lock}${link}</div>
+      <div class="grid two" style="margin-top:16px">${requiredCard}${messages}</div>
+      <div style="margin-top:16px">${card('Online spelers', 'players', html`<div id="mp-players">${mpPlayers(d)}</div>`)}</div>
+      <div class="grid two" style="margin-top:16px">${exempt}${help}</div>`);
+
+    main.onchange = async event => {
+      const radio = event.target.closest('input[name=mode]');
+      if (!radio) return;
+      const mode = radio.value;
+      if (mode === 'hard') {
+        const ok = await confirmDialog({ title: 'Hardlock aanzetten?', confirm: 'Hardlock aanzetten', danger: true,
+          text: `Wie de PindaCraft-mod${d.required.length ? ' of een verplichte mod' : ''} niet heeft, komt er vanaf nu niet meer in. Wie nu online is, blijft. Uitzonderingen en spelers met pinda.modpack.bypass mogen altijd.` });
+        if (!ok) { $(`input[name=mode][value="${d.mode}"]`, main).checked = true; return; }
+      }
+      const result = await busy(null, () => post('/modpack/settings', { mode }));
+      if (result) { toast(`${MP_MODES[mode][0]} staat aan.`); mpUpdate(result); }
+      else $(`input[name=mode][value="${d.mode}"]`, main).checked = true;
+    };
+    main.onclick = async event => {
+      const player = event.target.closest('[data-mp-player]');
+      if (player) { openModpackPlayer(player.dataset.mpPlayer); return; }
+      const edit = event.target.closest('[data-mp-message]');
+      if (edit) {
+        const kind = edit.dataset.mpMessage;
+        openTextEditor({ title: kind === 'soft' ? 'Melding bij de softlock' : 'Melding bij de hardlock', subtitle: kind === 'soft' ? 'in de chat' : 'op het scherm als iemand wordt tegengehouden',
+          value: d.messages[kind], placeholders: MP_PLACEHOLDERS, onSave: async value => {
+            const result = await post('/modpack/settings', { [kind]: value });
+            toast('Melding opgeslagen.');
+            mpUpdate(result);
+            return result;
+          } });
+        return;
+      }
+      const suggest = event.target.closest('[data-mp-suggest]');
+      if (suggest) {
+        const mod = (d.seen || []).find(m => m.id === suggest.dataset.mpSuggest);
+        const result = await busy(suggest, () => post('/modpack/required', { id: mod.id, name: mod.name || '' }));
+        if (result) { toast(`${mod.name || mod.id} is nu verplicht.`); mpUpdate(result); }
+        return;
+      }
+      const editRequired = event.target.closest('[data-mp-edit-required]');
+      if (editRequired) {
+        const form = $('form[data-form=modpack-required]', main);
+        const r = d.required.find(x => x.id === editRequired.dataset.mpEditRequired);
+        form.elements.namedItem('id').value = r.id;
+        form.elements.namedItem('name').value = r.name;
+        form.elements.namedItem('name').focus();
+        form.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        return;
+      }
+      const removeRequired = event.target.closest('[data-mp-remove-required]');
+      if (removeRequired) {
+        const r = d.required.find(x => x.id === removeRequired.dataset.mpRemoveRequired);
+        const ok = await confirmDialog({ title: `${r.name || r.id} niet meer verplicht?`, text: 'Spelers zonder deze mod mogen dan weer gewoon spelen.', confirm: 'Niet meer verplicht' });
+        if (!ok) return;
+        const result = await busy(null, () => post(`/modpack/required/${encodeURIComponent(r.id)}/delete`));
+        if (result) { toast('Niet meer verplicht.'); mpUpdate(result); }
+        return;
+      }
+      const removeExempt = event.target.closest('[data-mp-remove-exempt]');
+      if (removeExempt) {
+        const result = await busy(removeExempt, () => post(`/modpack/exempt/${encodeURIComponent(removeExempt.dataset.mpRemoveExempt)}/delete`));
+        if (result) { toast(`${removeExempt.dataset.name} is geen uitzondering meer.`); mpUpdate(result); }
+      }
+    };
+  }
+
+  /** Na een wijziging: de pagina opnieuw opbouwen (als we er nog zijn). */
+  function mpUpdate(result) {
+    state.modpack = result;
+    if (location.hash.startsWith('#/modpack')) renderModpack($('#main'), result);
+  }
+
+  async function openModpackPlayer(uuid) {
+    let d;
+    try { d = await api(`/modpack/players/${encodeURIComponent(uuid)}`); } catch (error) { toast(error.message, 'error'); return; }
+    const r = d.report;
+    const top = r ? r.mods.filter(m => !m.included) : [];
+    const inner = r ? r.mods.filter(m => m.included) : [];
+    const row = m => html`<li class="${m.required ? 'req' : ''}" data-search="${`${m.name} ${m.id}`.toLowerCase()}">
+      <span class="mp-mod-name"><b>${m.name}</b> <span class="muted mono small">${m.id}</span></span>
+      ${m.required ? html`<span class="badge success">verplicht</span>` : ''}<span class="mono small muted mp-mod-version">${m.version}</span></li>`;
+    const sub = r ? `${r.loader} ${r.loaderVersion} · Minecraft ${r.minecraft} · PindaCraft ${r.client}` : 'Speelt zonder de PindaCraft-mod: de mods zijn niet te zien.';
+    openModal(html`<div class="mp-modlist">
+      <div class="modal-head"><h3>Mods van ${d.name}</h3><p>${sub}${d.online ? '' : ` · gemeld op ${dateTime(d.updated)}`}</p></div>
+      <div class="modal-body">
+        ${d.missing.length ? html`<div class="alert warning mp-first">Mist: ${d.missing.join(', ')}</div>` : r ? html`<div class="alert success mp-first">Heeft alle verplichte mods.</div>` : ''}
+        ${r ? html`<input class="input mp-filter" type="search" placeholder="Zoeken in ${num(top.length)} mods…" data-mp-filter>
+          <ul class="mp-mods">${top.map(row)}</ul>
+          ${inner.length ? html`<details class="mp-inner"><summary>Ingebouwde onderdelen (${num(inner.length)})</summary><ul class="mp-mods">${inner.map(row)}</ul></details>` : ''}` : ''}
+      </div>
+      <div class="modal-foot"><button type="button" class="btn" data-action="close">Sluiten</button></div></div>`, 'wide');
+    const filter = $('[data-mp-filter]', modal);
+    if (filter) {
+      filter.addEventListener('input', () => {
+        const query = filter.value.trim().toLowerCase();
+        $$('.mp-mods li', modal).forEach(li => { li.hidden = !!query && !li.dataset.search.includes(query); });
+        const details = $('.mp-inner', modal);
+        if (details && query) details.open = true;
+      });
+    }
   }
 
   // =============================================================== bossbars
@@ -3089,6 +3320,9 @@
   }
 
   const actions = {
+    'modpack-mods'(button) {
+      openModpackPlayer(button.dataset.uuid);
+    },
     async 'player-action'(button) {
       const kind = button.dataset.kind;
       if (kind === 'clear-inventory') {
@@ -3282,6 +3516,31 @@
       };
       const result = await busy(button, () => post('/itemlimits/rules', body));
       if (result) { closeModal(); toast('Opgeslagen.'); state.itemLimits = result; afterItemLimitChange(result); }
+    },
+
+    'modpack-mode'() {
+      // Wordt meteen opgeslagen bij het kiezen (zie renderModpack).
+    },
+
+    async 'modpack-settings'(form, data, button) {
+      const result = await busy(button, () => post('/modpack/settings', {
+        url: (data.get('url') || '').trim(), timeout: Number(data.get('timeout')), remind: Number(data.get('remind'))
+      }));
+      if (result) { toast('Opgeslagen.'); mpUpdate(result); }
+    },
+
+    async 'modpack-required'(form, data, button) {
+      const id = (data.get('id') || '').trim().toLowerCase();
+      const seen = ((state.modpack && state.modpack.seen) || []).find(m => m.id === id);
+      const name = (data.get('name') || '').trim() || (seen && seen.name !== id ? seen.name : '');
+      const result = await busy(button, () => post('/modpack/required', { id, name }));
+      if (result) { toast(`${name || id} is verplicht.`); mpUpdate(result); }
+    },
+
+    async 'modpack-exempt'(form, data, button) {
+      const name = (data.get('name') || '').trim();
+      const result = await busy(button, () => post('/modpack/exempt', { name }));
+      if (result) { toast(`${name} mag altijd spelen.`); mpUpdate(result); }
     },
 
     async 'itemlimit-settings'(form, data, button) {
