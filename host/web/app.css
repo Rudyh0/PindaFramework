@@ -807,7 +807,12 @@ details.manual .chips { margin-top: 8px; }
 .qr { width: 208px; height: 208px; border-radius: 12px; background: #fff; padding: 6px; image-rendering: pixelated; }
 .secret { font-size: 15px; letter-spacing: .06em; background: var(--surface-3); padding: 8px 10px; border-radius: 8px; text-align: center; color: var(--primary); user-select: all; overflow-wrap: anywhere; }
 .code-form { display: flex; gap: 8px; margin-top: 18px; }
-.code-input { font-family: var(--mono); font-size: 22px; letter-spacing: .3em; text-align: center; padding: 10px; }
+/* Het codeveld van 2FA: een eigen veld, los van de bestandseditor. De letterafstand komt ook na het
+   laatste cijfer; text-indent zet dat recht zodat de code echt in het midden staat. */
+.otp-input { position: static; flex: 1 1 auto; min-width: 0; height: auto; font-family: var(--mono); font-size: 24px; line-height: 1.3;
+  letter-spacing: .35em; text-indent: .35em; text-align: center; padding: 10px 12px; color: var(--text); caret-color: var(--primary);
+  background: var(--bg-2); -webkit-text-fill-color: currentColor; }
+.otp-input::placeholder { color: #5d544a; letter-spacing: .35em; }
 
 @media (max-width: 920px) {
   .settings-layout { grid-template-columns: minmax(0, 1fr); }

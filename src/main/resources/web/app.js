@@ -334,13 +334,13 @@
         <details class="manual"><summary>Scannen lukt niet?</summary><p class="muted">Vul in je app deze sleutel handmatig in (type: op tijd gebaseerd):</p><p class="secret mono">${challenge.secret}</p></details>`
         : html`<p class="lead">Open je authenticator-app en vul de code van 6 cijfers voor <span class="kbd">${name}</span> in.</p>`}
       <form data-form="two-factor" class="code-form">
-        <input class="input code-input" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000000" aria-label="Code van 6 cijfers" required>
+        <input class="input otp-input" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000000" aria-label="Code van 6 cijfers" required>
         <button class="btn primary">${setup ? 'Koppelen en inloggen' : 'Inloggen'}</button>
       </form>
       ${message ? html`<div class="alert error">${message}</div>` : ''}
       <p class="login-foot">Telefoon kwijt? Vraag een admin om je 2FA te resetten (/panel 2fa reset).</p>
     </div></div>`);
-    const input = $('.code-input');
+    const input = $('.otp-input');
     input.focus();
     input.addEventListener('input', () => {
       const digits = input.value.replace(/\D/g, '');

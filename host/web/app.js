@@ -301,12 +301,12 @@
         <details class="manual"><summary>Scannen lukt niet?</summary><p class="muted">Vul deze sleutel handmatig in (op tijd gebaseerd):</p><p class="secret mono">${challenge.secret}</p></details>`
         : html`<p class="lead">Vul de code van 6 cijfers uit je authenticator-app in.</p>`}
       <form data-form="${setup ? 'setup-verify' : 'login-verify'}" class="code-form">
-        <input class="input code-input" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="7" required autofocus aria-label="Code van 6 cijfers">
+        <input class="input otp-input" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="7" placeholder="000000" required autofocus aria-label="Code van 6 cijfers">
         <button class="btn primary">${first ? 'Koppelen' : 'Inloggen'}</button>
       </form>
       ${message ? html`<div class="alert error">${message}</div>` : ''}
       <p class="login-foot"><a href="#" data-action="restart-login">Opnieuw beginnen</a></p>`);
-    const input = $('.code-input');
+    const input = $('.otp-input');
     input.addEventListener('input', () => {
       if (input.value.replace(/\D/g, '').length === 6 && !state.verifying) input.form.requestSubmit();
     });
