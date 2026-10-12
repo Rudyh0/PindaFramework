@@ -358,6 +358,7 @@
     { path: 'skills', title: 'Skills', icon: 'award', perm: P.skills, feature: 'skills', page: pageSkills },
     { path: 'toplijsten', title: 'Toplijsten', icon: 'trophy', perm: P.players, feature: 'leaderboards', page: pageLeaderboards },
     { path: 'straffen', title: 'Straffen', icon: 'shield', perm: P.players, feature: 'moderation', page: pagePunishments },
+    { path: 'itemlimiet', title: 'Item-limiet', icon: 'box', perm: P.players, feature: 'itemlimits', page: pageItemLimits },
     { path: 'server', title: 'Server', icon: 'server', perm: [P.server, P.config], page: pageServer, group: 'Beheer' },
     { path: 'prestaties', title: 'Prestaties', icon: 'gauge', perm: P.server, feature: 'antilag', page: pagePerformance, group: 'Beheer' },
     { path: 'wereld', title: 'Wereld', icon: 'mountain', perm: P.server, feature: 'world', page: pageWorld, group: 'Beheer' },
@@ -676,7 +677,7 @@
     'modules/moderation.yml': 'Moderatie', 'modules/skills.yml': 'Skills', 'modules/sleep.yml': 'Slapen',
     'modules/motd.yml': 'MOTD', 'modules/discord.yml': 'Discord', 'modules/panel.yml': 'Webpaneel',
     'modules/leaderboards.yml': 'Toplijsten', 'modules/bossbar.yml': 'Bossbars', 'modules/broadcasts.yml': 'Aankondigingen',
-    'modules/antilag.yml': 'Antilag', 'modules/timber.yml': 'Bomen kappen', 'modules/backpack.yml': 'Rugtas', 'modules/world.yml': 'Wereld'
+    'modules/antilag.yml': 'Antilag', 'modules/timber.yml': 'Bomen kappen', 'modules/backpack.yml': 'Rugtas', 'modules/world.yml': 'Wereld', 'modules/itemlimits.yml': 'Item-limiet'
   };
   const fileName = path => FILE_NAMES[path] || path.replace(/^modules\//, '').replace(/\.yml$/, '');
   const prettyKey = key => {
@@ -824,7 +825,7 @@
     tpa: 'TPA', spawn: 'Spawn', back: 'Terug', msg: 'Privéberichten', gamemode: 'Spelmodus', afk: 'AFK', utility: 'Handige commando’s',
     vanish: 'Vanish', invsee: 'Invsee', economy: 'Economie', shop: 'Shops', lock: 'Sloten', partner: 'Partners', rank: 'Rangen',
     moderation: 'Moderatie', skills: 'Skills', sleep: 'Slapen', discord: 'Discord', panel: 'Webpaneel', admin: 'Beheer',
-    top: 'Toplijsten', bossbar: 'Bossbars', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen', backpack: 'Rugtas', world: 'Wereld'
+    top: 'Toplijsten', bossbar: 'Bossbars', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen', backpack: 'Rugtas', world: 'Wereld', itemlimits: 'Item-limiet'
   };
 
   async function pageTexts(main, tab, alive) {
@@ -1647,6 +1648,11 @@
           <button class="btn primary">Uitvoeren</button></form>` : ''}
       </div>`, html`<span class="count">totaal level ${num(sk.total)} / ${num(sk.maxTotal)}</span>`));
     }
+    if (p.itemLimits && p.itemLimits.length) {
+      sections.push(card('Beperkte items', 'box', html`<div class="card-body"><ul class="il-profile">${p.itemLimits.map(r => html`<li>
+          <div class="il-row"><a href="#/itemlimiet/${esc(r.id)}">${ilName(r)}</a>${r.enabled ? ilCount(r.count, r.max) : html`<span class="badge plain">uit</span>`}</div>
+          ${r.items.length ? html`<ul class="il-items">${r.items.map(i => html`<li><span class="mono">#${i.serial}</span><span class="muted">${i.where}</span></li>`)}</ul>` : ''}</li>`)}</ul></div>`));
+    }
     if (p.shop) {
       sections.push(card('Shop', 'shop', html`<div class="card-body"><dl class="kv">
         <dt>Naam</dt><dd>${p.shop.name}</dd>
@@ -1868,6 +1874,148 @@
       ${boards}
       ${data.bossbar ? html`<div class="alert info" style="margin-top:16px">${icon('bossbar')} <div>De toplijsten staan ook in de bossbars bovenin beeld (bijv. <span class="mono">&lt;top:money:3&gt;</span>).
         ${data.canEditBossbar ? html` Instellen bij <a href="#/bossbars">Bossbars</a>.` : ''}</div></div>` : ''}`);
+  }
+
+  // =============================================================== item-limiet
+
+  const IL_SMALL = new Set(['of', 'the', 'and', 'on', 'a']);
+  const ilPretty = key => String(key || '').split('_').map((word, i) => i > 0 && IL_SMALL.has(word) ? word : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  const ilName = r => r.name || `${ilPretty(r.material)}${r.enchantment ? ` (${ilPretty(r.enchantment)})` : ''}`;
+  const ilCount = (count, max) => html`<span class="badge ${max && count > max ? 'error' : max && count >= max ? 'warning' : 'plain'}">${num(count)}${max ? ` / ${num(max)}` : ''}</span>`;
+
+  async function pageItemLimits(main, id, alive) {
+    if (id) return pageItemLimit(main, id, alive);
+    const data = await api('/itemlimits');
+    if (!alive()) return;
+    state.itemLimits = data;
+    renderItemLimits(main, data);
+  }
+
+  function renderItemLimits(main, data) {
+    if (data.materials) state.materials = data.materials;
+    const rows = data.rules.length ? data.rules.map(r => html`<tr data-href="#/itemlimiet/${esc(r.id)}" tabindex="0" class="${r.enabled ? '' : 'off'}">
+        <td><b>${ilName(r)}</b><div class="muted small mono">${r.material}${r.enchantment ? ` · ${r.enchantment}` : ''}</div></td>
+        <td class="num">${r.perPlayer ? num(r.perPlayer) : '—'}</td>
+        <td class="num hide-sm">${r.serverMax ? num(r.serverMax) : '—'}</td>
+        <td class="num">${num(r.active)}${r.serverMax ? html`<div class="meter il-meter ${r.active >= r.serverMax ? 'warning' : ''}"><i style="width:${Math.min(100, Math.round(r.active / r.serverMax * 100))}%"></i></div>` : ''}</td>
+        <td class="num hide-sm">${num(r.owners)}</td>
+        <td>${r.enabled ? html`<span class="badge success">Aan</span>` : html`<span class="badge plain">Uit</span>`}</td>
+        <td class="actions">${data.canEdit ? html`<button class="btn sm" data-il-edit="${r.id}">Bewerken</button>` : ''}</td></tr>`)
+      : emptyRow(7, data.canEdit ? 'Nog geen beperkte items. Voeg er een toe!' : 'Nog geen beperkte items.');
+    const s = data.settings;
+    render(main, html`${pageHead('Item-limiet', 'Hoeveel één speler van zeldzame items mag hebben. Elk exemplaar krijgt een nummer, zodat je ziet wie het heeft en waar het ligt.',
+        data.canEdit ? html`<button class="btn primary" data-il-add>${icon('plus')} Item toevoegen</button>` : '')}
+      <section class="card"><div class="card-head"><h2>${icon('box')}Beperkte items</h2><span class="count">${num(data.rules.filter(r => r.enabled).length)} aan</span></div>
+        <div class="table-wrap"><table class="il-table"><thead><tr><th>Item</th><th class="num">Per speler</th><th class="num hide-sm">Server</th><th class="num">In omloop</th><th class="num hide-sm">Spelers</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows}</tbody></table></div></section>
+      <div class="grid two" style="margin-top:16px">
+        <section class="card"><div class="card-head"><h2>${icon('shield')}Hoe het werkt</h2></div><div class="card-body"><ul class="il-help">
+          <li>Pakt iemand een beperkt item op, haalt hij het uit een kist of koopt hij het in een shop, dan wordt het van hem. Zit hij al aan het maximum, dan gaat dat niet.</li>
+          <li>Items in kisten, de enderkist, shulkerdozen en de rugtas tellen gewoon mee.</li>
+          <li>Gaat een item op (een totem die afgaat, opgegeten, kapot, verbrand, in de void, opgeruimd of als blok geplaatst), dan mag de speler er weer een.</li>
+          <li>Beperkte items stapelen niet: elk exemplaar heeft een eigen nummer.</li>
+          <li>Spelers zien met <span class="kbd">/limieten</span> hoeveel ze hebben, staff met <span class="kbd">/limieten &lt;speler&gt;</span> ook waar ze liggen. In creative of met <span class="mono">pinda.itemlimits.bypass</span> geldt geen limiet.</li>
+        </ul></div></section>
+        ${data.canEdit ? html`<form class="card" data-form="itemlimit-settings"><div class="card-head"><h2>${icon('cog')}Instellingen</h2></div><div class="card-body">
+          <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Meer dan het maximum</span><span class="cfg-help">Van vóór de limiet, of gekregen via /give of een andere plugin.</span></div>
+            <select name="overLimit" class="input il-select"><option value="keep" ${s.overLimit === 'keep' ? 'selected' : ''}>Mag hij houden</option><option value="remove" ${s.overLimit === 'remove' ? 'selected' : ''}>Wordt weggehaald</option></select></div>
+          <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">"Beperkt item" in de beschrijving</span><span class="cfg-help">Zo zien spelers waarom het niet stapelt.</span></div><label class="switch"><input type="checkbox" name="markItems" ${s.markItems ? 'checked' : ''}><span></span></label></div>
+          <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Melding als je er weer een mag</span><span class="cfg-help">Bijvoorbeeld als je totem afgaat.</span></div><label class="switch"><input type="checkbox" name="notifyFreed" ${s.notifyFreed ? 'checked' : ''}><span></span></label></div>
+          <div class="save-bar"><span></span><button class="btn primary">${icon('save')} Opslaan</button></div></div></form>` : ''}
+      </div>`);
+    main.onclick = event => {
+      const edit = event.target.closest('[data-il-edit]');
+      if (edit) openItemLimitEditor(data.rules.find(r => r.id === edit.dataset.ilEdit));
+      else if (event.target.closest('[data-il-add]')) openItemLimitEditor(null);
+    };
+  }
+
+  async function openItemLimitEditor(rule) {
+    if (!state.itemLimits || !state.itemLimits.enchantments) {
+      try { state.itemLimits = await api('/itemlimits'); } catch (error) { toast(error.message, 'error'); return; }
+      state.materials = state.itemLimits.materials;
+    }
+    const r = rule || { id: '', material: '', enchantment: '', name: '', perPlayer: 2, serverMax: 0, enabled: true };
+    openModal(html`<form data-form="itemlimit-rule" data-id="${r.id}">
+      <div class="modal-head"><h3>${rule ? `${ilName(r)} bewerken` : 'Beperkt item toevoegen'}</h3>
+        <p>${rule ? 'Pas je het item of de betovering aan, dan beginnen de tellingen opnieuw.' : 'Vanaf nu krijgt elk exemplaar een nummer en telt het mee.'}</p></div>
+      <div class="modal-body">
+        <label class="field">${label('Item', '(de Minecraft-naam)')}<input class="input mono" name="material" list="material-list" value="${r.material}" placeholder="totem_of_undying" autocomplete="off" spellcheck="false" required ${rule ? '' : 'autofocus'}></label>
+        <label class="field">${label('Betovering', '(alleen items met deze betovering, bijv. Mending-boeken)')}<select name="enchantment">
+          <option value="">Elk item van dit soort</option>${state.itemLimits.enchantments.map(e => html`<option value="${e}" ${e === r.enchantment ? 'selected' : ''}>${ilPretty(e)}</option>`)}</select></label>
+        <label class="field">${label('Naam', '(optioneel; leeg = de Minecraft-naam in de taal van de speler)')}<input class="input" name="name" maxlength="48" value="${r.name}"></label>
+        <div class="row">
+          <label class="field">${label('Max per speler', '(0 = geen)')}<input class="input" type="number" name="perPlayer" min="0" max="100000" step="1" value="${r.perPlayer}" required></label>
+          <label class="field">${label('Max op de server', '(0 = geen)')}<input class="input" type="number" name="serverMax" min="0" max="100000" step="1" value="${r.serverMax}" required></label>
+        </div>
+        <label class="check" style="margin-top:14px"><input type="checkbox" name="enabled" ${r.enabled ? 'checked' : ''}> De limiet geldt</label>
+        <datalist id="material-list"></datalist>
+      </div>
+      <div class="modal-foot">${rule ? html`<button type="button" class="btn danger" data-il-delete="${r.id}" style="margin-right:auto">${icon('trash')} Verwijderen</button>` : ''}
+        <button type="button" class="btn ghost" data-action="close">Annuleren</button><button class="btn primary">${icon('save')} Opslaan</button></div>
+    </form>`);
+    fillMaterials();
+    const remove = $('[data-il-delete]', modal);
+    if (remove) remove.addEventListener('click', async () => {
+      const ok = await confirmDialog({ title: `${ilName(r)} niet meer beperken?`, text: 'De nummers vervallen: de items worden weer gewone items en tellen nergens meer mee.', confirm: 'Verwijderen', danger: true });
+      if (!ok) return;
+      const result = await busy(remove, () => post(`/itemlimits/rules/${encodeURIComponent(r.id)}/delete`));
+      if (result) { closeModal(); toast('Limiet verwijderd.'); state.itemLimits = result; afterItemLimitChange(result); }
+    });
+  }
+
+  /** Na opslaan: terug naar het overzicht, of de detailpagina opnieuw laden. */
+  function afterItemLimitChange(result) {
+    if (location.hash === '#/itemlimiet') renderItemLimits($('#main'), result);
+    else navigate();
+  }
+
+  async function pageItemLimit(main, id, alive) {
+    const data = await api(`/itemlimits/rules/${encodeURIComponent(id)}`);
+    if (!alive()) return;
+    renderItemLimit(main, data);
+  }
+
+  function renderItemLimit(main, data) {
+    const r = data.rule;
+    const over = data.owners.filter(o => o.over).length;
+    const total = data.owners.reduce((sum, o) => sum + o.count, 0) + data.ownerless.length;
+    const item = it => html`<li><span class="mono">#${it.serial}</span><span class="muted">${it.where}</span>
+      ${data.canRelease ? html`<button class="btn sm ghost" data-il-release="${it.serial}" title="Telt niet meer mee (alleen als het item echt weg is)">Vrijgeven</button>` : ''}</li>`;
+    const owners = data.owners.length ? data.owners.map(o => html`<tr class="${o.over ? 'il-over' : ''}">
+        <td><div class="il-who">${who(o.name, o.uuid, null)}${o.online ? html`<span class="badge success sm-badge">online</span>` : ''}</div></td>
+        <td class="num">${ilCount(o.count, r.perPlayer)}</td>
+        <td><ul class="il-items">${o.items.map(item)}</ul></td></tr>`)
+      : emptyRow(3, 'Niemand heeft dit item (met een nummer).');
+    const recent = data.recent.length ? data.recent.map(g => html`<tr><td class="mono">#${g.serial}</td><td class="hide-sm">${g.name || '—'}</td><td>${g.reason || '—'}</td><td class="muted nowrap">${ago(g.time)}</td></tr>`)
+      : emptyRow(4, 'Nog niets verdwenen.');
+    render(main, html`<a class="back" href="#/itemlimiet">${icon('back')} Item-limiet</a>
+      ${pageHead(ilName(r), `${r.material}${r.enchantment ? ` met ${ilPretty(r.enchantment)}` : ''}${r.enabled ? '' : ' · staat uit'}`,
+        data.canEdit ? html`<button class="btn" data-il-edit>${icon('edit')} Bewerken</button>` : '')}
+      <div class="grid stats">
+        ${stat('In omloop', num(total), r.serverMax ? `max ${num(r.serverMax)} op de server` : 'geen maximum op de server', 'box', r.serverMax && total >= r.serverMax ? 'warning' : '')}
+        ${stat('Spelers', num(data.owners.length), r.perPlayer ? `max ${num(r.perPlayer)} per speler` : 'geen maximum per speler', 'players')}
+        ${stat('Boven het maximum', num(over), over ? 'van vóór de limiet of via /give' : 'iedereen zit eronder', 'warn', over ? 'warning' : '')}
+      </div>
+      <div style="margin-top:16px">${card('Wie heeft ze', 'players', html`<div class="table-wrap"><table class="il-owners"><thead><tr><th>Speler</th><th class="num">Aantal</th><th>Nummers en waar ze liggen</th></tr></thead>
+        <tbody>${owners}</tbody></table></div>`, html`<span class="count">${num(data.owners.length)}</span>`)}</div>
+      ${data.ownerless.length ? html`<div style="margin-top:16px">${card('Van niemand', 'box', html`<div class="card-body"><ul class="il-items">${data.ownerless.map(item)}</ul></div>`)}</div>` : ''}
+      <div style="margin-top:16px">${card('Onlangs verdwenen', 'clock', html`<div class="table-wrap"><table class="il-recent"><thead><tr><th>Nummer</th><th class="hide-sm">Van</th><th>Wat er gebeurde</th><th>Wanneer</th></tr></thead>
+        <tbody>${recent}</tbody></table></div>`)}</div>`);
+    main.onclick = async event => {
+      if (event.target.closest('[data-il-edit]')) {
+        openItemLimitEditor(r);
+        return;
+      }
+      const release = event.target.closest('[data-il-release]');
+      if (!release) return;
+      const serial = release.dataset.ilRelease;
+      const ok = await confirmDialog({ title: `Item #${serial} vrijgeven?`, confirm: 'Vrijgeven',
+        text: 'Doe dit alleen als het item echt weg is (bijv. na /clear) maar nog meetelt. De eigenaar mag er dan weer een. Duikt het later toch op, dan telt het opnieuw mee.' });
+      if (!ok) return;
+      const result = await busy(release, () => post(`/itemlimits/items/${encodeURIComponent(serial)}/release`));
+      if (result) { toast('Vrijgegeven.'); navigate(); }
+    };
   }
 
   // =============================================================== bossbars
@@ -3124,6 +3272,23 @@
       } finally {
         state.verifying = false;
       }
+    },
+
+    async 'itemlimit-rule'(form, data, button) {
+      const body = {
+        id: form.dataset.id || null, material: data.get('material').trim().toLowerCase(), enchantment: data.get('enchantment') || null,
+        name: data.get('name').trim() || null, perPlayer: Number(data.get('perPlayer')), serverMax: Number(data.get('serverMax')),
+        enabled: !!data.get('enabled')
+      };
+      const result = await busy(button, () => post('/itemlimits/rules', body));
+      if (result) { closeModal(); toast('Opgeslagen.'); state.itemLimits = result; afterItemLimitChange(result); }
+    },
+
+    async 'itemlimit-settings'(form, data, button) {
+      const result = await busy(button, () => post('/itemlimits/settings', {
+        overLimit: data.get('overLimit'), markItems: !!data.get('markItems'), notifyFreed: !!data.get('notifyFreed')
+      }));
+      if (result) { toast('Instellingen opgeslagen.'); state.itemLimits = result; renderItemLimits($('#main'), result); }
     },
 
     async 'bossbar-bar'(form, data, button) {

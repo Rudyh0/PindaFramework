@@ -138,6 +138,7 @@ public final class PanelModule extends PindaModule {
         new BossBarApi(this).register(created);
         new PerformanceApi(this).register(created);
         new BackpackApi(this).register(created);
+        new ItemLimitsApi(this).register(created);
         new WorldApi(this).register(created);
         String bind = bind();
         int port = port();

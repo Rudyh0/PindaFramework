@@ -8,6 +8,7 @@ import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.module.PindaModule;
 import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.economy.EconomyService;
+import nl.pinda.framework.modules.itemlimits.ItemLimitModule;
 import nl.pinda.framework.modules.moderation.ModerationModule;
 import nl.pinda.framework.modules.ranks.Rank;
 import nl.pinda.framework.modules.ranks.RankModule;
@@ -43,6 +44,17 @@ abstract class PanelApi {
     }
 
     // ============================================================ modules
+
+    /**
+     * Een item is via het paneel weggehaald: voor de item-limiet bestaat het niet meer, dus de
+     * eigenaar mag er weer een. Aanroepen op de hoofdthread.
+     */
+    protected void removedItem(org.bukkit.inventory.ItemStack item, String actor) {
+        ItemLimitModule limits = enabled(ItemLimitModule.class);
+        if (limits != null && item != null) {
+            limits.destroyed(item, "weggehaald via het paneel door " + actor);
+        }
+    }
 
     protected <T extends PindaModule> T enabled(Class<T> type) {
         T found = plugin.modules().get(type);

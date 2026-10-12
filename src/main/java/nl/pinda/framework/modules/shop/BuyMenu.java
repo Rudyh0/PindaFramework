@@ -126,6 +126,10 @@ public final class BuyMenu extends Menu {
             case SOLD_OUT -> fail("shop.buy.sold-out");
             case OWN_SHOP -> fail("shop.own-shop");
             case NO_SPACE -> fail("shop.inventory-full");
+            case LIMIT -> {
+                service.explainLimit(viewer, shop.listing(slot));
+                plugin.theme().play(viewer, "error");
+            }
             case NO_MONEY -> fail("economy.not-enough",
                     Text.p("amount", service.economy().format(service.economy().spendable(service.economy().account(viewer)))));
         }

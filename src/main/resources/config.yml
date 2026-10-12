@@ -29,6 +29,7 @@ modules:
   shop: true
   locks: true
   backpack: true
+  itemlimits: true
   moderation: true
   skills: true
   sleep: true

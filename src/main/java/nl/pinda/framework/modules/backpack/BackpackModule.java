@@ -21,6 +21,7 @@ import nl.pinda.framework.module.PindaModule;
 import nl.pinda.framework.modules.economy.Account;
 import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.economy.EconomyService;
+import nl.pinda.framework.modules.itemlimits.ItemLimitModule;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -786,8 +787,31 @@ public final class BackpackModule extends PindaModule implements Listener {
             for (HumanEntity viewer : new ArrayList<>(bag.inventory.getViewers())) {
                 viewer.closeInventory();
             }
+        }
+        // Beperkte items die erin zaten, bestaan niet meer: de eigenaren mogen er weer een.
+        ItemLimitModule limits = plugin.modules().get(ItemLimitModule.class);
+        if (limits != null && limits.isEnabled()) {
+            limits.destroyed(bag.inventory != null ? bag.inventory.getContents() : bag.items, "rugtas op de grond verdwenen");
+        }
+        if (bag.inventory != null) {
             bag.inventory.clear();
         }
+    }
+
+    /**
+     * Voor de item-limiet: waar liggen de items van dit inventory? "backpack:&lt;eigenaar&gt;" (een
+     * open rugtas), "dropped-backpack:&lt;wereld:x:y:z&gt;" (op de grond), of null (geen rugtas).
+     */
+    public static String describe(InventoryHolder holder) {
+        if (holder instanceof BackpackHolder open) {
+            return "backpack:" + open.ownerName;
+        }
+        if (holder instanceof DroppedBackpack bag) {
+            World world = bag.location.getWorld();
+            return "dropped-backpack:" + (world == null ? "?" : world.getName()) + ":" + bag.location.getBlockX() + ":"
+                    + bag.location.getBlockY() + ":" + bag.location.getBlockZ();
+        }
+        return null;
     }
 
     /** Bij een herstart: de spullen en het geld op de grond leggen in plaats van ze kwijt te raken. */

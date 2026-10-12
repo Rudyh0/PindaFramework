@@ -75,7 +75,14 @@ final class BackpackApi extends PanelApi {
         }
         requireLower(request.user(), uuid, "Je kunt dit alleen doen bij spelers met een lagere rang dan jij.");
         int target = slot;
+        String actor = request.user().name();
         ItemStack removed = syncAwait(() -> backpacks.removeItem(uuid, target));
+        if (removed != null) {
+            sync(() -> {
+                removedItem(removed, actor);
+                return null;
+            });
+        }
         if (removed == null) {
             throw ApiException.badRequest("Dat vak is al leeg.");
         }

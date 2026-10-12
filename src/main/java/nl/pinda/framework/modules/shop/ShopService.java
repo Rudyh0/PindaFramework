@@ -18,6 +18,7 @@ import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.lang.Text;
 import nl.pinda.framework.modules.economy.EconomyService;
 import nl.pinda.framework.modules.economy.Money;
+import nl.pinda.framework.modules.itemlimits.ItemLimitModule;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -51,7 +52,27 @@ public final class ShopService {
     private final Map<Shop.SignLocation, UUID> supports = new HashMap<>();
 
     /** Uitkomst van een aankoop. */
-    public enum PurchaseResult { OK, CLOSED, SOLD_OUT, OWN_SHOP, NO_SPACE, NO_MONEY }
+    public enum PurchaseResult { OK, CLOSED, SOLD_OUT, OWN_SHOP, NO_SPACE, NO_MONEY, LIMIT }
+
+    /** De item-limiet, als die aan staat. */
+    private ItemLimitModule limits() {
+        ItemLimitModule limits = plugin.modules().get(ItemLimitModule.class);
+        return limits != null && limits.isEnabled() ? limits : null;
+    }
+
+    /** Hoeveel van dit item iemand nog mag hebben (item-limiet). */
+    private int limitRoom(Player player, ItemStack template) {
+        ItemLimitModule limits = limits();
+        return limits == null ? Integer.MAX_VALUE : limits.room(player, template);
+    }
+
+    /** Vertelt de koper waarom het niet kan (item-limiet). */
+    public void explainLimit(Player buyer, Listing listing) {
+        ItemLimitModule limits = limits();
+        if (limits != null && listing != null) {
+            limits.explainLimit(buyer, listing.template());
+        }
+    }
 
     public ShopService(PindaFramework plugin, ShopModule module, EconomyService economy) {
         this.plugin = plugin;
@@ -248,6 +269,10 @@ public final class ShopService {
             ensureFee(shop);
         }
         updateSign(shop);
+        ItemLimitModule limits = limits();
+        if (limits != null) {
+            limits.located(items, "shop");
+        }
         return true;
     }
 
@@ -273,6 +298,10 @@ public final class ShopService {
         }
         listing.stock(listing.stock() - amount);
         giveItems(owner, listing.template(), amount);
+        ItemLimitModule limits = limits();
+        if (limits != null) {
+            limits.received(owner, listing.template(), amount);
+        }
         if (listing.stock() == 0) {
             shop.removeListing(listing.slot());
             deleteListing(shop.owner(), listing.slot());
@@ -305,7 +334,7 @@ public final class ShopService {
 
     /** Hoeveel deze koper maximaal kan kopen: voorraad, ruimte in de inventory en geld. */
     public int maxBuyable(Player buyer, Listing listing) {
-        int amount = Math.min(listing.stock(), freeSpace(buyer, listing.template()));
+        int amount = Math.min(Math.min(listing.stock(), freeSpace(buyer, listing.template())), limitRoom(buyer, listing.template()));
         if (listing.price() > 0) {
             long affordable = economy.spendable(economy.account(buyer)) / listing.price();
             amount = (int) Math.min(amount, affordable);
@@ -333,6 +362,12 @@ public final class ShopService {
         if (amount <= 0) {
             return PurchaseResult.SOLD_OUT;
         }
+        // De item-limiet: niet meer kopen dan je mag hebben (vóór er geld wordt afgeschreven).
+        int room = limitRoom(buyer, listing.template());
+        if (room <= 0) {
+            return PurchaseResult.LIMIT;
+        }
+        amount = Math.min(amount, room);
         long total;
         try {
             total = Math.multiplyExact(listing.price(), amount);
@@ -347,6 +382,10 @@ public final class ShopService {
         listing.stock(listing.stock() - amount);
         saveListing(shop.owner(), listing);
         giveItems(buyer, listing.template(), amount);
+        ItemLimitModule limits = limits();
+        if (limits != null) {
+            limits.received(buyer, listing.template(), amount);
+        }
 
         long tax = Money.percentage(total, taxPercent());
         long net = total - tax;

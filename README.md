@@ -15,7 +15,7 @@ Er zijn twee manieren:
 
 ## Wat zit erin
 
-Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, een rugtas, bomen in één keer omhakken, toplijsten, geanimeerde bossbars, automatische aankondigingen, antilag, wereldbeheer (explosies zonder gaten, phantoms, spawnen, ender dragon), een eigen MOTD, Discord-webhooks, PlaceholderAPI-placeholders en een webpaneel waarin je alles kunt instellen.
+Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, een rugtas, een item-limiet (wie mag hoeveel totems, elytra, ... hebben), bomen in één keer omhakken, toplijsten, geanimeerde bossbars, automatische aankondigingen, antilag, wereldbeheer (explosies zonder gaten, phantoms, spawnen, ender dragon), een eigen MOTD, Discord-webhooks, PlaceholderAPI-placeholders en een webpaneel waarin je alles kunt instellen.
 
 ## To-do
 
@@ -88,6 +88,19 @@ Een extra inventory van 3 rijen, te openen met **`/backpack`**, `/bp`, `/rugtas`
 - Staat keepInventory aan, dan houd je je rugtas en je geld.
 - Staff bekijkt rugtassen met `/backpack <speler>` (ook offline) en in het paneel op het spelersprofiel, waar je ook items kunt weghalen en ziet waar een gevallen rugtas ligt.
 - Instellingen in het paneel onder **Instellingen › Rugtas** (grootte, spelmodi, werelden, tijden).
+
+## Item-limiet
+
+Beperk hoeveel één speler van zeldzame items mag hebben (en eventueel hoeveel er op de hele server zijn), zodat ze niet massaal in omloop komen en niet voor woekerprijzen in de shops staan. Instellen in het paneel bij **Item-limiet**; als voorbeeld staan er al (uitgezet) totems, betoverde gouden appels, elytra, de mace en Mending-boeken in.
+
+- **Elk exemplaar krijgt een nummer en een eigenaar.** Ligt het in een kist, de enderkist, een shulkerdoos of de rugtas, dan telt het nog steeds mee.
+- **Overnemen:** pakt iemand een beperkt item op, haalt hij het uit een kist, koopt hij het in een shop, neemt hij het van een harnasstandaard of craft/ruilt hij het, dan wordt hij de eigenaar. Zit hij al aan het maximum, dan gaat dat niet (met een melding). Ligt er een stapel, dan pakt hij alleen wat nog mag.
+- **Weer een mogen:** gaat een item op (een totem die afgaat, opgegeten, kapot, verbrand, ontploft, in de void, te lang op de grond, opgeruimd door antilag, verwerkt in een aambeeld of crafting table, als blok geplaatst, weggehaald via het paneel), dan telt het niet meer mee en krijgt de eigenaar een melding.
+- **Beperkte items stapelen niet** (elk heeft een eigen nummer) en krijgen de regel "Beperkt item" in de beschrijving.
+- **Te veel** (van vóór de limiet, of via `/give` of een andere plugin): mag hij houden maar er pas weer een bij krijgen als hij onder het maximum zit, of het wordt weggehaald (instelbaar).
+- **Dupes:** hetzelfde nummer twee keer in één inventory komt in de console, en het tweede exemplaar telt gewoon mee.
+- Spelers zien met **`/limieten`** hoeveel ze hebben. Staff ziet met `/limieten <speler>` ook de nummers en waar ze liggen; in het paneel staat per item wie het heeft en waar, wat er onlangs verdween, en op elk spelersprofiel hoeveel hij heeft. Telt een item mee dat echt weg is (bijv. na `/clear`), dan geef je het daar vrij.
+- In creative en met `pinda.itemlimits.bypass` geldt geen limiet (de items worden wel bijgehouden).
 
 ## Bomen kappen
 
@@ -268,6 +281,7 @@ Het idee: PindaFramework installeren en daarna alles in de browser inrichten.
 - **Rangen:** rangen maken en bewerken, met een lijst van alle bekende permissies om uit te kiezen.
 - **Toplijsten, Bossbars, Aankondigingen en Prestaties:** alle toplijsten, de bossbars (met bewegend voorbeeld), de automatische aankondigingen en de antilag.
 - **Wereld:** explosies, phantoms, hoeveel mobs er spawnen en de ender dragon (status, terug laten komen).
+- **Item-limiet:** welke items beperkt zijn en hoeveel per speler en op de server, wie ze heeft en waar ze liggen, en items vrijgeven.
 
 ## Webpaneel
 
@@ -301,6 +315,7 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | Rangen bewerken | rangen maken, kleuren, prefix, gewicht, erven en permissies, chatopmaak, standaardrang | `pinda.panel.ranks.edit` | Admin |
 | Speleracties | spelmodus, healen, eten, vliegen, naar spawn, teleporteren, items geven, bericht sturen, inventory en enderkist bekijken en items weghalen, homes verwijderen | `pinda.panel.players.manage` | Admin |
 | Rugtas | de rugtas van een speler bekijken (ook offline) en zien waar een gevallen rugtas ligt; items weghalen met `pinda.panel.players.manage` | `pinda.panel.players` | Mod |
+| Item-limiet | wie welke beperkte items heeft en waar ze liggen; regels en instellingen met `pinda.panel.config`, items vrijgeven met `pinda.panel.players.manage` | `pinda.panel.players` | Mod |
 | 2FA resetten | de authenticator van iemand anders ontkoppelen | `pinda.panel.security` | Admin |
 | Shop sluiten | een shop dichtzetten | `pinda.panel.shops.manage` | Admin |
 | Server | tijd, weer, mededeling, whitelist, opslaan, `/pinda reload` | `pinda.panel.server` | Admin |
@@ -378,6 +393,8 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | `/timber` | `/bomenkappen`, `/treefeller` | `pinda.timber.use` | iedereen |
 | `/backpack` | `/bp`, `/rugtas`, `/rugzak`, `/rt`, `/rz` | `pinda.backpack.use` | iedereen |
 | `/backpack <speler>` | | `pinda.backpack.others` (+ `.edit` om aan te passen) | Mod (bekijken) / op |
+| `/limieten` | `/itemlimits`, `/itemlimiet`, `/limits` | `pinda.itemlimits.use` | iedereen |
+| `/limieten <speler>` | | `pinda.itemlimits.others` | op |
 | `/lag`, `/lag chunks` | `/antilag` | `pinda.antilag.use` | Mod |
 | `/lag clear [seconden\|nu]`, `/lag tp <wereld> <x> <z>` | | `pinda.antilag.admin` | op |
 | `/dragon [respawn]` | `/draak`, `/enderdragon` | `pinda.world.dragon` | op |
@@ -404,6 +421,7 @@ Extra permissies:
 | `pinda.shop.admin` | Shopborden van anderen afbreken | op |
 | `pinda.lock.bypass` | Bij alle afgesloten kisten en deuren kunnen | op |
 | `pinda.sleep.exempt` | Telt niet mee bij het aantal spelers dat moet slapen | niemand |
+| `pinda.itemlimits.bypass` | Geen item-limiet (de items worden wel bijgehouden) | niemand |
 | `pinda.antilag.notify` | Een melding krijgen als de server laggt | Mod |
 | `pinda.timber.bypass-cooldown` | Geen wachttijd tussen twee bomen | op |
 
@@ -445,6 +463,7 @@ plugins/PindaFramework/
     ├── sleep.yml       percentage slapers, doorspoelen, meldingen
     ├── timber.yml      bomen kappen: wanneer, bijl, terugplanten, drops, animatie, boomsoorten
     ├── backpack.yml    rugtas: grootte, spelmodi, gouden staaf, gevallen rugtas bij doodgaan
+    ├── itemlimits.yml  item-limiet: welke items, hoeveel per speler en op de server, wat bij te veel
     ├── motd.yml        de MOTD in de serverlijst (meerdere varianten)
     ├── leaderboards.yml welke toplijsten, hoe vaak bijwerken, verborgen spelers
     ├── bossbar.yml     bossbars: teksten, kleuren, balk, effecten, werelden en de wisselingen

@@ -328,6 +328,17 @@ permissions:
     description: Telt niet mee bij het aantal spelers dat moet slapen
     default: false
 
+  # Item-limiet
+  pinda.itemlimits.use:
+    description: /limieten, zien hoeveel beperkte items je hebt
+    default: true
+  pinda.itemlimits.others:
+    description: /limieten <speler>, de beperkte items van iemand anders en waar ze liggen
+    default: op
+  pinda.itemlimits.bypass:
+    description: Geen limiet op beperkte items (ze worden wel bijgehouden)
+    default: false
+
   # Webpaneel (/panel)
   pinda.panel.*:
     description: Alles in het webpaneel

@@ -1,0 +1,73 @@
+# ┌──────────────────────────────────────────────┐
+# │         PindaFramework - item-limiet         │
+# └──────────────────────────────────────────────┘
+# Beperk hoeveel één speler van bepaalde items mag hebben, en eventueel hoeveel er op de hele
+# server mogen zijn. Zo komen zeldzame items niet massaal in omloop en blijven de prijzen in de
+# shops normaal. Alles is ook in te stellen in het webpaneel (Item-limiet).
+#
+# Hoe het werkt:
+#  - Elk beperkt item krijgt een eigen nummer en een eigenaar: de speler die het heeft. Ligt het
+#    in een kist, de enderkist, een shulkerdoos of de rugtas, dan telt het nog steeds mee.
+#  - Neemt iemand anders het over (oppakken, uit een kist halen, kopen in een shop), dan wordt
+#    die de eigenaar. Zit hij al aan het maximum, dan gaat dat niet.
+#  - Gaat een item op (een totem die afgaat, opgegeten, kapot, verbrand, in de void, opgeruimd,
+#    geplaatst als blok), dan telt het niet meer mee en mag je er weer een.
+#  - Beperkte items stapelen niet: elk exemplaar heeft een eigen nummer.
+#  - Spelers zien met /limieten hoeveel ze hebben. Staff ziet met /limieten <speler> ook waar
+#    de items liggen.
+#  - Spelers met pinda.itemlimits.bypass (en iedereen in creative) hebben geen limiet; hun
+#    items worden wel bijgehouden.
+
+# Wat er gebeurt als iemand meer heeft dan mag (bijvoorbeeld van vóór de limiet, of via /give):
+#   keep   = mag hij houden, maar hij krijgt er pas weer een bij als hij onder het maximum zit
+#   remove = wat boven het maximum zit, wordt weggehaald
+over-limit: keep
+
+# Een regel "Beperkt item" in de beschrijving van beperkte items.
+mark-items: true
+
+# Een melding als je er weer een mag hebben (bijvoorbeeld als je totem afgaat).
+notify-freed: true
+
+# De beperkte items. Zet 'enabled' op true om een limiet te laten gelden.
+items:
+  totem:
+    # Het item (de Minecraft-naam)
+    material: totem_of_undying
+    # Alleen items met deze betovering (leeg = elk item van dit soort). Bijv. mending.
+    enchantment: ""
+    # De naam in meldingen en het paneel (leeg = de Minecraft-naam, in de taal van de speler)
+    name: ""
+    # Hoeveel één speler er mag hebben (0 = geen maximum per speler)
+    per-player: 2
+    # Hoeveel er op de hele server mogen zijn (0 = geen maximum)
+    server-max: 0
+    enabled: false
+  god-apple:
+    material: enchanted_golden_apple
+    enchantment: ""
+    name: ""
+    per-player: 3
+    server-max: 0
+    enabled: false
+  elytra:
+    material: elytra
+    enchantment: ""
+    name: ""
+    per-player: 1
+    server-max: 0
+    enabled: false
+  mace:
+    material: mace
+    enchantment: ""
+    name: ""
+    per-player: 1
+    server-max: 0
+    enabled: false
+  mending-book:
+    material: enchanted_book
+    enchantment: mending
+    name: ""
+    per-player: 2
+    server-max: 0
+    enabled: false

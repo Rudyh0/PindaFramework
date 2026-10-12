@@ -1008,6 +1008,36 @@ backpack:
   owner-only: "[actionbar]<error>This backpack belongs only to <player> for <time>."
   looted-money: "<prefix><success>You took <amount> from the backpack of <player>."
 
+itemlimits:
+  # The line in the description of a limited item
+  mark: "<gray>Limited item"
+  blocked: "[actionbar]<error>You already have <highlight><count>/<max></highlight> <item>. Lose one first."
+  server-full: "[actionbar]<error>There are already <max> <item> on the server: no more can be added right now."
+  partial: "[actionbar]<warning>You could only take <amount>: you have reached the maximum for <item>."
+  craft-one: "[actionbar]<warning><item> is a limited item: take them one by one (without shift)."
+  freed: "<prefix><text>Your <item> is gone. You may have another one <muted>(<count>/<max>)."
+  removed: "<prefix><error>You had too many <item> (max <max>): <amount> removed."
+  list:
+    header: "<primary><bold>Limited items</bold></primary> <muted>· <text><player>"
+    line: "<muted>• <text><item><muted>: <highlight><count></highlight><muted>/<max>"
+    line-full: "<muted>• <text><item><muted>: <error><count>/<max></error> <muted>(full)"
+    line-nomax: "<muted>• <text><item><muted>: <highlight><count></highlight>"
+    item: "<muted>    #<serial> <dark_gray>· <text><where>"
+    none: "<prefix><muted>There are no limited items (yet)."
+  # Where an item is (/limits <player> and the web panel)
+  where:
+    player: "in the inventory"
+    enderchest: "in the ender chest"
+    shop: "in the shop"
+    backpack: "in the backpack of <player>"
+    dropped-backpack: "in a dropped backpack at <x>, <y>, <z>"
+    container: "in a <type> at <x>, <y>, <z>"
+    ground: "on the ground at <x>, <y>, <z>"
+    frame: "in an item frame at <x>, <y>, <z>"
+    stand: "on an armor stand at <x>, <y>, <z>"
+    entity: "with a <type> at <x>, <y>, <z>"
+    unknown: "unknown"
+
 world:
   # Time units: days, hours, minutes
   units: "d,h,m"

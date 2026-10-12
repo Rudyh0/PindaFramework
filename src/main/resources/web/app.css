@@ -949,3 +949,35 @@ details.manual .chips { margin-top: 8px; }
   .mc-bossbar-title { font-size: 12px; }
   .bb-rot-head select { flex: 1 1 100%; }
 }
+
+/* ----------------------------------------------------------------- item-limiet */
+
+.il-table td b { font-weight: 650; }
+.il-meter { margin-top: 6px; height: 4px; min-width: 60px; }
+.il-help { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--text-2); font-size: 14px; line-height: 1.5; }
+.il-select { width: auto; min-width: 200px; flex: none; }
+.il-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.il-items li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13.5px; }
+.il-items li .mono { color: var(--primary); }
+.il-items li .btn { margin-left: auto; }
+.il-owners td { vertical-align: top; }
+.il-owners tr.il-over td:first-child { box-shadow: inset 3px 0 0 var(--error); }
+.il-profile { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.il-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.il-row a { color: var(--text); font-weight: 600; }
+.il-profile .il-items { margin-top: 6px; }
+.sm-badge { font-size: 11px; padding: 1px 7px; }
+.il-who { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 720px) {
+  .il-items li .btn { margin-left: 0; }
+  .il-select { min-width: 0; width: 100%; }
+  /* Per speler een blok: naam en aantal boven, de nummers eronder. */
+  .il-owners thead { display: none; }
+  .il-owners, .il-owners tbody, .il-owners tr, .il-owners td { display: block; width: 100%; }
+  .il-owners tr { padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .il-owners tr:last-child { border-bottom: 0; }
+  .il-owners td, .il-owners td.num { border: 0; padding: 4px 16px; text-align: left; }
+  .il-owners tr.il-over td:first-child { box-shadow: none; }
+  .il-owners tr.il-over { box-shadow: inset 3px 0 0 var(--error); }
+}
+.il-table tr.off td { opacity: .55; }

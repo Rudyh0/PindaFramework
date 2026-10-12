@@ -15,6 +15,7 @@ import nl.pinda.framework.modules.afk.AfkModule;
 import nl.pinda.framework.modules.economy.Account;
 import nl.pinda.framework.modules.economy.EconomyService;
 import nl.pinda.framework.modules.economy.Money;
+import nl.pinda.framework.modules.itemlimits.ItemLimitModule;
 import nl.pinda.framework.modules.moderation.Durations;
 import nl.pinda.framework.modules.moderation.ModerationModule;
 import nl.pinda.framework.modules.moderation.ModerationService;
@@ -187,6 +188,11 @@ final class PlayersApi extends PanelApi {
             if (skills != null) {
                 profile.put("skills", skills);
             }
+        }
+
+        ItemLimitModule limits = enabled(ItemLimitModule.class);
+        if (limits != null) {
+            profile.put("itemLimits", sync(() -> ItemLimitsApi.profile(this, limits, uuid)));
         }
 
         ShopModule shops = shops();

@@ -6,6 +6,7 @@ import java.util.Map;
 import nl.pinda.framework.modules.backpack.BackpackModule;
 import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.homes.HomesModule;
+import nl.pinda.framework.modules.itemlimits.ItemLimitModule;
 import nl.pinda.framework.modules.leaderboards.LeaderboardsModule;
 import nl.pinda.framework.modules.locks.LockModule;
 import nl.pinda.framework.modules.moderation.ModerationModule;
@@ -33,6 +34,7 @@ public final class Schemas {
         all.put("shop", ShopModule.MIGRATIONS);
         all.put("locks", LockModule.MIGRATIONS);
         all.put("backpack", BackpackModule.MIGRATIONS);
+        all.put("itemlimits", ItemLimitModule.MIGRATIONS);
         all.put("homes", HomesModule.MIGRATIONS);
         all.put("moderation", ModerationModule.MIGRATIONS);
         all.put("skills", SkillsModule.MIGRATIONS);

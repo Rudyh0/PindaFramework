@@ -182,6 +182,7 @@ final class PlayerActionsApi extends PanelApi {
         requireLower(request.user(), uuid, "Je kunt dit alleen doen bij spelers met een lagere rang dan jij.");
         boolean ender = request.body().has("enderchest") && request.body().get("enderchest").getAsBoolean();
         int target = slot;
+        String actor = request.user().name();
         String removed = sync(() -> {
             Player player = online(uuid);
             Inventory inventory = ender ? player.getEnderChest() : player.getInventory();
@@ -193,6 +194,7 @@ final class PlayerActionsApi extends PanelApi {
                 throw ApiException.badRequest("Dat vak is al leeg.");
             }
             inventory.setItem(target, null);
+            removedItem(item, actor);
             return item.getAmount() + "x " + item.getType().name().toLowerCase(Locale.ROOT) + " van " + player.getName();
         });
         module.log().add(request, "item verwijderd", null, removed);
@@ -234,12 +236,17 @@ final class PlayerActionsApi extends PanelApi {
     // ============================================================ items
 
     private Object materials() {
+        return map("materials", materialNames());
+    }
+
+    /** Alle items (Minecraft-namen), voor een keuzelijst. */
+    static List<String> materialNames() {
         List<String> names = new ArrayList<>();
         for (Material material : Material.values()) {
             if (material.isItem() && !material.isAir() && !material.name().startsWith("LEGACY_")) {
                 names.add(material.name().toLowerCase(Locale.ROOT));
             }
         }
-        return map("materials", names);
+        return names;
     }
 }
