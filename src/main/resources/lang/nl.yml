@@ -95,11 +95,11 @@ settings:
         - "<text>Laat boven je hotbar zien"
         - "<text>hoeveel XP je verdient."
 
-    scoreboard:
-      name: "<primary>Scoreboard"
+    bossbar:
+      name: "<primary>Bossbars"
       description:
-        - "<text>De toplijsten rechts"
-        - "<text>in beeld."
+        - "<text>De balken bovenin beeld,"
+        - "<text>met de toplijsten en meer."
 
     timber:
       name: "<primary>Bomen omhakken"
@@ -920,15 +920,22 @@ top:
         - "<text>elke skill apart."
     close: "<error>Sluiten"
 
-scoreboard:
-  title: "<gradient:#FFC857:#E9724C><bold><board>"
-  entry: "<muted><position>. <text><player>"
-  entry-self: "<primary><position>. <highlight><bold><player>"
-  value: "<primary><value>"
-  empty: "<muted>Nog niemand"
-  own: "<text>Jij <muted>#<position>"
-  own-none: "<text>Jij <muted>-"
-  footer: "<muted>Alle lijsten: <primary>/top"
+bossbar:
+  # De top van een toplijst in een bossbar (<top:money:3>)
+  top-entry: "<muted><position>.</muted> <highlight><player></highlight> <primary><value></primary>"
+  top-separator: "<muted>  ·  </muted>"
+  top-empty: "<muted>nog niemand"
+  toggled-on: "<prefix><text>De bossbars staan nu <success>aan</success>."
+  toggled-off: "<prefix><text>De bossbars staan nu <error>uit</error>. Weer aanzetten: <primary>/bossbars toggle</primary> of /instellingen."
+  usage: "<prefix><text>Gebruik: <primary>/bossbars toggle</primary> <muted>(je bossbars aan of uit)"
+  usage-admin: "<prefix><text>Gebruik: <primary>/bossbars toggle</primary>, <primary>/bossbars show <naam> [speler|*] [seconden]</primary>, <primary>/bossbars hide <naam|*> [speler|*]</primary> of <primary>/bossbars list</primary>"
+  unknown: "<prefix><error>Er is geen bossbar <highlight><bar></highlight>. <text>Kies uit: <muted><bars>"
+  shown: "<prefix><text>Bossbar <primary><bar></primary> getoond aan <highlight><count></highlight> speler(s)."
+  hidden: "<prefix><text>Bossbar <primary><bar></primary> weggehaald bij <highlight><count></highlight> speler(s)."
+  list-header: "<prefix><text>Bossbars <muted>(<count>)</muted>:"
+  list-bar: "<muted> • <primary><bar></primary> <muted><color>, <frames> tekst(en), <seconds> s"
+  list-rotation: "<muted> ↻ <text><name></text>: <bars>"
+  list-rotation-off: "<muted> ↻ <name> (uit): <bars>"
 
 broadcasts:
   format: "<newline><gradient:#FFC857:#E9724C><bold>✦ <server></bold></gradient> <muted>»</muted> <text><message><newline>"

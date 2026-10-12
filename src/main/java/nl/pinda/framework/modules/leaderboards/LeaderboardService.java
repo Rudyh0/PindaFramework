@@ -30,7 +30,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 /**
- * Rekent de toplijsten uit en bewaart ze in het geheugen. Het scoreboard, /top, de placeholders
+ * Rekent de toplijsten uit en bewaart ze in het geheugen. De bossbars, /top, de placeholders
  * en het paneel lezen alleen uit dat geheugen, dus dat is altijd snel.
  */
 public final class LeaderboardService {
@@ -285,7 +285,7 @@ public final class LeaderboardService {
         };
     }
 
-    /** Een korte waarde voor het scoreboard, bijv. "12,3K" of "3d 4u". */
+    /** Een korte waarde (bossbar, placeholders), bijv. "12,3K" of "3d 4u". */
     public String compact(Board board, long value, String code) {
         return switch (board) {
             case MONEY -> compactNumber(value / 100.0, code);

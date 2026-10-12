@@ -38,8 +38,11 @@ final class SettingsApi extends PanelApi {
     private Object files(PanelRequest request) throws Exception {
         List<Map<String, Object>> files = new ArrayList<>();
         for (String path : editor.settingsFiles()) {
-            if (path.equals("modules/ranks.yml") || (path.equals("modules/panel.yml") && !request.user().operator())) {
-                continue; // Rangen hebben een eigen pagina; het paneel zelf alleen voor operators
+            if (path.equals("modules/ranks.yml") || path.equals("modules/bossbar.yml") || (path.equals("modules/panel.yml") && !request.user().operator())) {
+                continue; // Rangen en bossbars hebben een eigen pagina; het paneel zelf alleen voor operators
+            }
+            if (path.startsWith("modules/") && plugin.getResource(path) == null) {
+                continue; // Een oud bestand van een module die er niet meer is (bijv. scoreboard.yml)
             }
             PindaModule owner = editor.moduleFor(path);
             files.add(map("path", path,
@@ -51,11 +54,15 @@ final class SettingsApi extends PanelApi {
     }
 
     /**
-     * ranks.yml heeft een eigen pagina met controles (Rangen); panel.yml (o.a. 2FA) mag alleen een operator aanpassen.
+     * ranks.yml en bossbar.yml hebben een eigen pagina met controles (Rangen, Bossbars); panel.yml
+     * (o.a. 2FA) mag alleen een operator aanpassen.
      */
     private static void guard(String path, PanelUser user) throws ApiException {
         if ("modules/ranks.yml".equals(path)) {
             throw ApiException.forbidden("Rangen pas je aan op de pagina Rangen.");
+        }
+        if ("modules/bossbar.yml".equals(path)) {
+            throw ApiException.forbidden("Bossbars pas je aan op de pagina Bossbars.");
         }
         if ("modules/panel.yml".equals(path) && !user.operator()) {
             throw ApiException.forbidden("De instellingen van het webpaneel kan alleen een operator aanpassen.");

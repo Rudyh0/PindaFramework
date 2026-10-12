@@ -83,7 +83,11 @@
     mountain: '<path d="M3 20 9.5 8l4 7 2.5-4 5 9z"/><path d="m7.6 11.5 1.9 1.5 1.6-1.4"/>',
     bomb: '<circle cx="10.5" cy="13.5" r="7.5"/><path d="m15.8 8.2 2.2-2.2"/><path d="M18 3v1.5M21 6h-1.5M20.1 3.9l-1 1"/><path d="M7.5 12a3 3 0 0 1 3-3"/>',
     egg: '<path d="M12 2.5c-3.6 0-7 6.2-7 11.3a7 7 0 0 0 14 0c0-5.1-3.4-11.3-7-11.3z"/><path d="m9 13 1.5 1.5L12 13l1.5 1.5L15 13"/>',
-    paw: '<circle cx="5.5" cy="11" r="2"/><circle cx="9.5" cy="6.5" r="2"/><circle cx="14.5" cy="6.5" r="2"/><circle cx="18.5" cy="11" r="2"/><path d="M8 18.2c0-2.6 1.8-5.2 4-5.2s4 2.6 4 5.2a2.3 2.3 0 0 1-2.3 2.3h-3.4A2.3 2.3 0 0 1 8 18.2z"/>'
+    paw: '<circle cx="5.5" cy="11" r="2"/><circle cx="9.5" cy="6.5" r="2"/><circle cx="14.5" cy="6.5" r="2"/><circle cx="18.5" cy="11" r="2"/><path d="M8 18.2c0-2.6 1.8-5.2 4-5.2s4 2.6 4 5.2a2.3 2.3 0 0 1-2.3 2.3h-3.4A2.3 2.3 0 0 1 8 18.2z"/>',
+    bossbar: '<rect x="3" y="11" width="18" height="5" rx="1.5"/><path d="M3 13.5h11"/><path d="M7 7.5h10"/>',
+    copy: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    trash: '<path d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13M9 7V4h6v3"/>'
   };
   const icon = (name, cls = '') => raw(`<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`);
 
@@ -358,6 +362,7 @@
     { path: 'prestaties', title: 'Prestaties', icon: 'gauge', perm: P.server, feature: 'antilag', page: pagePerformance, group: 'Beheer' },
     { path: 'wereld', title: 'Wereld', icon: 'mountain', perm: P.server, feature: 'world', page: pageWorld, group: 'Beheer' },
     { path: 'aankondigingen', title: 'Aankondigingen', icon: 'megaphone', perm: P.broadcasts, feature: 'broadcasts', page: pageBroadcasts, group: 'Beheer' },
+    { path: 'bossbars', title: 'Bossbars', icon: 'bossbar', perm: P.config, feature: 'bossbar', page: pageBossbars, group: 'Beheer' },
     { path: 'instellingen', title: 'Instellingen', icon: 'cog', perm: P.config, page: pageSettings, group: 'Beheer' },
     { path: 'teksten', title: 'Teksten', icon: 'type', perm: P.texts, page: pageTexts, group: 'Beheer' },
     { path: 'rangen', title: 'Rangen', icon: 'crown', perm: P.ranksEdit, feature: 'ranks', page: pageRanks, group: 'Beheer' },
@@ -670,7 +675,7 @@
     'modules/economy.yml': 'Economie', 'modules/shop.yml': 'Shops', 'modules/locks.yml': 'Sloten',
     'modules/moderation.yml': 'Moderatie', 'modules/skills.yml': 'Skills', 'modules/sleep.yml': 'Slapen',
     'modules/motd.yml': 'MOTD', 'modules/discord.yml': 'Discord', 'modules/panel.yml': 'Webpaneel',
-    'modules/leaderboards.yml': 'Toplijsten', 'modules/scoreboard.yml': 'Scoreboard', 'modules/broadcasts.yml': 'Aankondigingen',
+    'modules/leaderboards.yml': 'Toplijsten', 'modules/bossbar.yml': 'Bossbars', 'modules/broadcasts.yml': 'Aankondigingen',
     'modules/antilag.yml': 'Antilag', 'modules/timber.yml': 'Bomen kappen', 'modules/backpack.yml': 'Rugtas', 'modules/world.yml': 'Wereld'
   };
   const fileName = path => FILE_NAMES[path] || path.replace(/^modules\//, '').replace(/\.yml$/, '');
@@ -819,7 +824,7 @@
     tpa: 'TPA', spawn: 'Spawn', back: 'Terug', msg: 'Privéberichten', gamemode: 'Spelmodus', afk: 'AFK', utility: 'Handige commando’s',
     vanish: 'Vanish', invsee: 'Invsee', economy: 'Economie', shop: 'Shops', lock: 'Sloten', partner: 'Partners', rank: 'Rangen',
     moderation: 'Moderatie', skills: 'Skills', sleep: 'Slapen', discord: 'Discord', panel: 'Webpaneel', admin: 'Beheer',
-    top: 'Toplijsten', scoreboard: 'Scoreboard', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen', backpack: 'Rugtas', world: 'Wereld'
+    top: 'Toplijsten', bossbar: 'Bossbars', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen', backpack: 'Rugtas', world: 'Wereld'
   };
 
   async function pageTexts(main, tab, alive) {
@@ -1840,7 +1845,7 @@
     show('total');
   }
 
-  // =============================================================== toplijsten en scoreboard
+  // =============================================================== toplijsten
 
   const BOARD_ICONS = { money: 'coin', skills: 'award', playtime: 'clock', kills: 'sword', mobkills: 'ghost', deaths: 'skull', trees: 'tree' };
 
@@ -1851,7 +1856,6 @@
   }
 
   function renderLeaderboards(main, data) {
-    const sb = data.scoreboard;
     const boards = data.boards.length ? html`<div class="grid three">${data.boards.map(b => html`<section class="card board-card">
         <div class="card-head"><h2>${icon(BOARD_ICONS[b.id] || 'trophy')}${b.name}</h2><span class="count">${num(b.total)} ${b.total === 1 ? 'speler' : 'spelers'}</span></div>
         ${b.description ? html`<p class="board-desc">${b.description}${b.id === 'money' ? ` In ${currency()}.` : ''}</p>` : ''}
@@ -1859,53 +1863,555 @@
           <td class="rank-pos ${e.position <= 3 ? `medal-${e.position}` : ''}">${e.position}</td><td>${who(e.name, null, null)}</td><td class="num nowrap"><b>${b.id === 'money' ? amount(e.text) : e.text}</b></td></tr>`)
           : emptyRow(3, 'Nog niemand op deze lijst.')}</tbody></table></div></section>`)}</div>`
       : html`<div class="empty-page">${icon('trophy')}<h2>Geen toplijsten</h2><p>Zet toplijsten aan bij Instellingen › Toplijsten.</p></div>`;
-    render(main, html`${pageHead('Toplijsten', `Spelers zien dit met /top en op het scoreboard. ${data.updated ? `Bijgewerkt ${ago(data.updated)}.` : 'Wordt nu berekend…'}`,
+    render(main, html`${pageHead('Toplijsten', `Spelers zien dit met /top en in de bossbars bovenin beeld. ${data.updated ? `Bijgewerkt ${ago(data.updated)}.` : 'Wordt nu berekend…'}`,
         html`<button class="btn" data-action="leaderboards-refresh">${icon('refresh')} Nu bijwerken</button>`)}
       ${boards}
-      ${sb && sb.enabled ? scoreboardCard(data) : html`<div class="alert info">Het scoreboard staat uit in config.yml (modules.scoreboard).</div>`}`);
-    if (sb && sb.enabled) {
-      $$('input[name=sb-board]', main).forEach(input => input.addEventListener('change', () => {
-        render($('#sb-preview', main), sidebarPreview(sb.previews[input.value]));
-      }));
+      ${data.bossbar ? html`<div class="alert info" style="margin-top:16px">${icon('bossbar')} <div>De toplijsten staan ook in de bossbars bovenin beeld (bijv. <span class="mono">&lt;top:money:3&gt;</span>).
+        ${data.canEditBossbar ? html` Instellen bij <a href="#/bossbars">Bossbars</a>.` : ''}</div></div>` : ''}`);
+  }
+
+  // =============================================================== bossbars
+
+  // De kleuren van de balk zoals in Minecraft (de lege helft is donkerder, zie app.css).
+  const BB_COLORS = { pink: '#EC00B8', blue: '#00B7EC', red: '#EC3500', green: '#1DEC00', yellow: '#E9EC00', purple: '#7B00EC', white: '#ECECEC' };
+  const BB_COLOR_NAMES = { pink: 'Roze', blue: 'Blauw', red: 'Rood', green: 'Groen', yellow: 'Geel', purple: 'Paars', white: 'Wit' };
+  const BB_STYLES = [['progress', 'Eén balk'], ['notched_6', '6 vakjes'], ['notched_10', '10'], ['notched_12', '12'], ['notched_20', '20']];
+  const BB_PROGRESS = {
+    static: ['Vast', 'Altijd even vol.'], decrease: ['Aftellen', 'Loopt leeg zolang hij te zien is.'],
+    increase: ['Optellen', 'Loopt vol zolang hij te zien is.'], loop: ['Steeds opnieuw', 'Loopt leeg en begint dan weer vol.'],
+    bounce: ['Heen en weer', 'Loopt leeg en weer vol.'], value: ['Waarde', 'Zo vol als een waarde, bijv. spelers online van het maximum.']
+  };
+  const BB_EFFECTS = {
+    none: ['Geen', 'De tekst zoals hij is.'], wave: ['Golf', 'Een kleurverloop dat over de tekst schuift.'],
+    shine: ['Glans', 'Een lichte glans die over de tekst gaat.'], pulse: ['Puls', 'De tekst kleurt rustig heen en weer.'],
+    typewriter: ['Typemachine', 'Letter voor letter, bij elke tekst opnieuw.']
+  };
+  const BB_EFFECT_COLORS = { wave: ['#FFC857', '#E9724C', '#FFFFFF'], shine: ['#FFFFFF'], pulse: ['#FFC857', '#E9724C'] };
+  const BB_TAGS = ['player', 'online', 'max', 'server', 'world', 'top:money:3', 'board:money', 'own:money'];
+  const BB_PAPI = ['%pinda_money%', '%pinda_rank%', '%pinda_playtime%', '%pinda_skills_total%'];
+  const bb = { data: null, fetchedAt: 0, joinedAt: 0, rotations: [], dirty: false, glyphs: new Map(), editor: null };
+
+  async function pageBossbars(main, _, alive) {
+    const data = await api('/bossbar');
+    if (!alive()) return;
+    bb.joinedAt = Date.now();
+    renderBossbars(main, data);
+    every(100, () => { if (alive()) bbTick(); });
+  }
+
+  const bbFrameTicks = bar => Math.max(2, Math.round(bar.frameSeconds * 20));
+  const bbSlotTicks = (bar, alone) => { const d = Math.round(bar.duration * 20); return d > 0 ? d : (alone ? 0 : 200); };
+  const hexRgb = hex => { const n = parseInt(String(hex).slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const rgbHex = rgb => '#' + rgb.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+  const lerpHex = (t, a, b) => { const x = hexRgb(a); const y = hexRgb(b); const k = Math.max(0, Math.min(1, t)); return rgbHex(x.map((v, i) => v + (y[i] - v) * k)); };
+  const fracOf = v => v - Math.floor(v);
+
+  /** Welke bossbar er in een wisseling staat (zoals Rotation.at in de plugin). */
+  function bbPlacement(rotation, ticks, bars) {
+    const list = rotation.bars.map(id => bars.find(b => b.id === id)).filter(Boolean);
+    if (!list.length || ticks < 0) return null;
+    const alone = list.length === 1;
+    const total = list.reduce((sum, bar) => sum + bbSlotTicks(bar, alone), 0);
+    if (total === 0) return { bar: list[0], local: ticks, length: 0 };
+    if (!rotation.loop && ticks >= total) return null;
+    let at = rotation.loop ? ticks % total : ticks;
+    for (const bar of list) {
+      const length = bbSlotTicks(bar, alone);
+      if (at < length) return { bar, local: at, length };
+      at -= length;
+    }
+    return null;
+  }
+
+  /** Hoe vol de balk is (zoals BossBarModule.progress). */
+  function bbProgress(bar, local, length) {
+    const cycle = Math.max(1, Math.round(bar.cycleSeconds * 20));
+    let value;
+    switch (bar.progress) {
+      case 'decrease': value = length > 0 ? 1 - local / length : 1 - (local % cycle) / cycle; break;
+      case 'increase': value = length > 0 ? local / length : (local % cycle) / cycle; break;
+      case 'loop': value = 1 - (local % cycle) / cycle; break;
+      case 'bounce': value = Math.abs(1 - 2 * ((local % cycle) / cycle)); break;
+      case 'value': value = bbValue(bar); break;
+      default: value = bar.value / 100;
+    }
+    return Math.max(0, Math.min(1, value));
+  }
+
+  function bbValue(bar) {
+    const number = text => {
+      const filled = String(text || '').replace(/<online>/g, bb.data ? bb.data.online : 0).replace(/<max>/g, bb.data ? bb.data.max : 20).trim();
+      return /^-?\d+([.,]\d+)?$/.test(filled) ? Number(filled.replace(',', '.')) : null;
+    };
+    const value = number(bar.progressValue);
+    const max = number(bar.progressMax);
+    return value === null || max === null || max <= 0 ? 0.6 : value / max;
+  }
+
+  /** De letters van een (door de server gemaakte) tekst, met hun eigen kleur en opmaak. */
+  function bbGlyphs(source) {
+    if (bb.glyphs.has(source)) return bb.glyphs.get(source);
+    const template = document.createElement('template');
+    template.innerHTML = source;
+    const glyphs = [];
+    const walk = (node, style, cls) => {
+      for (const child of node.childNodes) {
+        if (child.nodeType === Node.TEXT_NODE) {
+          for (const ch of Array.from(child.textContent)) glyphs.push({ ch, style, cls });
+        } else if (child.nodeName === 'BR') {
+          glyphs.push({ ch: ' ', style, cls });
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          walk(child, child.getAttribute('style') || style, child.getAttribute('class') || cls);
+        }
+      }
+    };
+    walk(template.content, '', '');
+    for (const glyph of glyphs) {
+      const match = /color:\s*(#[0-9a-f]{6})/i.exec(glyph.style || '');
+      glyph.color = match ? match[1] : null;
+      glyph.rest = (glyph.style || '').replace(/color:\s*#[0-9a-f]{6};?/i, '');
+    }
+    if (bb.glyphs.size > 400) bb.glyphs.clear();
+    bb.glyphs.set(source, glyphs);
+    return glyphs;
+  }
+
+  /** Het effect over de tekst (zoals TextEffects in de plugin). */
+  function bbTitle(bar, source, local) {
+    if (!bar.effect || bar.effect === 'none') return source;
+    const glyphs = bbGlyphs(source);
+    const length = glyphs.length;
+    if (!length) return source;
+    const colors = bar.effectColors || [];
+    const speed = bar.effectSpeed || 1;
+    const frameLocal = local % bbFrameTicks(bar);
+    let visible = length;
+    if (bar.effect === 'typewriter') visible = Math.min(length, Math.floor(frameLocal * 0.75 * speed) + 1);
+    const wave = colors.length >= 2 ? colors : colors.length === 1 ? [colors[0], '#FFFFFF'] : ['#FFC857', '#E9724C'];
+    const pulse = (1 - Math.cos(2 * Math.PI * local * speed / 40)) / 2;
+    const width = 3;
+    const center = (local * 0.5 * speed) % (length + 2 * width + 10) - width;
+    let out = '';
+    for (let index = 0; index < visible; index++) {
+      const glyph = glyphs[index];
+      const base = glyph.color || '#FFFFFF';
+      let color = glyph.color;
+      if (bar.effect === 'wave') {
+        const segment = fracOf(index / length - local * 0.02 * speed) * wave.length;
+        const at = Math.floor(segment) % wave.length;
+        color = lerpHex(segment - Math.floor(segment), wave[at], wave[(at + 1) % wave.length]);
+      } else if (bar.effect === 'shine') {
+        const distance = Math.abs(index - center);
+        if (distance < width) color = lerpHex(1 - distance / width, base, colors[0] || '#FFFFFF');
+      } else if (bar.effect === 'pulse') {
+        color = lerpHex(pulse, colors[1] || base, colors[0] || '#FFC857');
+      }
+      out += `<span${glyph.cls ? ` class="${esc(glyph.cls)}"` : ''} style="${esc(glyph.rest)}${color ? `color:${color}` : ''}">${esc(glyph.ch)}</span>`;
+    }
+    return out;
+  }
+
+  /** Eén bossbar zoals in Minecraft: de titel met daaronder de balk. */
+  function bbBarHtml(bar, previews, local, length) {
+    const frames = previews && previews.length ? previews : [''];
+    const frame = Math.floor(local / bbFrameTicks(bar)) % frames.length;
+    const progress = bbProgress(bar, local, length);
+    return `<div class="mc-bossbar"><div class="mc-bossbar-title">${bbTitle(bar, frames[frame] || '', local) || '&nbsp;'}</div>`
+      + `<div class="mc-bossbar-track c-${esc(bar.color)} s-${esc(bar.style)}" style="--bb:${BB_COLORS[bar.color] || BB_COLORS.yellow}"><i style="width:${(progress * 100).toFixed(2)}%"></i></div></div>`;
+  }
+
+  function bbTick() {
+    if (!bb.data) return;
+    const ticks = bb.data.clock + (Date.now() - bb.fetchedAt) / 50;
+    const joined = (Date.now() - bb.joinedAt) / 50;
+    const stage = $('#bb-stage');
+    if (stage) {
+      const rows = [];
+      const legend = [];
+      bb.rotations.forEach((rotation, index) => {
+        if (!rotation.enabled) return;
+        const placement = bbPlacement(rotation, rotation.start === 'join' ? joined : ticks, bb.data.bars);
+        if (placement) rows.push(bbBarHtml(placement.bar, placement.bar.previews, placement.local, placement.length));
+        legend.push(`<span class="bb-now">${esc(rotation.name || `Wisseling ${index + 1}`)}: <b>${placement ? esc(placement.bar.id) : 'klaar'}</b></span>`);
+      });
+      stage.innerHTML = rows.join('') || '<div class="bb-stage-empty">Nu niets in beeld.</div>';
+      const now = $('#bb-now');
+      if (now) now.innerHTML = legend.join('');
+    }
+    for (const element of $$('[data-bb-card]')) {
+      const bar = bb.data.bars.find(b => b.id === element.dataset.bbCard);
+      if (!bar) continue;
+      const length = bbSlotTicks(bar, false);
+      element.innerHTML = bbBarHtml(bar, bar.previews, ticks % length, length);
+    }
+    const editor = bb.editor;
+    const target = $('#bb-editor-preview');
+    if (editor && target && modal.open) {
+      const bar = bbReadForm($('form[data-form=bossbar-bar]'));
+      if (bar) {
+        const length = bbSlotTicks(bar, false);
+        target.innerHTML = bbBarHtml(bar, editor.previews, ((Date.now() - editor.start) / 50) % length, length);
+      }
     }
   }
 
-  function sidebarPreview(preview) {
-    if (!preview) return html`<div class="empty">Nog geen voorbeeld.</div>`;
-    return html`<div class="mc-sidebar"><div class="mc-sidebar-title">${raw(preview.title)}</div>
-      ${preview.lines.map(l => html`<div class="mc-sidebar-row"><span>${raw(l.left || '&nbsp;')}</span>${l.right ? html`<span class="mc-sidebar-right">${raw(l.right)}</span>` : ''}</div>`)}</div>`;
+  function renderBossbars(main, data) {
+    bb.data = data;
+    bb.fetchedAt = Date.now();
+    bb.rotations = data.rotations.map(r => ({ ...r, bars: [...r.bars] }));
+    bb.dirty = false;
+    const s = data.settings;
+    const toggle = (name, checked) => html`<label class="switch"><input type="checkbox" name="${name}" ${checked ? 'checked' : ''}><span></span></label>`;
+    render(main, html`${pageHead('Bossbars', 'De balken bovenin het scherm. Hier bewegen ze net als in-game.',
+        html`<button class="btn primary" data-bb-new>${icon('plus')} Nieuwe bossbar</button>`)}
+      ${data.moduleEnabled ? '' : html`<div class="alert warning">De module staat uit in config.yml (modules.bossbar). Zet hem aan en herstart de server.</div>`}
+      <section class="card"><div class="card-head"><h2>${icon('bossbar')}Zo ziet het eruit</h2>
+          <button class="btn sm ghost" data-bb-rejoin title="De wisselingen die bij het joinen beginnen opnieuw afspelen">${icon('refresh')} Alsof je net joint</button></div>
+        <div class="card-body"><div class="bb-stage" id="bb-stage"></div><div class="bb-now-list" id="bb-now"></div>
+          <p class="muted small">${data.leaderboards ? '' : 'De toplijsten staan uit, dus <top:…> blijft leeg. '}Teksten met de gegevens van ${raw('<b>')}${state.me ? state.me.name : 'jou'}${raw('</b>')} (of een voorbeeld als je niet online bent).</p></div></section>
+      <section class="card" style="margin-top:16px"><div class="card-head"><h2>${icon('refresh')}Wisselingen</h2><span class="count">elke wisseling is één plek bovenin beeld</span></div>
+        <div class="card-body" id="bb-rotations"></div></section>
+      <section class="card" style="margin-top:16px"><div class="card-head"><h2>${icon('list')}Bossbars</h2><span class="count">${num(data.bars.length)}</span></div>
+        <div class="card-body"><div class="bb-cards">${data.bars.length ? data.bars.map(bar => html`<div class="bb-card">
+            <div class="bb-card-stage" data-bb-card="${bar.id}"></div>
+            <div class="bb-card-info"><b class="mono">${bar.id}</b>
+              <span class="bb-dot" style="background:${BB_COLORS[bar.color] || '#fff'}" title="${BB_COLOR_NAMES[bar.color] || bar.color}"></span>
+              <span class="badge plain">${(BB_PROGRESS[bar.progress] || [bar.progress])[0]}</span>
+              <span class="badge plain">${bar.duration > 0 ? `${String(bar.duration).replace('.', ',')} s` : 'altijd'}</span>
+              ${bar.frames.length > 1 ? html`<span class="badge plain">${bar.frames.length} teksten</span>` : ''}
+              ${bar.effect !== 'none' ? html`<span class="badge info">${(BB_EFFECTS[bar.effect] || [bar.effect])[0]}</span>` : ''}
+              ${bar.permission ? html`<span class="badge warning" title="Alleen met deze permissie">${icon('lock')} ${bar.permission}</span>` : ''}
+              ${bar.worlds.length || bar.disabledWorlds.length ? html`<span class="badge plain" title="Werelden">${icon('globe')} ${bar.worlds.length ? bar.worlds.join(', ') : `niet in ${bar.disabledWorlds.join(', ')}`}</span>` : ''}
+            </div>
+            <div class="btn-row">
+              <button class="btn sm" data-bb-edit="${bar.id}">${icon('edit')} Bewerken</button>
+              <button class="btn sm" data-bb-show="${bar.id}" title="Nu aan iedereen tonen, ${bar.duration > 0 ? `${bar.duration} seconden` : 'tot je hem weghaalt (/bossbars hide)'}">${icon('send')} Nu tonen</button>
+              <button class="btn sm ghost icon-only" data-bb-hide="${bar.id}" title="Weghalen bij iedereen die hem los ziet (na Nu tonen)" aria-label="${bar.id} weghalen">${icon('x')}</button>
+              <button class="btn sm ghost icon-only" data-bb-copy="${bar.id}" title="Kopie maken" aria-label="Kopie maken van ${bar.id}">${icon('copy')}</button>
+              <button class="btn sm danger icon-only" data-bb-delete="${bar.id}" title="Verwijderen" aria-label="${bar.id} verwijderen">${icon('trash')}</button>
+            </div></div>`) : html`<div class="empty">${icon('bossbar')}Nog geen bossbars. Maak er een!</div>`}</div></div></section>
+      <form class="card" data-form="bossbar-settings" style="margin-top:16px"><div class="card-head"><h2>${icon('cog')}Algemeen</h2></div><div class="card-body">
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Standaard aan</span><span class="cfg-help">Voor spelers die zelf nog niets gekozen hebben. Spelers zetten de bossbars uit in /instellingen of met /bossbars toggle.</span></div>${toggle('defaultEnabled', s.defaultEnabled)}</div>
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">In het welkomstmenu</span><span class="cfg-help">De schakelaar tonen als iemand voor het eerst joint.</span></div>${toggle('showInSetup', s.showInSetup)}</div>
+        <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Werelden zonder bossbars</span></div>
+          <div class="check-chips">${bbWorldChips('disabledWorlds', s.disabledWorlds)}</div></div>
+        <div class="save-bar"><span class="muted small">Een bossbar los tonen in-game: <span class="mono">/bossbars show &lt;naam&gt; [speler|*] [seconden]</span></span><button class="btn primary">${icon('save')} Opslaan</button></div></div></form>`);
+    bbRenderRotations();
+    bbTick();
+    main.onclick = event => bbClick(event);
   }
 
-  function scoreboardCard(data) {
-    const sb = data.scoreboard;
-    const s = sb.settings;
-    const ids = Object.keys(sb.previews);
-    const current = sb.current && sb.previews[sb.current] ? sb.current : ids[0];
-    const available = data.allBoards.filter(b => b.available);
-    const ordered = [...s.boards.map(id => available.find(b => b.id === id)).filter(Boolean), ...available.filter(b => !s.boards.includes(b.id))];
-    const names = Object.fromEntries(data.allBoards.map(b => [b.id, b.name]));
-    const row = (name, title, help, input) => html`<div class="cfg-row"><div class="cfg-text"><span class="cfg-label">${title}</span>${help ? html`<span class="cfg-help">${help}</span>` : ''}</div>${input}</div>`;
-    const toggle = (name, checked) => html`<label class="switch"><input type="checkbox" name="${name}" ${checked ? 'checked' : ''}><span></span></label>`;
-    return html`<section class="card" style="margin-top:16px"><div class="card-head"><h2>${icon('list')}Scoreboard</h2><span class="count">rechts in beeld, wisselt elke ${num(s.switchSeconds)} seconden</span></div>
-      <div class="card-body scoreboard-layout">
-        <div class="scoreboard-preview">
-          ${ids.length > 1 ? html`<div class="seg" role="tablist">${ids.map(id => html`<label><input type="radio" name="sb-board" value="${id}" ${id === current ? 'checked' : ''}><span>${names[id] || id}</span></label>`)}</div>` : ''}
-          <div class="scoreboard-stage" id="sb-preview">${sidebarPreview(sb.previews[current])}</div>
-          <p class="muted small">Zo ziet het eruit voor een speler die er nog niet op staat. Spelers zetten het zelf aan of uit in /instellingen.</p>
+  function bbWorldChips(name, selected) {
+    const worlds = [...new Set([...(bb.data ? bb.data.worlds : []).map(w => w.toLowerCase()), ...selected.map(w => w.toLowerCase())])];
+    if (!worlds.length) return html`<span class="muted small">Geen werelden gevonden.</span>`;
+    return worlds.map(world => html`<label class="check-chip"><input type="checkbox" name="${name}" value="${world}" ${selected.map(w => w.toLowerCase()).includes(world) ? 'checked' : ''}> ${world}</label>`);
+  }
+
+  function bbRenderRotations() {
+    const box = $('#bb-rotations');
+    if (!box) return;
+    const bars = bb.data.bars;
+    const options = bars.map(bar => html`<option value="${bar.id}">${bar.id}</option>`);
+    render(box, html`<div class="bb-rotations">${bb.rotations.map((rotation, index) => {
+        const list = rotation.bars.map(id => bars.find(b => b.id === id)).filter(Boolean);
+        const total = list.reduce((sum, bar) => sum + bbSlotTicks(bar, list.length === 1), 0) / 20;
+        return html`<div class="bb-rotation ${rotation.enabled ? '' : 'off'}" data-rot="${index}">
+          <div class="bb-rot-head">
+            <input class="input" data-rot-field="name" value="${rotation.name}" placeholder="Naam" maxlength="40" aria-label="Naam van de wisseling">
+            <select data-rot-field="start" aria-label="Wanneer"><option value="always" ${rotation.start !== 'join' ? 'selected' : ''}>Voor iedereen tegelijk</option><option value="join" ${rotation.start === 'join' ? 'selected' : ''}>Vanaf het joinen</option></select>
+            <label class="check"><input type="checkbox" data-rot-field="loop" ${rotation.loop ? 'checked' : ''}> Herhalen</label>
+            <label class="switch" title="Wisseling aan of uit"><input type="checkbox" data-rot-field="enabled" ${rotation.enabled ? 'checked' : ''}><span></span></label>
+            <button type="button" class="btn sm ghost icon-only" data-rot-remove title="Wisseling verwijderen" aria-label="Wisseling verwijderen">${icon('trash')}</button>
+          </div>
+          <div class="bb-rot-bars">${rotation.bars.map((id, position) => {
+              const bar = bars.find(b => b.id === id);
+              return html`<span class="bb-chip ${bar ? '' : 'missing'}"><span class="bb-dot" style="background:${bar ? BB_COLORS[bar.color] : '#666'}"></span>${id}
+                <small>${bar ? (bbSlotTicks(bar, rotation.bars.length === 1) ? `${bbSlotTicks(bar, rotation.bars.length === 1) / 20} s` : 'altijd') : 'bestaat niet'}</small>
+                <button type="button" data-rot-move="${position}" data-dir="-1" ${position === 0 ? 'disabled' : ''} aria-label="Naar voren">‹</button>
+                <button type="button" data-rot-move="${position}" data-dir="1" ${position === rotation.bars.length - 1 ? 'disabled' : ''} aria-label="Naar achteren">›</button>
+                <button type="button" data-rot-del="${position}" aria-label="Uit de wisseling halen">×</button></span>`;
+            })}
+            <select data-rot-add aria-label="Bossbar toevoegen"><option value="">+ bossbar</option>${options}</select></div>
+          <p class="muted small">${list.length ? (total ? `${String(total).replace('.', ',')} seconden${rotation.loop ? ', daarna weer vooraan' : ', daarna weg'}` : 'Blijft altijd staan') : 'Nog leeg: voeg een bossbar toe.'}${rotation.start === 'join' ? ' · begint als iemand joint' : ' · iedereen ziet hetzelfde'}</p>
+        </div>`;
+      })}</div>
+      ${bb.rotations.length ? '' : html`<div class="empty">Geen wisselingen: dan staat er niets in beeld (alleen wat je los toont).</div>`}
+      <div class="btn-row bb-rot-foot"><button type="button" class="btn" data-rot-new>${icon('plus')} Wisseling toevoegen</button>
+        <button type="button" class="btn primary" data-rot-save ${bb.dirty ? '' : 'disabled'}>${icon('save')} Wisselingen opslaan</button></div>`);
+    box.oninput = event => {
+      const field = event.target.closest('[data-rot-field]');
+      if (!field) return;
+      const rotation = bb.rotations[Number(field.closest('[data-rot]').dataset.rot)];
+      const key = field.dataset.rotField;
+      rotation[key] = field.type === 'checkbox' ? field.checked : field.value;
+      bb.dirty = true;
+      $('[data-rot-save]', box).disabled = false;
+      if (field.type !== 'text') bbRenderRotations();
+    };
+    box.onchange = event => {
+      const add = event.target.closest('[data-rot-add]');
+      if (add && add.value) {
+        bb.rotations[Number(add.closest('[data-rot]').dataset.rot)].bars.push(add.value);
+        bb.dirty = true;
+        bbRenderRotations();
+      }
+    };
+  }
+
+  /**
+   * Opslaan en de pagina opnieuw tekenen. Nog niet opgeslagen wijzigingen in de wisselingen blijven
+   * staan (niet opgeslagen), met dezelfde aanpassing als op de server (hernoemen, verwijderen).
+   */
+  async function bbSave(body, message, transform = rotations => rotations) {
+    const local = bb.dirty && body.rotations !== bb.rotations ? bb.rotations : null;
+    const result = await post('/bossbar', body);
+    toast(message);
+    renderBossbars($('#main'), result);
+    if (local) {
+      bb.rotations = transform(local);
+      bb.dirty = true;
+      bbRenderRotations();
+    }
+    return result;
+  }
+  const bbCopyRotations = rotations => rotations.map(r => ({ ...r, bars: [...r.bars] }));
+
+  /** De bossbars zoals de server ze verwacht (zonder de voorbeelden). */
+  const bbPlain = bar => { const { previews, ...rest } = bar; return rest; };
+
+  function bbClick(event) {
+    const target = event.target.closest('button, [data-bb-new]');
+    if (!target || target.disabled) return;
+    const rotation = target.closest('[data-rot]');
+    const rotIndex = rotation ? Number(rotation.dataset.rot) : -1;
+    if (target.matches('[data-rot-move]')) {
+      const list = bb.rotations[rotIndex].bars;
+      const from = Number(target.dataset.rotMove);
+      const to = from + Number(target.dataset.dir);
+      [list[from], list[to]] = [list[to], list[from]];
+      bb.dirty = true;
+      bbRenderRotations();
+    } else if (target.matches('[data-rot-del]')) {
+      bb.rotations[rotIndex].bars.splice(Number(target.dataset.rotDel), 1);
+      bb.dirty = true;
+      bbRenderRotations();
+    } else if (target.matches('[data-rot-remove]')) {
+      bb.rotations.splice(rotIndex, 1);
+      bb.dirty = true;
+      bbRenderRotations();
+    } else if (target.matches('[data-rot-new]')) {
+      bb.rotations.push({ name: `Wisseling ${bb.rotations.length + 1}`, bars: [], loop: true, start: 'always', enabled: true });
+      bb.dirty = true;
+      bbRenderRotations();
+    } else if (target.matches('[data-rot-save]')) {
+      busy(target, () => bbSave({ rotations: bb.rotations }, 'Wisselingen opgeslagen. Ze zijn meteen in-game te zien.'));
+    } else if (target.matches('[data-bb-rejoin]')) {
+      bb.joinedAt = Date.now();
+    } else if (target.matches('[data-bb-new]')) {
+      bbOpenEditor(null);
+    } else if (target.matches('[data-bb-edit]')) {
+      bbOpenEditor(bb.data.bars.find(b => b.id === target.dataset.bbEdit));
+    } else if (target.matches('[data-bb-copy]')) {
+      const source = bb.data.bars.find(b => b.id === target.dataset.bbCopy);
+      let id = `${source.id}-kopie`.slice(0, 32);
+      for (let n = 2; bb.data.bars.some(b => b.id === id); n++) id = `${source.id.slice(0, 26)}-kopie${n}`;
+      busy(target, () => bbSave({ bars: [...bb.data.bars.map(bbPlain), { ...bbPlain(source), id }] }, `Kopie gemaakt: ${id}.`));
+    } else if (target.matches('[data-bb-show]')) {
+      busy(target, () => post('/bossbar/show', { id: target.dataset.bbShow })).then(result => {
+        if (result) toast(`Getoond aan ${num(result.shown)} ${result.shown === 1 ? 'speler' : 'spelers'}.`);
+      });
+    } else if (target.matches('[data-bb-hide]')) {
+      busy(target, () => post('/bossbar/hide', { id: target.dataset.bbHide })).then(result => {
+        if (result) toast(result.hidden ? `Weggehaald bij ${num(result.hidden)} ${result.hidden === 1 ? 'speler' : 'spelers'}.` : 'Hij stond nergens los in beeld.');
+      });
+    } else if (target.matches('[data-bb-delete]')) {
+      const id = target.dataset.bbDelete;
+      const used = bb.rotations.filter(r => r.bars.includes(id)).map(r => r.name || 'naamloos');
+      confirmDialog({ title: `Bossbar ${id} verwijderen?`, confirm: 'Verwijderen', danger: true,
+        text: used.length ? `Hij wordt ook uit de wisseling${used.length === 1 ? '' : 'en'} ${used.join(', ')} gehaald.` : 'Hij staat in geen enkele wisseling.' }).then(ok => {
+        if (!ok) return;
+        busy(null, () => bbSave({ bars: bb.data.bars.filter(b => b.id !== id).map(bbPlain) }, 'Bossbar verwijderd.',
+          rotations => rotations.map(r => ({ ...r, bars: r.bars.filter(b => b !== id) }))));
+      });
+    }
+  }
+
+  // ------------------------------------------------------------ de editor van één bossbar
+
+  const BB_NEW = { id: '', frames: ['<primary><bold><server></bold></primary> <muted>·</muted> <text>Welkom, <highlight><player>'], frameSeconds: 2, color: 'yellow', style: 'progress',
+    progress: 'decrease', value: 100, progressValue: '<online>', progressMax: '<max>', cycleSeconds: 5, duration: 10, effect: 'none', effectColors: ['#FFFFFF'], effectSpeed: 1,
+    permission: '', worlds: [], disabledWorlds: [] };
+
+  function bbFrameRow(text, index, count) {
+    return html`<div class="bb-frame" data-frame="${index}">
+      <textarea class="input mono" name="frame" rows="2" spellcheck="false" aria-label="Tekst ${index + 1}">${text}</textarea>
+      <div class="bb-frame-tools">
+        <button type="button" class="btn sm ghost icon-only" data-frame-move="-1" ${index === 0 ? 'disabled' : ''} aria-label="Omhoog">↑</button>
+        <button type="button" class="btn sm ghost icon-only" data-frame-move="1" ${index === count - 1 ? 'disabled' : ''} aria-label="Omlaag">↓</button>
+        <button type="button" class="btn sm ghost icon-only" data-frame-remove ${count === 1 ? 'disabled' : ''} aria-label="Tekst weghalen">${icon('x')}</button>
+      </div></div>`;
+  }
+
+  function bbOpenEditor(source) {
+    const bar = source ? { ...BB_NEW, ...bbPlain(source) } : { ...BB_NEW };
+    if (!source) {
+      let n = bb.data.bars.length + 1;
+      while (bb.data.bars.some(b => b.id === `bar-${n}`)) n++;
+      bar.id = `bar-${n}`;
+    }
+    bb.editor = { original: source ? source.id : null, previews: source ? source.previews : [], start: Date.now(), focus: null, sequence: 0,
+      colorsTouched: !!source && bar.effect !== 'none' };
+    const colors = (bar.effectColors && bar.effectColors.length ? bar.effectColors : BB_EFFECT_COLORS[bar.effect] || ['#FFFFFF']).slice(0, 8);
+    openModal(html`<form data-form="bossbar-bar" class="bb-editor" novalidate>
+      <div class="modal-head"><h3>${source ? `Bossbar ${source.id}` : 'Nieuwe bossbar'}</h3></div>
+      <div class="modal-body">
+        <div class="bb-stage sm" id="bb-editor-preview"></div>
+        <div class="bb-grid">
+          <label class="field">Naam <span class="hint">kleine letters, cijfers, - en _ (voor /bossbars show)</span>
+            <input class="input mono" name="id" value="${bar.id}" required maxlength="32" pattern="[a-z0-9][a-z0-9_\\-]{0,31}"></label>
+          <label class="field">Hoe lang in een wisseling <span class="hint">seconden; 0 = altijd (als hij alleen staat)</span>
+            <input class="input" type="number" name="duration" min="0" max="86400" step="0.5" value="${bar.duration}"></label>
         </div>
-        ${data.canEdit ? html`<form data-form="scoreboard" class="scoreboard-form">
-          ${row('defaultEnabled', 'Standaard aan', 'Voor spelers die zelf nog niets gekozen hebben.', toggle('defaultEnabled', s.defaultEnabled))}
-          ${row('showInSetup', 'In het welkomstmenu', 'De schakelaar tonen als iemand voor het eerst joint.', toggle('showInSetup', s.showInSetup))}
-          ${row('switchSeconds', 'Wisselen na', 'Seconden per toplijst (minimaal 3).', html`<input class="input cfg-number" type="number" min="3" max="600" name="switchSeconds" value="${s.switchSeconds}">`)}
-          ${row('places', 'Plekken per lijst', '1 tot 10.', html`<input class="input cfg-number" type="number" min="1" max="10" name="places" value="${s.places}">`)}
-          ${row('showOwn', 'Eigen plek onderaan', 'Iedereen ziet zijn eigen plek, ook buiten de top.', toggle('showOwn', s.showOwn))}
-          <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Toplijsten op het scoreboard</span><span class="cfg-help">In deze volgorde; vink uit wat je niet wilt zien.</span></div>
-            <div class="check-chips">${ordered.map(b => html`<label class="check-chip"><input type="checkbox" name="sb-boards" value="${b.id}" ${s.boards.includes(b.id) ? 'checked' : ''}> ${b.name}</label>`)}</div></div>
-          <div class="cfg-row cfg-stack"><div class="cfg-text"><span class="cfg-label">Werelden zonder scoreboard</span><span class="cfg-help">Namen gescheiden door komma's, bijv. minigames.</span></div>
-            <input class="input" name="disabledWorlds" value="${s.disabledWorlds.join(', ')}" placeholder="geen"></div>
-          <div class="save-bar"><button type="button" class="btn ghost" data-action="scoreboard-texts">${icon('type')} Teksten aanpassen</button><button class="btn primary">${icon('save')} Opslaan</button></div>
-        </form>` : ''}
-      </div></section>`;
+        <div class="field-label">Tekst${bar.frames.length > 1 ? 'en' : ''} <span class="hint">meer teksten = ze wisselen elkaar af</span></div>
+        <div class="te-toolbar bb-toolbar">
+          <div class="te-group" aria-label="Themakleuren">${THEME_TAGS.map(t => html`<button type="button" class="te-swatch" data-wrap="${t}" title="${THEME_LABELS[t]} (&lt;${t}&gt;)" style="--c:${resolveColor(t) || '#fff'}"></button>`)}
+            <span class="te-sep"></span>
+            <button type="button" class="btn sm te-btn" data-wrap="bold" title="Vet"><b>B</b></button>
+            <button type="button" class="btn sm te-btn" data-wrap="italic" title="Cursief"><i>I</i></button>
+            <span class="te-sep"></span>
+            <input type="color" id="bb-grad-a" value="#ffc857" title="Verloop: begin"><input type="color" id="bb-grad-b" value="#e9724c" title="Verloop: eind"><button type="button" class="btn sm" data-te="gradient">Verloop</button></div>
+          <div class="te-group te-placeholders"><span class="muted">Invoegen:</span>${BB_TAGS.map(p => html`<button type="button" class="te-chip" data-insert="&lt;${p}&gt;">${p}</button>`)}${BB_PAPI.map(p => html`<button type="button" class="te-chip" data-insert="${p}">${p}</button>`)}</div>
+        </div>
+        <div class="bb-frames" id="bb-frames">${bar.frames.map((text, index) => bbFrameRow(text, index, bar.frames.length))}</div>
+        <div class="btn-row"><button type="button" class="btn sm" data-frame-add>${icon('plus')} Tekst toevoegen</button>
+          <label class="bb-inline">elke <input class="input" type="number" name="frameSeconds" min="0.1" max="600" step="0.1" value="${bar.frameSeconds}"> seconden de volgende</label></div>
+        <p class="muted small">&lt;top:money:3&gt; = de top 3 van een toplijst (${(bb.data.boards || []).map(b => b.id).join(', ')}), &lt;own:money&gt; = je eigen plek. ${bb.data.placeholderApi ? 'Ook %placeholders% van PlaceholderAPI werken.' : '%pinda_...% werkt altijd; andere %placeholders% alleen met PlaceholderAPI.'}</p>
+
+        <div class="field-label">Kleur</div>
+        <div class="bb-colors">${Object.keys(BB_COLORS).map(color => html`<label class="bb-color" title="${BB_COLOR_NAMES[color]}"><input type="radio" name="color" value="${color}" ${bar.color === color ? 'checked' : ''}><span style="--c:${BB_COLORS[color]}"></span></label>`)}</div>
+        <div class="field-label">Balk</div>
+        <div class="seg" role="radiogroup" aria-label="Stijl">${BB_STYLES.map(([value, label]) => html`<label><input type="radio" name="style" value="${value}" ${bar.style === value ? 'checked' : ''}><span>${label}</span></label>`)}</div>
+        <div class="bb-grid">
+          <label class="field">Hoe de balk beweegt
+            <select name="progress">${Object.entries(BB_PROGRESS).map(([value, [label]]) => html`<option value="${value}" ${bar.progress === value ? 'selected' : ''}>${label}</option>`)}</select>
+            <span class="hint" id="bb-progress-help">${(BB_PROGRESS[bar.progress] || ['', ''])[1]}</span></label>
+          <label class="field" data-show="static">Hoe vol (%)<input class="input" type="number" name="value" min="0" max="100" step="1" value="${bar.value}"></label>
+          <label class="field" data-show="loop bounce decrease increase">Eén ronde duurt <span class="hint">seconden (bij aftellen/optellen alleen als hij altijd staat)</span><input class="input" type="number" name="cycleSeconds" min="0.5" max="3600" step="0.5" value="${bar.cycleSeconds}"></label>
+          <label class="field" data-show="value">Waarde <span class="hint">bijv. &lt;online&gt; of %pinda_skills_total%</span><input class="input mono" name="progressValue" value="${bar.progressValue}" maxlength="200"></label>
+          <label class="field" data-show="value">Van het maximum <span class="hint">bijv. &lt;max&gt; of 100</span><input class="input mono" name="progressMax" value="${bar.progressMax}" maxlength="200"></label>
+        </div>
+        <div class="field-label">Effect over de tekst</div>
+        <div class="seg" role="radiogroup" aria-label="Effect">${Object.entries(BB_EFFECTS).map(([value, [label, help]]) => html`<label title="${help}"><input type="radio" name="effect" value="${value}" ${bar.effect === value ? 'checked' : ''}><span>${label}</span></label>`)}</div>
+        <div class="bb-grid">
+          <div class="field" data-effect-colors><span>Kleuren <span class="hint">golf: het verloop; glans: de glans; puls: de twee kleuren</span></span>
+            <div class="bb-effect-colors" id="bb-effect-colors">${colors.map(color => html`<input type="color" name="effectColor" value="${color.toLowerCase()}">`)}
+              <button type="button" class="btn sm ghost icon-only" data-color-add title="Kleur erbij" aria-label="Kleur erbij">${icon('plus')}</button>
+              <button type="button" class="btn sm ghost icon-only" data-color-remove title="Kleur eraf" aria-label="Kleur eraf">${icon('x')}</button></div></div>
+          <label class="field" data-effect-speed>Snelheid <span class="hint" id="bb-speed-label">${String(bar.effectSpeed).replace('.', ',')}×</span>
+            <input type="range" name="effectSpeed" min="0.1" max="5" step="0.1" value="${bar.effectSpeed}"></label>
+        </div>
+        <details class="bb-more" ${bar.permission || bar.worlds.length || bar.disabledWorlds.length ? 'open' : ''}><summary>Wie ziet hem</summary>
+          <label class="field">Alleen met deze permissie <span class="hint">leeg = iedereen, bijv. pinda.mod</span><input class="input mono" name="permission" value="${bar.permission}" maxlength="100"></label>
+          <div class="field-label">Alleen in deze werelden <span class="hint">niets aangevinkt = overal</span></div>
+          <div class="check-chips">${bbWorldChips('worlds', bar.worlds)}</div>
+          <div class="field-label">Niet in deze werelden</div>
+          <div class="check-chips">${bbWorldChips('barDisabledWorlds', bar.disabledWorlds)}</div>
+        </details>
+      </div>
+      <div class="modal-foot"><button type="button" class="btn ghost" data-action="close">Annuleren</button>
+        <button class="btn primary">${icon('save')} Opslaan</button></div></form>`, 'wide');
+    const form = $('form[data-form=bossbar-bar]', modal);
+    const sync = () => {
+      const progress = form.progress.value;
+      $$('[data-show]', form).forEach(el => { el.hidden = !el.dataset.show.split(' ').includes(progress); });
+      $('#bb-progress-help', form).textContent = (BB_PROGRESS[progress] || ['', ''])[1];
+      $('[data-effect-colors]', form).hidden = form.effect.value === 'none' || form.effect.value === 'typewriter';
+      $('[data-effect-speed]', form).hidden = form.effect.value === 'none';
+      $('#bb-speed-label', form).textContent = `${String(form.effectSpeed.value).replace('.', ',')}×`;
+    };
+    let timer;
+    const refresh = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        const id = ++bb.editor.sequence;
+        try {
+          const result = await post('/bossbar/preview', { frames: $$('textarea[name=frame]', form).map(area => area.value) });
+          if (bb.editor && id === bb.editor.sequence) bb.editor.previews = result.html;
+        } catch { /* het voorbeeld blijft dan even staan */ }
+      }, 250);
+    };
+    form.addEventListener('input', event => {
+      sync();
+      if (event.target.name === 'frame') refresh();
+    });
+    form.addEventListener('change', event => {
+      if (event.target.name === 'effectColor') bb.editor.colorsTouched = true;
+      // Nog niets aan de kleuren gedaan? Dan passende kleuren bij het effect (een golf van wit naar wit zie je niet).
+      if (event.target.name === 'effect' && !bb.editor.colorsTouched && BB_EFFECT_COLORS[event.target.value]) {
+        const box = $('#bb-effect-colors', form);
+        $$('input[type=color]', box).forEach(input => input.remove());
+        $('[data-color-add]', box).insertAdjacentHTML('beforebegin', BB_EFFECT_COLORS[event.target.value].map(c => `<input type="color" name="effectColor" value="${c.toLowerCase()}">`).join(''));
+      }
+      sync();
+    });
+    form.addEventListener('focusin', event => { if (event.target.name === 'frame') bb.editor.focus = event.target; });
+    form.addEventListener('click', event => {
+      const button = event.target.closest('button');
+      if (!button || button.dataset.action === 'close') return;
+      const area = bb.editor.focus && form.contains(bb.editor.focus) ? bb.editor.focus : $('textarea[name=frame]', form);
+      const frames = () => $$('textarea[name=frame]', form).map(a => a.value);
+      const redraw = list => {
+        render($('#bb-frames', form), list.map((text, index) => bbFrameRow(text, index, list.length)));
+        bb.editor.focus = null;
+        refresh();
+      };
+      if (button.dataset.wrap) { wrapSelection(area, `<${button.dataset.wrap}>`, `</${button.dataset.wrap}>`); refresh(); }
+      else if (button.dataset.insert) { insertAt(area, button.dataset.insert); refresh(); }
+      else if (button.dataset.te === 'gradient') { wrapSelection(area, `<gradient:${$('#bb-grad-a', form).value}:${$('#bb-grad-b', form).value}>`, '</gradient>'); refresh(); }
+      else if (button.matches('[data-frame-add]')) {
+        const list = frames();
+        if (list.length >= 30) { toast('Hooguit 30 teksten.', 'error'); return; }
+        redraw([...list, list[list.length - 1] || '']);
+      } else if (button.matches('[data-frame-remove]')) {
+        redraw(frames().filter((_, index) => index !== Number(button.closest('[data-frame]').dataset.frame)));
+      } else if (button.matches('[data-frame-move]')) {
+        const list = frames();
+        const from = Number(button.closest('[data-frame]').dataset.frame);
+        const to = from + Number(button.dataset.frameMove);
+        [list[from], list[to]] = [list[to], list[from]];
+        redraw(list);
+      } else if (button.matches('[data-color-add]')) {
+        const box = $('#bb-effect-colors', form);
+        if ($$('input[type=color]', box).length >= 8) return;
+        bb.editor.colorsTouched = true;
+        button.insertAdjacentHTML('beforebegin', '<input type="color" name="effectColor" value="#ffffff">');
+      } else if (button.matches('[data-color-remove]')) {
+        const inputs = $$('#bb-effect-colors input[type=color]', form);
+        if (inputs.length > 1) inputs[inputs.length - 1].remove();
+        bb.editor.colorsTouched = true;
+      } else return;
+      event.preventDefault();
+    });
+    sync();
+    if (!source) refresh();
+  }
+
+  /** De bossbar uit het formulier (voor het voorbeeld en om op te slaan). */
+  function bbReadForm(form) {
+    if (!form) return null;
+    const value = (name, fallback) => { const n = Number(form.elements[name] ? form.elements[name].value : NaN); return Number.isFinite(n) ? n : fallback; };
+    const checked = name => $$(`input[name=${name}]:checked`, form).map(input => input.value);
+    return {
+      id: form.elements.id.value.trim().toLowerCase(),
+      frames: $$('textarea[name=frame]', form).map(area => area.value),
+      frameSeconds: value('frameSeconds', 1), color: (form.querySelector('input[name=color]:checked') || {}).value || 'yellow',
+      style: (form.querySelector('input[name=style]:checked') || {}).value || 'progress', progress: form.elements.progress.value,
+      value: value('value', 100), progressValue: form.elements.progressValue.value, progressMax: form.elements.progressMax.value,
+      cycleSeconds: value('cycleSeconds', 5), duration: value('duration', 10),
+      effect: (form.querySelector('input[name=effect]:checked') || {}).value || 'none',
+      effectColors: $$('input[name=effectColor]', form).map(input => input.value.toUpperCase()), effectSpeed: value('effectSpeed', 1),
+      permission: form.elements.permission.value.trim(), worlds: checked('worlds'), disabledWorlds: checked('barDisabledWorlds')
+    };
   }
 
   // =============================================================== aankondigingen
@@ -2480,11 +2986,6 @@
       if (result) { toast('Toplijsten bijgewerkt.'); renderLeaderboards($('#main'), result); }
     },
 
-    'scoreboard-texts'() {
-      state.textFilter = { section: 'scoreboard', query: '', changed: false };
-      location.hash = '#/teksten';
-    },
-
     'broadcast-once'() {
       openTextEditor({ title: 'Eenmalige aankondiging', subtitle: 'Gaat meteen naar iedereen die online is', value: '<text>', placeholders: BROADCAST_PLACEHOLDERS,
         saveLabel: 'Versturen', onSave: async value => {
@@ -2625,15 +3126,26 @@
       }
     },
 
-    async scoreboard(form, data, button) {
-      const boards = $$('input[name=sb-boards]:checked', form).map(input => input.value);
-      if (!boards.length) { toast('Kies minimaal één toplijst.', 'error'); return; }
-      const result = await busy(button, () => post('/scoreboard', {
-        defaultEnabled: form.defaultEnabled.checked, showInSetup: form.showInSetup.checked, showOwn: form.showOwn.checked,
-        switchSeconds: Number(data.get('switchSeconds')), places: Number(data.get('places')), boards,
-        disabledWorlds: String(data.get('disabledWorlds') || '').split(',').map(w => w.trim()).filter(Boolean)
-      }));
-      if (result) { toast('Scoreboard opgeslagen. Het is meteen bijgewerkt in-game.'); renderLeaderboards($('#main'), result); }
+    async 'bossbar-bar'(form, data, button) {
+      const bar = bbReadForm(form);
+      const original = bb.editor ? bb.editor.original : null;
+      if (!/^[a-z0-9][a-z0-9_-]{0,31}$/.test(bar.id)) { toast('De naam is 1 tot 32 tekens: kleine letters, cijfers, - en _.', 'error'); return; }
+      if (bar.id !== original && bb.data.bars.some(b => b.id === bar.id)) { toast(`Er is al een bossbar ${bar.id}.`, 'error'); return; }
+      if (!bar.frames.some(frame => frame.trim())) { toast('Typ een tekst.', 'error'); return; }
+      const bars = bb.data.bars.map(bbPlain);
+      const index = original ? bars.findIndex(b => b.id === original) : -1;
+      if (index >= 0) bars[index] = bar; else bars.push(bar);
+      // Hernoemd: in de (opgeslagen) wisselingen meenemen.
+      const rename = rotations => rotations.map(r => ({ ...r, bars: r.bars.map(id => id === original ? bar.id : id) }));
+      const body = { bars };
+      if (original && original !== bar.id) body.rotations = rename(bbCopyRotations(bb.data.rotations));
+      const result = await busy(button, () => bbSave(body, original ? 'Bossbar opgeslagen. Hij is meteen in-game bijgewerkt.' : 'Bossbar gemaakt. Zet hem in een wisseling om hem in beeld te krijgen.', rename));
+      if (result) { bb.editor = null; closeModal(); }
+    },
+
+    async 'bossbar-settings'(form, data, button) {
+      await busy(button, () => bbSave({ settings: { defaultEnabled: form.defaultEnabled.checked, showInSetup: form.showInSetup.checked,
+        disabledWorlds: data.getAll('disabledWorlds') } }, 'Opgeslagen.'));
     },
 
     async 'broadcast-settings'(form, data, button) {

@@ -15,14 +15,14 @@ Er zijn twee manieren:
 
 ## Wat zit erin
 
-Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, een rugtas, bomen in één keer omhakken, toplijsten met een scoreboard, automatische aankondigingen, antilag, wereldbeheer (explosies zonder gaten, phantoms, spawnen, ender dragon), een eigen MOTD, Discord-webhooks, PlaceholderAPI-placeholders en een webpaneel waarin je alles kunt instellen.
+Fundament (modules, taal NL/EN, database, menu's), setup bij eerste join, `/instellingen`, tips, teleports (homes, TPA, spawn, back), privéberichten, `/gm`, AFK, handige commando's, vanish/invsee, economy (contant + bank), shops met marktplaats, sloten met partners, een eigen rangensysteem, moderatie, skills, slapen met een percentage, een rugtas, bomen in één keer omhakken, toplijsten, geanimeerde bossbars, automatische aankondigingen, antilag, wereldbeheer (explosies zonder gaten, phantoms, spawnen, ender dragon), een eigen MOTD, Discord-webhooks, PlaceholderAPI-placeholders en een webpaneel waarin je alles kunt instellen.
 
 ## To-do
 
 1. ~~Rangensysteem (Pinda, PindaMod, PindaAdmin) met prefix in chat en tablist~~ ✅
 2. ~~Moderatie: kick, mute, tijdelijke en permanente ban, banlijst en logboek~~ ✅
 3. ~~Webpaneel: eigen webserver (IP + poort, later instelbare URL), eenmalige inloglink vanaf PindaMod, dashboard, spelers en rangen, moderatie, economy, shops, serverbeheer, statistieken, actielog~~ ✅
-4. ~~Overige basis: automatische broadcasts, scoreboard en leaderboards (+ PlaceholderAPI), antilag~~ ✅
+4. ~~Overige basis: automatische broadcasts, bossbars (eerst een scoreboard) en leaderboards (+ PlaceholderAPI), antilag~~ ✅
 5. ~~World control: creepers en TNT zonder blokschade, phantoms uit, spawnrates, ender dragon respawn~~ ✅
 6. ~~Backpack: tweede inventory die bij doodgaan blijft liggen~~ ✅
 7. ~~Skills: level 0-99 (RuneScape-curve), geld bij level-up, menu met voortgang~~ ✅
@@ -101,13 +101,28 @@ Naar het voorbeeld van UltimateTimber: hak met een **bijl** het onderste blok va
 - Alle boomsoorten: eik, berk, spar, jungle, acacia, dark oak, mangrove, kers, azalea en pale oak. Aan/uit per speler in `/instellingen` of met **`/timber`**. Alles instelbaar in het paneel onder **Instellingen › Bomen kappen** (gebukt of niet, creative, wachttijd, animatie, drops in je inventory, ...).
 - Nieuwe toplijst: **meeste bomen gekapt**.
 
-## Toplijsten en scoreboard
+## Toplijsten
 
 Zeven toplijsten: **rijkste spelers** (contant + bank), **hoogste skills** (totaal level), **langst online**, **meeste spelerkills**, **meeste mobkills**, **vaakst doodgegaan** en **meeste bomen gekapt**. Speeltijd, kills en doden komen uit de statistieken van Minecraft zelf, dus ook wat spelers deden voordat PindaFramework erop stond telt mee.
 
 - **`/top`** opent een menu met alle toplijsten en je eigen plek op elke lijst. **`/top geld`** (of `skills`, `speeltijd`, `kills`, `mobkills`, `doden`) zet een toplijst in de chat.
-- **Scoreboard** rechts in beeld: wisselt elke 10 seconden naar de volgende toplijst, met de top 10 en onderaan je eigen plek. Spelers zetten het zelf uit in `/instellingen`. Teams van het gewone scoreboard (kleuren van `/team`, teams van andere plugins) worden overgenomen.
-- In het paneel onder **Toplijsten** zie je alle lijsten en stel je het scoreboard in (met voorbeeld). Staff of testaccounts haal je van de lijsten met `hidden-players` in `modules/leaderboards.yml`.
+- De toplijsten staan ook in de **bossbars** bovenin beeld (zie hieronder).
+- In het paneel onder **Toplijsten** zie je alle lijsten. Staff of testaccounts haal je van de lijsten met `hidden-players` in `modules/leaderboards.yml`.
+
+## Bossbars
+
+Balken bovenin het scherm, naar het voorbeeld van [AnimaBossBar](https://modrinth.com/plugin/animabossbar), helemaal ingebouwd (geen extra plugin nodig). Ze vervangen het oude scoreboard.
+
+- **Zoveel bossbars als je wilt**, elk met een eigen tekst, kleur (roze, blauw, rood, groen, geel, paars, wit) en stijl (één balk of 6, 10, 12 of 20 vakjes).
+- **Teksten die elkaar afwisselen** (frames), met alle opmaak van de teksteditor: kleuren, verloop, vet, ...
+- **De balk beweegt**: vast, aftellen (loopt leeg), optellen, steeds opnieuw, heen en weer, of **een waarde** volgen (bijv. spelers online van het maximum, of een %placeholder%).
+- **Effecten over de tekst**: een kleurgolf (ook regenboog), een glans die over de tekst gaat, een puls, of letter voor letter (typemachine).
+- **Wisselingen**: bossbars die elkaar op één plek afwisselen, elk zo lang als ingesteld, voor iedereen tegelijk of vanaf het joinen (bijv. een welkomstbalk van 12 seconden). Meerdere wisselingen = meerdere bossbars onder elkaar.
+- **Per bossbar** alleen voor spelers met een permissie, alleen in bepaalde werelden of juist niet.
+- In de tekst: `<player>`, `<online>`, `<max>`, `<world>`, `<tps>`, `<ping>`, `<server>`, **`<top:money:3>`** (de top 3 van een toplijst op één regel), `<board:money>` (de naam van een toplijst), `<own:money>` (je eigen plek), de `%pinda_...%` placeholders (ook zonder PlaceholderAPI) en met PlaceholderAPI alle andere `%placeholders%`.
+- Standaard: een welkomstbalk bij het joinen en een hoofdbalk die wisselt tussen spelers online en je geld, en de toplijsten (geld, skills, speeltijd, kills, bomen). Plus een voorbeeld voor een event.
+- Spelers zetten de bossbars uit in `/instellingen` of met **`/bossbars toggle`**. Voor events: **`/bossbars show <naam> [speler|*] [seconden]`** (ook als iemand ze uit heeft staan) en `/bossbars hide`.
+- In het paneel onder **Bossbars** zie je ze **bewegen zoals in-game**, maak en bewerk je ze (met voorbeeld terwijl je typt), zet je de wisselingen in elkaar en toon je een bossbar met één klik aan iedereen.
 
 ## Aankondigingen
 
@@ -219,7 +234,7 @@ Alles staat in `/opt/pinda`: `server/` (Minecraft), `website/`, `backups/` en `p
 
 ## PlaceholderAPI
 
-Optioneel. Staat [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) op de server, dan werken `%placeholders%` in de aankondigingen en op het scoreboard, en kunnen andere plugins (TAB, hologrammen, ...) deze placeholders van PindaFramework gebruiken:
+Optioneel. Staat [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) op de server, dan werken alle `%placeholders%` in de aankondigingen en de bossbars (onze eigen `%pinda_...%` werken daar ook zonder PlaceholderAPI), en kunnen andere plugins (TAB, hologrammen, ...) deze placeholders van PindaFramework gebruiken:
 
 | Placeholder | Wat |
 |---|---|
@@ -228,7 +243,7 @@ Optioneel. Staat [PlaceholderAPI](https://www.spigotmc.org/resources/placeholder
 | `%pinda_skills_total%`, `%pinda_skill_<skill>%` | Totaal level, of het level in één skill (bijv. `%pinda_skill_mining%`) |
 | `%pinda_playtime%`, `%pinda_kills%`, `%pinda_mobkills%`, `%pinda_deaths%` | Speeltijd, kills en doden |
 | `%pinda_position_<lijst>%`, `%pinda_value_<lijst>%` | Je plek en waarde op een toplijst (`money`, `skills`, `playtime`, `kills`, `mobkills`, `deaths`, `trees`) |
-| `%pinda_top_<lijst>_<plek>_name%`, `%pinda_top_<lijst>_<plek>_value%` | Wie er op een plek staat, bijv. `%pinda_top_money_1_name%` |
+| `%pinda_top_<lijst>_<plek>_name%`, `%pinda_top_<lijst>_<plek>_value%`, `..._short` | Wie er op een plek staat, bijv. `%pinda_top_money_1_name%`; `_short` geeft een korte waarde (12,3K) |
 | `%pinda_afk%`, `%pinda_name_colored%`, `%pinda_tps%`, `%pinda_online%` | AFK (true/false), naam in de rangkleur, TPS, aantal online |
 
 ## Discord
@@ -248,7 +263,7 @@ Het idee: PindaFramework installeren en daarna alles in de browser inrichten.
 - **Teksten:** elke melding, elk menu en elke tip, in elke taal. Met knoppen voor themakleuren, Minecraft-kleuren, eigen kleur, verloop, vet/cursief/onderstreept en placeholders, en een voorbeeld van hoe het er in Minecraft uitziet. Onder **Uiterlijk** pas je de servernaam, de prefix en de themakleuren aan.
 - **Server:** tijd, weer, mededelingen, whitelist, MOTD (met voorbeeld zoals in de serverlijst), `server.properties` (wat kan, werkt meteen) en spelregels per wereld.
 - **Rangen:** rangen maken en bewerken, met een lijst van alle bekende permissies om uit te kiezen.
-- **Toplijsten, Aankondigingen en Prestaties:** alle toplijsten en het scoreboard, de automatische aankondigingen en de antilag.
+- **Toplijsten, Bossbars, Aankondigingen en Prestaties:** alle toplijsten, de bossbars (met bewegend voorbeeld), de automatische aankondigingen en de antilag.
 - **Wereld:** explosies, phantoms, hoeveel mobs er spawnen en de ender dragon (status, terug laten komen).
 
 ## Webpaneel
@@ -273,7 +288,8 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | Shops | alle shops en hun aanbod bekijken | `pinda.panel.shops` | Mod |
 | Skills | ranglijsten en levels per speler | `pinda.panel.skills` | Mod |
 | Skills aanpassen | levels zetten, XP geven, resetten, XP-boost starten | `pinda.panel.skills.edit` | Admin |
-| Toplijsten | alle toplijsten; het scoreboard instellen kan met `pinda.panel.config` | `pinda.panel.players` | Mod |
+| Toplijsten | alle toplijsten | `pinda.panel.players` | Mod |
+| Bossbars | bossbars en wisselingen maken en bewerken, meteen tonen | `pinda.panel.config` | Admin |
 | Aankondigingen | automatische aankondigingen beheren en meteen versturen | `pinda.panel.broadcasts` | Admin |
 | Prestaties | TPS, drukste chunks, werelden, items opruimen; antilag instellen met `pinda.panel.config` | `pinda.panel.server` | Admin |
 | Instellingen | alle configbestanden als formulier, MOTD, server.properties, spelregels per wereld, Discord | `pinda.panel.config` | Admin |
@@ -351,6 +367,8 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | `/skills [speler]`, `/skills top [skill]` | `/skill`, `/vaardigheden`, `/levels` | `pinda.skills.use` (+ `.others`) | iedereen |
 | `/skills set\|addxp\|reset <speler> ...`, `/skills boost <x> <duur>\|stop` | | `pinda.skills.admin` | op |
 | `/top [lijst]` | `/toplijst`, `/leaderboard`, `/lb` | `pinda.top.use` | iedereen |
+| `/bossbars toggle` | `/bbar`, `/bb` | `pinda.bossbar.toggle` | iedereen |
+| `/bossbars show <naam> [speler\|*] [seconden]`, `/bossbars hide <naam\|*> [speler\|*]`, `/bossbars list` | | `pinda.bossbar.admin` | op |
 | `/timber` | `/bomenkappen`, `/treefeller` | `pinda.timber.use` | iedereen |
 | `/backpack` | `/bp`, `/rugtas`, `/rugzak`, `/rt`, `/rz` | `pinda.backpack.use` | iedereen |
 | `/backpack <speler>` | | `pinda.backpack.others` (+ `.edit` om aan te passen) | Mod (bekijken) / op |
@@ -423,7 +441,7 @@ plugins/PindaFramework/
     ├── backpack.yml    rugtas: grootte, spelmodi, gouden staaf, gevallen rugtas bij doodgaan
     ├── motd.yml        de MOTD in de serverlijst (meerdere varianten)
     ├── leaderboards.yml welke toplijsten, hoe vaak bijwerken, verborgen spelers
-    ├── scoreboard.yml  het scoreboard: wisselen, plekken, eigen plek, werelden
+    ├── bossbar.yml     bossbars: teksten, kleuren, balk, effecten, werelden en de wisselingen
     ├── broadcasts.yml  automatische aankondigingen en hoe vaak
     ├── antilag.yml     items opruimen, maximum mobs per chunk, ingrijpen bij lag
     ├── world.yml       explosies, endermen, akkers, phantoms, spawnen, ender dragon

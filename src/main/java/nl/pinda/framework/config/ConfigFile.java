@@ -73,7 +73,9 @@ public final class ConfigFile {
             if (!loaded.isSet(key)) {
                 // Alleen echt nieuwe instellingen toevoegen. Stond hij al in de vorige standaardversie,
                 // dan heeft de beheerder hem bewust weggehaald (bijv. een rang of een blok uit een lijst).
-                if (previous == null || !previous.isSet(key)) {
+                // Hetzelfde als de beheerder het hele blok erboven weghaalde (bijv. een bossbar): dan
+                // geen losse nieuwe instelling erin terugzetten.
+                if ((previous == null || !previous.isSet(key)) && !removedParent(previous, loaded, key)) {
                     loaded.set(key, newDefault);
                     added++;
                 }
@@ -96,6 +98,20 @@ public final class ConfigFile {
             plugin.getLogger().info(resourcePath + " bijgewerkt: " + added + " nieuw, " + updated + " vernieuwd.");
         }
         writeSnapshot();
+    }
+
+    /** Stond een blok boven deze instelling in de vorige standaardversie, maar heeft de beheerder het weggehaald? */
+    private static boolean removedParent(YamlConfiguration previous, YamlConfiguration loaded, String key) {
+        if (previous == null) {
+            return false;
+        }
+        for (int dot = key.indexOf('.'); dot > 0; dot = key.indexOf('.', dot + 1)) {
+            String parent = key.substring(0, dot);
+            if (previous.isConfigurationSection(parent) && !loaded.isSet(parent)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public YamlConfiguration get() {

@@ -91,11 +91,11 @@ settings:
         - "<text>Shows above your hotbar"
         - "<text>how much XP you earn."
 
-    scoreboard:
-      name: "<primary>Scoreboard"
+    bossbar:
+      name: "<primary>Boss bars"
       description:
-        - "<text>The leaderboards on"
-        - "<text>the right of your screen."
+        - "<text>The bars at the top of your"
+        - "<text>screen, with leaderboards and more."
 
     timber:
       name: "<primary>Tree felling"
@@ -916,15 +916,22 @@ top:
         - "<text>of each skill."
     close: "<error>Close"
 
-scoreboard:
-  title: "<gradient:#FFC857:#E9724C><bold><board>"
-  entry: "<muted><position>. <text><player>"
-  entry-self: "<primary><position>. <highlight><bold><player>"
-  value: "<primary><value>"
-  empty: "<muted>Nobody yet"
-  own: "<text>You <muted>#<position>"
-  own-none: "<text>You <muted>-"
-  footer: "<muted>All boards: <primary>/top"
+bossbar:
+  # The top of a leaderboard in a boss bar (<top:money:3>)
+  top-entry: "<muted><position>.</muted> <highlight><player></highlight> <primary><value></primary>"
+  top-separator: "<muted>  ·  </muted>"
+  top-empty: "<muted>nobody yet"
+  toggled-on: "<prefix><text>Boss bars are now <success>on</success>."
+  toggled-off: "<prefix><text>Boss bars are now <error>off</error>. Turn them back on with <primary>/bossbars toggle</primary> or /settings."
+  usage: "<prefix><text>Usage: <primary>/bossbars toggle</primary> <muted>(turn your boss bars on or off)"
+  usage-admin: "<prefix><text>Usage: <primary>/bossbars toggle</primary>, <primary>/bossbars show <name> [player|*] [seconds]</primary>, <primary>/bossbars hide <name|*> [player|*]</primary> or <primary>/bossbars list</primary>"
+  unknown: "<prefix><error>There is no boss bar <highlight><bar></highlight>. <text>Choose from: <muted><bars>"
+  shown: "<prefix><text>Boss bar <primary><bar></primary> shown to <highlight><count></highlight> player(s)."
+  hidden: "<prefix><text>Boss bar <primary><bar></primary> removed for <highlight><count></highlight> player(s)."
+  list-header: "<prefix><text>Boss bars <muted>(<count>)</muted>:"
+  list-bar: "<muted> • <primary><bar></primary> <muted><color>, <frames> text(s), <seconds> s"
+  list-rotation: "<muted> ↻ <text><name></text>: <bars>"
+  list-rotation-off: "<muted> ↻ <name> (off): <bars>"
 
 broadcasts:
   format: "<newline><gradient:#FFC857:#E9724C><bold>✦ <server></bold></gradient> <muted>»</muted> <text><message><newline>"

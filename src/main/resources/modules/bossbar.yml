@@ -1,0 +1,131 @@
+# ┌──────────────────────────────────────────────┐
+# │          PindaFramework - bossbars           │
+# └──────────────────────────────────────────────┘
+# Bossbars bovenin het scherm, naar het voorbeeld van AnimaBossBar. Het makkelijkst beheer je
+# ze in het paneel (Bossbars): daar zie je ook meteen hoe ze bewegen.
+#
+# Een bossbar heeft een tekst (MiniMessage, net als in de taalbestanden), of een lijst teksten
+# (frames) die elkaar afwisselen. In de tekst werken:
+#   <player> (wie het ziet), <online>, <max>, <world>, <tps>, <ping>, <server>,
+#   <top:money:3>  de top 3 van een toplijst op één regel (money, skills, playtime, kills, mobkills, deaths, trees)
+#   <board:money>  de naam van een toplijst,  <own:money>  je eigen plek (#4)
+#   en %placeholders%: altijd %pinda_...% (zie de README), met PlaceholderAPI ook die van andere plugins.
+#
+# Spelers zetten de bossbars zelf uit in /instellingen of met /bossbars toggle.
+# Een bossbar los tonen (bijv. voor een event): /bossbars show <naam> [speler|*] [seconden].
+
+# Staan de bossbars standaard aan? Spelers kunnen ze zelf uitzetten.
+default-enabled: true
+
+# De schakelaar ook tonen in het setupmenu bij de eerste keer joinen
+show-in-setup: true
+
+# Werelden zonder bossbars
+disabled-worlds: []
+
+# De bossbars. De naam (bijv. top-geld) gebruik je in de wisselingen hieronder en bij /bossbars show.
+#   text            een tekst, of een lijst teksten die elkaar afwisselen
+#   frame-seconds   hoe lang elke tekst blijft staan (minimaal 0.1)
+#   color           pink, blue, red, green, yellow, purple of white
+#   style           progress (één balk), notched_6, notched_10, notched_12 of notched_20 (in vakjes)
+#   progress        static     altijd even vol (value, in procenten)
+#                   decrease   loopt leeg zolang hij te zien is (aftellen)
+#                   increase   loopt vol zolang hij te zien is
+#                   loop       loopt steeds opnieuw leeg (elke cycle-seconds)
+#                   bounce     loopt leeg en weer vol (elke cycle-seconds)
+#                   value      zo vol als progress-value van progress-max (bijv. <online> van <max>)
+#   duration        hoeveel seconden hij in een wisseling blijft staan (0 = altijd, als hij alleen staat)
+#   effect          none, wave (kleurverloop dat beweegt), shine (glans), pulse (kleur die heen en weer gaat)
+#                   of typewriter (letter voor letter)
+#   effect-colors   de kleuren voor het effect (#RRGGBB)
+#   effect-speed    hoe snel het effect gaat (0.1 tot 5)
+#   permission      alleen voor spelers met deze permissie (leeg = iedereen)
+#   worlds          alleen in deze werelden (leeg = overal)
+#   disabled-worlds niet in deze werelden
+bars:
+  welkom:
+    text:
+      - "<gradient:#FFC857:#E9724C><bold>Welkom op <server>, <player>!</bold></gradient>"
+      - "<text>Zet alles naar jouw zin met <primary>/instellingen</primary> <muted>·</muted> <text>toplijsten: <primary>/top"
+    frame-seconds: 6
+    color: yellow
+    style: progress
+    progress: decrease
+    duration: 12
+    effect: shine
+    effect-colors: ["#FFFFFF"]
+    effect-speed: 1.0
+  server:
+    text: "<primary>✦ <server></primary> <muted>·</muted> <text>Online: <highlight><online></highlight><muted>/<max></muted> <muted>·</muted> <text>Jouw geld: <primary>%pinda_money%"
+    frame-seconds: 1
+    color: green
+    style: notched_10
+    progress: value
+    progress-value: "<online>"
+    progress-max: "<max>"
+    duration: 15
+    effect: none
+  top-geld:
+    text: "<primary>★ <board:money></primary> <muted>»</muted> <top:money:3> <muted>· jij <own:money>"
+    color: yellow
+    style: progress
+    progress: decrease
+    duration: 10
+    effect: none
+  top-skills:
+    text: "<primary>⛏ <board:skills></primary> <muted>»</muted> <top:skills:3> <muted>· jij <own:skills>"
+    color: purple
+    style: progress
+    progress: decrease
+    duration: 10
+    effect: none
+  top-speeltijd:
+    text: "<primary>⌚ <board:playtime></primary> <muted>»</muted> <top:playtime:3> <muted>· jij <own:playtime>"
+    color: blue
+    style: progress
+    progress: decrease
+    duration: 10
+    effect: none
+  top-kills:
+    text: "<primary>⚔ <board:kills></primary> <muted>»</muted> <top:kills:3> <muted>· jij <own:kills>"
+    color: red
+    style: progress
+    progress: decrease
+    duration: 10
+    effect: none
+  top-bomen:
+    text: "<primary>♣ <board:trees></primary> <muted>»</muted> <top:trees:3> <muted>· jij <own:trees>"
+    color: green
+    style: progress
+    progress: decrease
+    duration: 10
+    effect: none
+  # Een voorbeeld voor een event: tonen met /bossbars show event * of in het paneel (Nu tonen).
+  event:
+    text:
+      - "<bold>⚑ EVENT</bold> <text>begint zo bij de spawn!"
+      - "<bold>⚑ EVENT</bold> <text>doe mee met <primary>/spawn"
+    frame-seconds: 3
+    color: red
+    style: notched_20
+    progress: decrease
+    duration: 60
+    effect: wave
+    effect-colors: ["#FF6B6B", "#FFC857", "#FFFFFF"]
+    effect-speed: 1.0
+
+# Wisselingen: elke wisseling is één plek bovenin het scherm. De bossbars erin wisselen elkaar af,
+# elk zo lang als zijn 'duration'.
+#   loop    na de laatste weer vooraan beginnen (false = daarna verdwijnt hij)
+#   start   always = voor iedereen tegelijk (iedereen ziet hetzelfde), join = begint als je joint
+rotations:
+  - name: "Welkom"
+    bars: [welkom]
+    loop: false
+    start: join
+    enabled: true
+  - name: "Hoofdbalk"
+    bars: [server, top-geld, top-skills, top-speeltijd, top-kills, top-bomen]
+    loop: true
+    start: always
+    enabled: true

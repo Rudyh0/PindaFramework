@@ -135,6 +135,7 @@ public final class PanelModule extends PindaModule {
         new PlayerActionsApi(this).register(created);
         new LeaderboardsApi(this).register(created);
         new BroadcastsApi(this).register(created);
+        new BossBarApi(this).register(created);
         new PerformanceApi(this).register(created);
         new BackpackApi(this).register(created);
         new WorldApi(this).register(created);

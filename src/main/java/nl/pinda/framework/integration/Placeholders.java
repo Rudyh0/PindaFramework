@@ -6,15 +6,23 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import nl.pinda.framework.PindaFramework;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 
 /**
- * PlaceholderAPI in onze eigen teksten (aankondigingen, scoreboard): %...% wordt ingevuld als
- * PlaceholderAPI op de server staat. Zonder PlaceholderAPI verandert er niets.
+ * Placeholders in onze eigen teksten (aankondigingen, bossbar): %...% wordt ingevuld als
+ * PlaceholderAPI op de server staat. Zonder PlaceholderAPI werken alleen onze eigen
+ * %pinda_...% placeholders.
  */
 public final class Placeholders {
 
     private static final Pattern TOKEN = Pattern.compile("%[A-Za-z][^%\\s]*%");
+    private static final String OWN_PREFIX = "%pinda_";
+    private static PindaPlaceholders own;
+
+    /** Bij het starten van de plugin: onze eigen placeholders klaarzetten (ook zonder PlaceholderAPI). */
+    public static void init(PindaFramework plugin) {
+        own = new PindaPlaceholders(plugin);
+    }
     private static final Pattern LEGACY_AMPERSAND = Pattern.compile("&[0-9a-fk-orA-FK-OR#]");
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
@@ -30,8 +38,12 @@ public final class Placeholders {
      * Vult de %placeholders% in voor deze speler. Kleurcodes uit de uitkomst (§a, &amp;a) worden
      * omgezet naar MiniMessage; gewone tekst wordt zo ingevoegd dat er geen tags in kunnen sluipen.
      */
-    public static String apply(Player player, String text) {
-        if (text == null || text.indexOf('%') < 0 || !available()) {
+    public static String apply(OfflinePlayer player, String text) {
+        if (text == null || text.indexOf('%') < 0) {
+            return text;
+        }
+        boolean papi = available();
+        if (!papi && (own == null || !text.contains(OWN_PREFIX))) {
             return text;
         }
         Matcher matcher = TOKEN.matcher(text);
@@ -40,7 +52,14 @@ public final class Placeholders {
             String token = matcher.group();
             String value;
             try {
-                value = Papi.set(player, token);
+                if (papi) {
+                    value = Papi.set(player, token);
+                } else if (token.startsWith(OWN_PREFIX) && own != null) {
+                    String resolved = own.resolve(player, token.substring(OWN_PREFIX.length(), token.length() - 1).toLowerCase(java.util.Locale.ROOT));
+                    value = resolved == null ? token : resolved;
+                } else {
+                    value = token;
+                }
             } catch (RuntimeException | LinkageError e) {
                 value = token;
             }
@@ -62,7 +81,7 @@ public final class Placeholders {
 
     /** Alleen geladen als PlaceholderAPI er is. */
     private static final class Papi {
-        static String set(Player player, String text) {
+        static String set(OfflinePlayer player, String text) {
             return me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, text);
         }
     }

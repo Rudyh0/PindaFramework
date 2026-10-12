@@ -9,7 +9,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 /**
  * Toplijsten: rijkste spelers, skills, speeltijd, kills, mobkills en doden. Te zien met /top,
- * op het scoreboard, in het paneel en via PlaceholderAPI.
+ * in de bossbars, in het paneel en via PlaceholderAPI.
  */
 public final class LeaderboardsModule extends PindaModule {
 

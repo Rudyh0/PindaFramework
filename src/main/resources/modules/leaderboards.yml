@@ -1,7 +1,7 @@
 # ┌──────────────────────────────────────────────┐
 # │          PindaFramework - toplijsten         │
 # └──────────────────────────────────────────────┘
-# Toplijsten met /top, op het scoreboard, in het paneel en via PlaceholderAPI.
+# Toplijsten met /top, in de bossbars, in het paneel en via PlaceholderAPI.
 # Speeltijd, kills en doden komen uit de statistieken van Minecraft zelf,
 # dus ook wat spelers deden voordat PindaFramework erop stond telt mee.
 

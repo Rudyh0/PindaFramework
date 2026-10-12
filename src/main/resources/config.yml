@@ -35,7 +35,7 @@ modules:
   timber: true
   motd: true
   leaderboards: true
-  scoreboard: true
+  bossbar: true
   broadcasts: true
   antilag: true
   world: true

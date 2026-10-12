@@ -274,10 +274,18 @@ permissions:
     description: /skills set, addxp, reset en boost
     default: op
 
-  # Toplijsten en antilag
+  # Toplijsten, bossbars en antilag
   pinda.top.use:
     description: /top, de toplijsten bekijken
     default: true
+  pinda.bossbar.toggle:
+    description: /bossbars toggle, je eigen bossbars aan- of uitzetten
+    default: true
+  pinda.bossbar.admin:
+    description: /bossbars show, hide en list (een bossbar los tonen, bijv. voor een event)
+    default: op
+    children:
+      pinda.bossbar.toggle: true
   pinda.antilag.use:
     description: /lag en /lag chunks, zien hoe het met de server gaat
     default: op

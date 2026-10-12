@@ -27,7 +27,7 @@ import nl.pinda.framework.modules.moderation.ModerationModule;
 import nl.pinda.framework.modules.ranks.RankModule;
 import nl.pinda.framework.modules.msg.MsgModule;
 import nl.pinda.framework.modules.panel.PanelModule;
-import nl.pinda.framework.modules.scoreboard.ScoreboardModule;
+import nl.pinda.framework.modules.bossbar.BossBarModule;
 import nl.pinda.framework.modules.settings.SettingsModule;
 import nl.pinda.framework.modules.shop.ShopModule;
 import nl.pinda.framework.modules.skills.SkillsModule;
@@ -105,6 +105,7 @@ public final class PindaFramework extends JavaPlugin {
             getServer().getPluginManager().registerEvents(teleports, this);
             getServer().getPluginManager().registerEvents(input, this);
 
+            Placeholders.init(this);
             modules = new ModuleManager(this);
             modules.register(new SettingsModule(this));
             modules.register(new RankModule(this));
@@ -128,7 +129,7 @@ public final class PindaFramework extends JavaPlugin {
             modules.register(new TimberModule(this));
             modules.register(new MotdModule(this));
             modules.register(new LeaderboardsModule(this));
-            modules.register(new ScoreboardModule(this));
+            modules.register(new BossBarModule(this));
             modules.register(new BroadcastsModule(this));
             modules.register(new AntilagModule(this));
             modules.register(new WorldControlModule(this));

@@ -83,6 +83,9 @@ final class TextsApi extends PanelApi {
             if (key.startsWith("language") || current.isConfigurationSection(key)) {
                 continue;
             }
+            if (defaults != null && !defaults.isSet(key)) {
+                continue; // Een oude tekst die de plugin niet meer gebruikt (bijv. van het scoreboard)
+            }
             Object value = value(current, key);
             Object fallback = defaults == null ? null : value(defaults, key);
             entries.add(map("key", key, "value", value, "default", fallback,
