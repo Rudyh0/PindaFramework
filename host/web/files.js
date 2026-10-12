@@ -671,9 +671,9 @@
       <div class="code-gutter" aria-hidden="true"><pre class="code-lines"></pre></div>
       <div class="code-area">
         <pre class="code-hl" aria-hidden="true"><code></code></pre>
-        <textarea class="code-input" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Inhoud van het bestand"></textarea>
+        <textarea class="code-text" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Inhoud van het bestand"></textarea>
       </div></div>`);
-    const input = $('.code-input', container);
+    const input = $('.code-text', container);
     const hl = $('.code-hl code', container);
     const pre = $('.code-hl', container);
     const lines = $('.code-lines', container);
