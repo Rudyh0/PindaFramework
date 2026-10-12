@@ -385,7 +385,7 @@
         <div class="brand"><img src="/favicon.svg" alt=""><div><div class="brand-name">${me.server}</div><div class="brand-sub">Beheerpaneel</div></div></div>
         <nav class="nav">${links}</nav>
         <div class="sidebar-foot">
-          <div class="me">${avatar(me.name, 'md')}<div class="me-text"><div class="me-name">${me.name}</div>${rankBadge(me.rank)}</div>
+          <div class="me">${me.dev ? html`<img class="avatar md" src="/favicon.svg" alt="" title="Ingelogd via het dev-paneel">` : avatar(me.name, 'md')}<div class="me-text"><div class="me-name">${me.name}</div>${rankBadge(me.rank)}</div>
             <button class="btn ghost icon-only" data-action="logout" title="Uitloggen" aria-label="Uitloggen">${icon('logout')}</button></div>
         </div>
       </aside>

@@ -11,6 +11,10 @@
 #    (bijv. sudo ufw allow 8085/tcp).
 #  - Later met een eigen adres en https (aanrader): zet nginx of Caddy ervoor, zet
 #    public-url op bijv. "https://panel.pindacraft.nl" en behind-proxy op true.
+#  - Met het dev-paneel (PindaHost) hoef je hier niets te doen: kies het adres daar bij
+#    Server > Instellingen. Het dev-paneel zet dan public-url, web.bind en behind-proxy bij elke
+#    start goed en regelt nginx en https. Met de knop "Webpaneel" in het dev-paneel log je
+#    meteen in als beheerder.
 # Na het aanpassen: /pinda reload
 
 web:

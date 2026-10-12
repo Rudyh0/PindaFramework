@@ -457,7 +457,7 @@ func (a *App) scheduledRestart(schedule Schedule, at time.Time) {
 			a.pruneBackups(schedule.Backup.Keep, func(string, ...any) {})
 		}
 	}
-	command, err := a.serverCommand()
+	command, err := a.startCommand()
 	if err == nil {
 		err = a.process.Restart(command)
 	}

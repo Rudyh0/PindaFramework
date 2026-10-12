@@ -339,6 +339,22 @@ public final class PanelModule extends PindaModule {
         return baseUrl() + "/#login=" + token;
     }
 
+    /** Hoe lang een inloglink van het dev-paneel geldig is: hij wordt meteen geopend. */
+    static final long DEV_LINK_MILLIS = 60_000L;
+
+    /** Een inloglink als beheerder voor iemand uit het dev-paneel (alleen via RCON, zie /panel devlink). */
+    String createDevLink(String name) {
+        return baseUrl() + "/#login=" + sessions.createDevToken(name, DEV_LINK_MILLIS);
+    }
+
+    /**
+     * Wie via het dev-paneel inlogt: een beheerder die alles mag, zonder eigen speler of rang. In
+     * het logboek en bij straffen staat hij als "naam (dev)", zodat je hem niet verwart met een speler.
+     */
+    PanelUser devUser(UUID uuid, String name) {
+        return new PanelUser(uuid, name + " (dev)", "pindahost", "Dev-paneel", "#F2A33A", Integer.MAX_VALUE, true, Map.of(), true);
+    }
+
     // ============================================================ statistieken
 
     private void sample() {

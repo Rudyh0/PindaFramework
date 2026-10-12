@@ -46,6 +46,8 @@ func (a *App) handleServer(q *Request) (any, error) {
 		"mode": a.process.Mode(), "state": status.State, "since": status.Since, "memoryUsed": status.Memory,
 		"eula": state.Installed && a.eulaAccepted(), "eulaUrl": eulaURL, "pluginsReady": state.PluginsReady,
 		"busy": a.serverBusy(), "address": config.GameAddress, "port": port, "players": nil,
+		// Heeft het webpaneel van de plugin een adres? (Met een domein moet je er een kiezen.)
+		"webpanelReady": config.Mode != "domain" || config.PanelDomain != "",
 	}
 	result["memTotal"], _ = memory()
 	if status.State == "active" {
@@ -169,13 +171,14 @@ func (a *App) handleServerPower(q *Request) (any, error) {
 		if !state.PluginsReady {
 			return a.prepareAndStart(q)
 		}
-		command, err := a.serverCommand()
-		if err != nil {
-			return nil, badRequest("%s", capitalize(err.Error())+".")
-		}
 		// Niet terwijl er iets met de server loopt (terugzetten vervangt de bestanden).
 		if !a.lockServerJob() {
 			return nil, errServerBusy
+		}
+		command, err := a.startCommand()
+		if err != nil {
+			a.unlockServerJob()
+			return nil, badRequest("%s", capitalize(err.Error())+".")
 		}
 		if body.Action == "start" {
 			err = a.process.Start(command)
@@ -249,7 +252,7 @@ func (a *App) prepareAndStart(q *Request) (any, error) {
 			a.audit.add(user, ip, "standaardplugins neergezet", "", "")
 			say("Plugins klaar. De rangen van PindaFramework geven ze de juiste rechten (PindaAdmin alles, PindaMod CoreProtect).")
 		}
-		command, err := a.serverCommand()
+		command, err := a.startCommand()
 		if err != nil {
 			return err
 		}
@@ -288,6 +291,10 @@ func (a *App) handleServerCommand(q *Request) (any, error) {
 	command := strings.TrimPrefix(strings.TrimSpace(body.Command), "/")
 	if command == "" || len(command) > 1000 || strings.ContainsAny(command, "\r\n\x00") {
 		return nil, badRequest("Typ een opdracht (zonder enters).")
+	}
+	// Een inloglink voor het webpaneel alleen via de knop: dan altijd op je eigen naam.
+	if devlinkCommand.MatchString(command) {
+		return nil, badRequest("Inloggen op het webpaneel gaat met de knop Webpaneel bovenaan.")
 	}
 	if status := a.process.Status(); status.State != "active" {
 		return nil, badRequest("De server draait niet.")

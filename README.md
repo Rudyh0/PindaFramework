@@ -192,6 +192,7 @@ Wat er nu in zit:
   - **Console**: alles uit `logs/latest.log` live, en opdrachten sturen (via RCON, alleen vanaf de VPS zelf, over één vaste verbinding; ook lange antwoorden zoals `help` komen heel aan). Spelers online, geheugen en uptime staan erboven.
   - **Plugins**: alle plugins met versie, aan/uit zetten, verwijderen, en de standaardplugins met één knop bijwerken.
   - **Instellingen**: hoeveel geheugen de server krijgt (met de vlaggen van Aikar), en overstappen naar een andere versie of build (alleen `server.jar` wordt vervangen).
+  - **Webpaneel**: het webpaneel van PindaFramework (voor staff) krijgt een eigen adres, bijv. `panel.jouwdomein.nl` (in de setup voorgesteld, later aan te passen bij Instellingen). Het paneel zet het achter nginx met HTTPS (via Cloudflare, of een certificaat van Let's Encrypt), zorgt dat het echte IP van bezoekers doorkomt en zet bij elke start `public-url`, `bind` en `behind-proxy` goed in `modules/panel.yml`. Staat de server uit, dan krijg je een nette pagina in plaats van een fout. Zonder domein gaat poort 8085 open in de firewall. Met de knop **Webpaneel** bovenaan log je er meteen op in als beheerder.
 - **Bestanden**: een bestandsbrowser zoals in Pterodactyl voor de hele servermap. Bladeren, bestanden bewerken in een editor met kleuren (YAML, properties, JSON, …; Ctrl+S om op te slaan), uploaden met slepen (ook hele mappen, in stukken van 16 MB zodat het via Cloudflare werkt), downloaden (mappen als zip), hernoemen, verplaatsen, inpakken als zip en uitpakken (.zip, .tar, .tar.gz), verwijderen. Het paneel blijft altijd binnen de map: symlinks of trucs van een plugin brengen het nooit naar andere bestanden op de VPS.
 - **Website**: een eigen bestandsbrowser voor de website (`/opt/pinda/website`). Alles wat je daar uploadt, staat meteen online op het domein van de website; `index.html` is de voorpagina. Via Cloudflare werkt HTTPS meteen; zonder Cloudflare vraag je met één knop een certificaat aan bij Let's Encrypt.
 - **Backups**: de servermap, de website en alle databases samen in één zip. Elke nacht automatisch (vaste tijden of elke paar uur, per dag van de week), of nu met één knop en een notitie. De server kan blijven draaien: het paneel zet opslaan even uit (`save-off`, `save-all flush`) zodat de wereld heel in de backup komt. Cache, libraries, versions en logs gaan niet mee (instelbaar).
@@ -210,6 +211,8 @@ Wat er nu in zit:
 | Databasegebruikers, wachtwoorden en toegang | ✓ | |
 | PindaFramework omzetten naar MySQL | ✓ | |
 | Server starten, stoppen, console, plugins, geheugen | ✓ | ✓ |
+| Inloggen op het webpaneel van PindaFramework (als beheerder) | ✓ | ✓ |
+| Het adres van dat webpaneel instellen | ✓ | |
 | Bestanden van de server en de website | ✓ | ✓ |
 | Server installeren of van versie wisselen | ✓ | |
 | HTTPS-certificaat voor de website aanvragen | ✓ | |
@@ -217,7 +220,7 @@ Wat er nu in zit:
 | Backups terugzetten, uploaden en verwijderen; de planning | ✓ | |
 | Gebruikers van het dev-paneel beheren | ✓ | |
 
-Een developer kan dus alles wat de server zelf kan: plugins en bestanden neerzetten en aanpassen. Geef die rol alleen aan mensen die je daarmee vertrouwt.
+Een developer kan dus alles wat de server zelf kan: plugins en bestanden neerzetten en aanpassen, en als beheerder in het webpaneel van PindaFramework. Geef die rol alleen aan mensen die je daarmee vertrouwt.
 - **Logboek**: wie deed wat en vanaf welk IP.
 
 Op de server zelf (als root):
@@ -274,6 +277,7 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 2. **Tweestapsverificatie (verplicht):** de eerste keer scan je een QR-code met een authenticator-app naar keuze (Google Authenticator, Microsoft Authenticator, Authy, Bitwarden, …). Daarna vul je bij elke login de code van 6 cijfers uit de app in. Na 5 foute codes vervalt de link.
 3. Na 60 minuten zonder activiteit (of maximaal 12 uur) log je vanzelf uit. `/panel logout` logt je overal uit.
 4. **Telefoon kwijt?** Een admin reset de 2FA met `/panel 2fa reset <speler>` (ook vanuit de console) of via het spelersprofiel in het paneel.
+5. **Vanuit het dev-paneel:** de knop **Webpaneel** (bij Server) logt je meteen in als beheerder, in een nieuw tabblad. De 2FA heb je dan al gedaan bij het inloggen op het dev-paneel. Het dev-paneel vraagt de link via RCON op (`/panel devlink`); dat werkt alleen via RCON, niet in-game en niet in de gewone console, en het antwoord komt niet in het serverlog. In het logboek en bij straffen sta je als `<naam> (dev)`.
 
 **Wat kan er in?**
 
@@ -309,6 +313,7 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 - **Laptop/thuis:** niets instellen. De link gebruikt automatisch het IP-adres van je laptop in je netwerk, bijvoorbeeld `http://192.168.1.20:8085`. Werkt op elk apparaat in hetzelfde netwerk.
 - **VPS:** zet `public-url: "http://<ip-van-je-vps>:8085"` en open de poort: `sudo ufw allow 8085/tcp`.
 - **Eigen adres met https (aanrader als je live gaat):** zet nginx of Caddy ervoor, zet `public-url: "https://panel.jouwdomein.nl"`, `bind: "127.0.0.1"` en `behind-proxy: true`. Met Caddy is dat één regel: `panel.jouwdomein.nl { reverse_proxy 127.0.0.1:8085 }`.
+- **Met het dev-paneel:** niets zelf doen. Kies het adres in de setup of bij Server › Instellingen (bijv. `panel.jouwdomein.nl`); het dev-paneel regelt nginx, https en `panel.yml`.
 
 **Veiligheid:** inloglinks zijn lang en willekeurig en werken maar één keer; ze verdwijnen direct uit je adresbalk. Het paneel controleert bij elke actie opnieuw je rang, dus wie een lagere rang krijgt, verliest meteen zijn rechten. Wie geen operator is, kan alleen iets doen bij zichzelf of bij spelers met een lagere rang, alleen rangen onder zijn eigen rang beheren, en alleen permissies weggeven die hij zelf heeft. De standaardrang, de operator-instellingen en de instellingen van het paneel zelf kan alleen een operator aanpassen. Elke actie komt in het logboek én in de serverconsole. Zonder https gaat het verkeer onversleuteld over het netwerk: prima thuis, maar gebruik https zodra het paneel via internet bereikbaar is.
 
@@ -364,6 +369,7 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | `/history <speler>`, `/banlist` | `/straffen`, `/bans` | `pinda.mod.history` | Mod |
 | `/panel [logout]` | `/paneel`, `/webpanel` | `pinda.panel.use` | Mod |
 | `/panel 2fa reset <speler>` | | `pinda.panel.security` | op |
+| `/panel devlink <naam>` | | alleen via RCON (het dev-paneel) | — |
 | `/skills [speler]`, `/skills top [skill]` | `/skill`, `/vaardigheden`, `/levels` | `pinda.skills.use` (+ `.others`) | iedereen |
 | `/skills set\|addxp\|reset <speler> ...`, `/skills boost <x> <duur>\|stop` | | `pinda.skills.admin` | op |
 | `/top [lijst]` | `/toplijst`, `/leaderboard`, `/lb` | `pinda.top.use` | iedereen |

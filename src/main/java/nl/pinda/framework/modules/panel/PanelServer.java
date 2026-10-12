@@ -199,7 +199,10 @@ final class PanelServer {
         }
         PanelUser user = session.user;
         long now = System.currentTimeMillis();
-        if (user == null || now - session.userLoaded > 10_000L) {
+        if (session.dev) {
+            // Via het dev-paneel: geen speler of rang om opnieuw op te zoeken.
+            user = module.devUser(session.uuid, session.name);
+        } else if (user == null || now - session.userLoaded > 10_000L) {
             user = PanelModule.await(module.loadUser(session.uuid, session.name));
             session.user = user;
             session.userLoaded = now;

@@ -209,6 +209,7 @@ func (a *App) routes() http.Handler {
 	a.registerServer(mux)
 	a.registerWebsite(mux)
 	a.registerBackups(mux)
+	a.registerWebpanel(mux)
 
 	static, err := fs.Sub(webFiles, "web")
 	if err != nil {

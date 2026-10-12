@@ -12,9 +12,20 @@ import java.util.UUID;
  *
  * @param operator    mag alles (rang met operator: true)
  * @param permissions alle permissies van de rang, inclusief geërfde
+ * @param dev         ingelogd vanuit het dev-paneel (PindaHost): een beheerder zonder eigen speler
  */
 record PanelUser(UUID uuid, String name, String rankId, String rankName, String rankColor, int weight,
-                 boolean operator, Map<String, Boolean> permissions) {
+                 boolean operator, Map<String, Boolean> permissions, boolean dev) {
+
+    PanelUser(UUID uuid, String name, String rankId, String rankName, String rankColor, int weight,
+              boolean operator, Map<String, Boolean> permissions) {
+        this(uuid, name, rankId, rankName, rankColor, weight, operator, permissions, false);
+    }
+
+    /** De speler achter deze gebruiker, of null bij het dev-paneel (dan telt hij als de console). */
+    UUID player() {
+        return dev ? null : uuid;
+    }
 
     static final String USE = "pinda.panel.use";
     static final String PLAYERS = "pinda.panel.players";

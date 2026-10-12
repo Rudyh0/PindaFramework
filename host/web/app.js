@@ -371,6 +371,8 @@
             <input class="input" name="gameAddress" value="${info.gameAddress || (domain ? 'play.' + domain : '')}" placeholder="play.pindacraft.nl" required></label>
           <label class="field port">Poort<input class="input" type="number" name="gamePort" min="1024" max="65535" value="${info.gamePort || 25565}" required></label>
         </div>
+        ${info.mode === 'domain' ? html`<label class="field">Webpaneel <span class="hint">het beheerpaneel voor staff (in-game /panel), met HTTPS (mag leeg)</span>
+          <input class="input" name="panelDomain" value="${info.panelDomain || (domain ? 'panel.' + domain : '')}" placeholder="panel.pindacraft.nl"></label>` : ''}
         <div class="wizard-foot"><span></span><button class="btn primary">Verder ${icon('arrow')}</button></div>
       </form>`;
     } else if (step === 1) {
@@ -413,7 +415,9 @@
       body = html`<div class="stack">
         <h2>Klaar om te beginnen</h2>
         <dl class="kv"><dt>Server</dt><dd>${info.serverName}</dd><dt>Adres voor spelers</dt><dd class="mono">${info.gameAddress}${info.gamePort !== 25565 ? `:${info.gamePort}` : ''}</dd>
-          <dt>Website</dt><dd class="mono">${info.siteDomain || '—'}</dd><dt>Database</dt><dd>${info.database === 'mysql' ? 'MySQL (MariaDB)' : 'SQLite'}</dd></dl>
+          <dt>Website</dt><dd class="mono">${info.siteDomain || '—'}</dd>
+          ${info.mode === 'domain' ? html`<dt>Webpaneel</dt><dd class="mono">${info.panelDomain || '—'}</dd>` : ''}
+          <dt>Database</dt><dd>${info.database === 'mysql' ? 'MySQL (MariaDB)' : 'SQLite'}</dd></dl>
         <p class="muted">Op het dashboard zie je wat er draait. Bij Server installeer je daarna de Minecraft-server; bestanden, de website en backups (elke nacht automatisch) staan in het menu.</p>
         <div class="wizard-foot"><button class="btn ghost" data-action="wizard-step" data-step="2">Terug</button>
           <button class="btn primary" data-action="wizard-finish">${icon('check')} Naar het dashboard</button></div>
@@ -996,7 +1000,8 @@
     async 'wizard-server'(form, data, button) {
       const result = await busy(button, () => post('/setup/server', {
         serverName: data.get('serverName').trim(), siteDomain: data.get('siteDomain').trim(),
-        gameAddress: data.get('gameAddress').trim(), gamePort: Number(data.get('gamePort'))
+        gameAddress: data.get('gameAddress').trim(), gamePort: Number(data.get('gamePort')),
+        panelDomain: (data.get('panelDomain') || '').trim()
       }));
       if (result) { await refreshInfo(); renderWizard(1); }
     },

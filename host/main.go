@@ -47,6 +47,13 @@ func main() {
 		}
 	}
 
+	// Voor tests: nginx-blokken in een eigen map, zonder nginx te testen of te herladen.
+	if dir := os.Getenv("PINDA_HOST_FAKE_NGINX"); dir != "" {
+		nginxDir, nginxSSLDir = dir, dir+"/pinda-ssl"
+		nginxTest = func() (string, error) { return "", nil }
+		nginxReload = nginxTest
+	}
+
 	app, err := openApp(*configPath)
 	if err != nil {
 		log.Fatalf("starten mislukt: %v", err)

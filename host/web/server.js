@@ -40,7 +40,8 @@
     const s = data.state;
     const running = s === 'active';
     const busyState = s === 'activating' || s === 'deactivating' || data.busy;
-    return html`<button class="btn primary" data-action="server-power" data-power="start" ${running || busyState ? 'disabled' : ''}>${icon('play')} Starten</button>
+    return html`<button class="btn" data-action="webpanel-login" ${running ? '' : 'disabled'} title="${running ? 'Inloggen op het webpaneel van PindaFramework, als beheerder' : 'Start eerst de server: het webpaneel draait in de server'}">${icon('panel')} Webpaneel</button>
+      <button class="btn primary" data-action="server-power" data-power="start" ${running || busyState ? 'disabled' : ''}>${icon('play')} Starten</button>
       <button class="btn" data-action="server-power" data-power="restart" ${!running || busyState ? 'disabled' : ''}>${icon('restart')} Herstarten</button>
       ${s === 'deactivating'
         ? html`<button class="btn solid-danger" data-action="server-power" data-power="kill">${icon('bolt')} Afbreken</button>`
@@ -130,6 +131,83 @@
     const result = await busy(button, () => post('/server/eula', { accept: true }));
     if (!result) return;
     if (result.job) watchJob(result.job, () => window.PH.reloadPage());
+  };
+
+  // =============================================================== webpaneel
+
+  // Inloggen op het webpaneel van PindaFramework als beheerder. Het tabblad gaat meteen bij de klik
+  // open (anders houdt de browser het tegen als pop-up) en krijgt de link zodra die er is.
+  actions['webpanel-login'] = async button => {
+    if (srv.data && srv.data.webpanelReady === false) {
+      toast('Kies eerst een adres voor het webpaneel.', 'error');
+      window.location.hash = '#/server/instellingen';
+      return;
+    }
+    const tab = window.open('', '_blank');
+    const result = await busy(button, () => post('/webpanel/login', {}));
+    if (!result) {
+      if (tab) tab.close();
+      return;
+    }
+    if (tab && !tab.closed) {
+      tab.opener = null;
+      tab.location.replace(result.url);
+      return;
+    }
+    openModal(html`<div class="modal-head"><h3>Webpaneel</h3><p>Je browser hield het nieuwe tabblad tegen.</p></div>
+      <div class="modal-body stack"><a class="btn primary" href="${result.url}" target="_blank" rel="noopener noreferrer">${icon('external')} Webpaneel openen</a>
+        <p class="muted small">De link werkt één keer en is een minuut geldig.</p></div>
+      <div class="modal-foot"><button class="btn ghost" data-action="close">Sluiten</button></div>`);
+  };
+
+  const HTTPS_LABELS = {
+    cloudflare: 'Via Cloudflare (SSL/TLS-modus Full)',
+    letsencrypt: 'Let\'s Encrypt, wordt vanzelf verlengd',
+    'self-signed': 'Eigen certificaat: je browser waarschuwt. Klopt het A-record, klik dan nog eens op Opslaan voor Let\'s Encrypt.'
+  };
+
+  function webpanelView(info) {
+    const intro = html`<p class="muted small">Het beheerpaneel van PindaFramework draait in de Minecraft-server. Staff logt in met <span class="kbd">/panel</span> in het spel (met 2FA). Jij komt er met de knop <b>Webpaneel</b> bovenaan meteen in, als beheerder.</p>`;
+    if (info.mode !== 'domain') {
+      return html`${intro}<dl class="kv"><dt>Adres</dt><dd class="mono">${info.url || '—'}</dd><dt>Poort</dt><dd>${info.port}, open in de firewall</dd></dl>
+        <p class="muted small">Zonder domein draait het webpaneel zonder HTTPS. Met een domein krijgt het een eigen adres met HTTPS.</p>`;
+    }
+    const plugin = info.plugin || {};
+    const applied = plugin.exists && plugin.publicUrl === info.url && plugin.behindProxy;
+    const status = info.domain ? html`<dl class="kv">
+        <dt>Adres</dt><dd><a class="mono" href="${info.url}" target="_blank" rel="noopener noreferrer">${info.domain}</a></dd>
+        <dt>HTTPS</dt><dd>${HTTPS_LABELS[info.https] || '—'}</dd>
+        <dt>PindaFramework</dt><dd>${applied ? html`<span class="badge success">ingesteld</span>` : html`<span class="badge plain">bij de volgende start</span>`}</dd></dl>`
+      : html`<div class="alert warning">${icon('warn')} <div>Het webpaneel heeft nog geen adres en is dus niet van buitenaf te bereiken. Kies er een, bijvoorbeeld <b class="mono">${info.suggested || 'panel.jouwdomein.nl'}</b>.</div></div>`;
+    const dns = info.dns && info.dns.length ? html`<p class="muted small">Maak bij je domein${info.cloudflare ? ' in Cloudflare' : ''} dit record aan:</p>
+      <div class="table-wrap card flat"><table>
+        <thead><tr><th>Type</th><th>Naam</th><th>Waarde</th>${info.cloudflare ? html`<th>Proxy</th>` : ''}</tr></thead>
+        <tbody>${info.dns.map(r => html`<tr><td><span class="badge plain">${r.type}</span></td><td class="mono">${r.name}</td><td class="mono">${r.content}</td>
+          ${info.cloudflare ? html`<td class="nowrap">${r.proxy === 'aan' ? html`<span class="badge warning">Aan</span>` : html`<span class="badge plain">Uit</span>`}</td>` : ''}</tr>`)}</tbody></table></div>` : '';
+    const form = isAdmin() ? html`<form data-form="webpanel-domain" class="webpanel-form">
+        <label class="field grow">Adres van het webpaneel<input class="input" name="domain" value="${info.domain || info.suggested || ''}" placeholder="${info.suggested || 'panel.jouwdomein.nl'}" autocomplete="off" spellcheck="false"></label>
+        <button class="btn primary">${icon('save')} Opslaan</button></form>`
+      : html`<p class="muted small">Alleen een beheerder kan het adres aanpassen.</p>`;
+    return html`<div class="stack">${intro}${status}${dns}${form}</div>`;
+  }
+
+  async function loadWebpanel(alive) {
+    let info;
+    try {
+      info = await api('/webpanel');
+    } catch (error) {
+      if (alive() && $('#webpanel-body')) render($('#webpanel-body'), html`<div class="alert error">${icon('warn')} ${error.message}</div>`);
+      return;
+    }
+    if (!alive() || !$('#webpanel-body')) return;
+    render($('#webpanel-body'), webpanelView(info));
+  }
+
+  forms['webpanel-domain'] = async (form, data, button) => {
+    const domain = data.get('domain').trim().toLowerCase();
+    if (!domain && !await confirmDialog({ title: 'Adres weghalen?', text: 'Het webpaneel is dan niet meer van buitenaf te bereiken.', confirm: 'Weghalen', danger: true })) return;
+    const job = await busy(button, () => post('/webpanel', { domain }));
+    if (job) watchJob(job, () => window.PH.reloadPage());
   };
 
   // =============================================================== console
@@ -422,11 +500,13 @@
           <dt>Instellingen</dt><dd><a href="${window.PH.editHash('bestanden', 'server.properties')}">server.properties</a> · <a href="${window.PH.editHash('bestanden', 'purpur.yml')}">purpur.yml</a></dd>
         </dl></div>`)}
     </div>
+    <div style="margin-top:16px">${card('Webpaneel voor staff', 'panel', html`<div class="card-body" id="webpanel-body"><div class="page-loading"><div class="spinner"></div></div></div>`)}</div>
     <div style="margin-top:16px">${card('Versie', 'download', html`<div class="card-body" id="version-body"><div class="page-loading"><div class="spinner"></div></div></div>`)}</div>`);
     const range = $('#memory-range');
     const input = $('#memory-input');
     range.addEventListener('input', () => { input.value = range.value; });
     input.addEventListener('input', () => { range.value = input.value; });
+    loadWebpanel(alive);
     const form = await versionForm(data.version);
     if (!alive() || !$('#version-body')) return;
     render($('#version-body'), html`<p class="muted small">Overstappen naar een andere versie (of een nieuwere build) vervangt alleen server.jar. Stop de server eerst.</p>${form}`);

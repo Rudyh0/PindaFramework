@@ -18,7 +18,7 @@ import (
 // (nginx heeft een eigen certificaat, Cloudflare in modus Full). Zonder Cloudflare vraagt het
 // paneel een certificaat aan bij Let's Encrypt en zet het een eigen nginx-blok voor het domein.
 
-const websiteSite = "/etc/nginx/sites-available/pinda-website"
+const websiteSiteName = "pinda-website"
 
 func (a *App) registerWebsite(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/website", a.api(member, a.handleWebsite))
@@ -55,7 +55,7 @@ func (a *App) handleWebsite(q *Request) (any, error) {
 	}
 	installed, state := unitState("nginx")
 	result["nginx"] = map[string]any{"installed": installed, "active": state == "active"}
-	_, managed := os.Stat(websiteSite)
+	_, managed := os.Stat(nginxSitePath(websiteSiteName))
 	result["managedSite"] = managed == nil
 	switch {
 	case config.SiteDomain == "":
@@ -218,34 +218,6 @@ func writeWebsiteSite(config Config, domains []string) error {
 	listenSSL, http2Line := nginxHTTP2()
 	_, err := os.Stat("/proc/net/if_inet6")
 	content := websiteSiteConfig(config, domains, listenSSL, http2Line, err == nil)
-	previous, readErr := os.ReadFile(websiteSite)
-	enabled := "/etc/nginx/sites-enabled/pinda-website"
-	_, linkErr := os.Lstat(enabled)
-	restore := func() {
-		if readErr == nil {
-			_ = writeFileAtomic(websiteSite, previous, 0o644)
-		} else {
-			_ = os.Remove(websiteSite)
-		}
-		if linkErr != nil {
-			_ = os.Remove(enabled)
-		}
-	}
-	if err := writeFileAtomic(websiteSite, []byte(content), 0o644); err != nil {
-		return err
-	}
-	if linkErr != nil {
-		if err := os.Symlink(websiteSite, enabled); err != nil {
-			restore()
-			return err
-		}
-	}
-	if out, err := runQuiet(30*time.Second, "nginx", "-t"); err != nil {
-		restore()
-		return fmt.Errorf("de nginx-instellingen kloppen niet: %s", out)
-	}
-	if out, err := runQuiet(30*time.Second, "systemctl", "reload", "nginx"); err != nil {
-		return fmt.Errorf("nginx herladen: %s", out)
-	}
-	return nil
+	_, err = installNginxSite(websiteSiteName, content)
+	return err
 }

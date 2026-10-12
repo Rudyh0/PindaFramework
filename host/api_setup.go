@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -34,20 +35,22 @@ func (a *App) handleSetupInfo(q *Request) (any, error) {
 		return nil, err
 	}
 	return map[string]any{
-		"mode":        config.Mode,
-		"domain":      config.Domain,
-		"cloudflare":  config.Cloudflare,
-		"serverName":  config.ServerName,
-		"siteDomain":  config.SiteDomain,
-		"gameAddress": config.GameAddress,
-		"gamePort":    config.GamePort,
-		"database":    config.Database,
-		"setupDone":   config.SetupDone,
-		"addresses":   publicAddresses(),
-		"dns":         dnsRecords(config, publicAddresses()),
-		"mariadb":     a.mariadb.status(),
-		"plugin":      map[string]any{"exists": exists, "type": plugin.Type},
-		"fingerprint": a.certificateFingerprint(),
+		"mode":           config.Mode,
+		"domain":         config.Domain,
+		"cloudflare":     config.Cloudflare,
+		"serverName":     config.ServerName,
+		"siteDomain":     config.SiteDomain,
+		"gameAddress":    config.GameAddress,
+		"gamePort":       config.GamePort,
+		"panelDomain":    config.PanelDomain,
+		"panelSuggested": suggestedPanelDomain(config),
+		"database":       config.Database,
+		"setupDone":      config.SetupDone,
+		"addresses":      publicAddresses(),
+		"dns":            dnsRecords(config, publicAddresses()),
+		"mariadb":        a.mariadb.status(),
+		"plugin":         map[string]any{"exists": exists, "type": plugin.Type},
+		"fingerprint":    a.certificateFingerprint(),
 	}, nil
 }
 
@@ -84,6 +87,9 @@ func dnsRecords(config Config, addresses []string) []DNSRecord {
 		add(config.Domain, web, "Het dev-paneel")
 	}
 	add(config.SiteDomain, web, "De website van de server")
+	if config.Mode == "domain" {
+		add(config.PanelDomain, web, "Het webpaneel voor staff (in-game /panel)")
+	}
 	if config.GameAddress != "" {
 		add(config.GameAddress, "uit", "Minecraft kan niet door de Cloudflare-proxy: zet de wolk hier op grijs (DNS only).")
 		port := config.GamePort
@@ -106,6 +112,7 @@ func (a *App) handleSetupServer(q *Request) (any, error) {
 		SiteDomain  string `json:"siteDomain"`
 		GameAddress string `json:"gameAddress"`
 		GamePort    int    `json:"gamePort"`
+		PanelDomain string `json:"panelDomain"`
 	}
 	if err := q.body(&body); err != nil {
 		return nil, err
@@ -132,12 +139,32 @@ func (a *App) handleSetupServer(q *Request) (any, error) {
 	if port < 1024 || port > 65535 {
 		return nil, badRequest("Kies een poort tussen 1024 en 65535 (standaard 25565).")
 	}
+	config := a.config.get()
+	panel := ""
+	if config.Mode == "domain" {
+		panel = strings.ToLower(strings.TrimSpace(body.PanelDomain))
+		check := config
+		check.SiteDomain, check.GameAddress = site, game
+		if err := checkPanelDomain(check, panel); err != nil {
+			return nil, err
+		}
+	}
 	if err := a.config.update(func(c *Config) {
-		c.ServerName, c.SiteDomain, c.GameAddress, c.GamePort = name, site, game, port
+		c.ServerName, c.SiteDomain, c.GameAddress, c.GamePort, c.PanelDomain = name, site, game, port, panel
 	}); err != nil {
 		return nil, err
 	}
-	q.log("setup", "server", fmt.Sprintf("%s, %s, %s:%d", name, site, game, port))
+	// Het webpaneel achter nginx zetten (met een eigen certificaat; Let's Encrypt kan pas als de
+	// DNS klopt, dat gaat later via Server › Instellingen). Lukt het niet, dan zie je dat daar ook.
+	if config.Mode == "domain" {
+		webpanelMu.Lock()
+		err := a.applyPanelSite()
+		webpanelMu.Unlock()
+		if err != nil {
+			log.Printf("webpaneel in nginx: %v", err)
+		}
+	}
+	q.log("setup", "server", fmt.Sprintf("%s, %s, %s:%d, webpaneel %s", name, site, game, port, fallback(panel, "-")))
 	return a.handleSetupInfo(q)
 }
 

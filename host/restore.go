@@ -160,7 +160,7 @@ func (a *App) restoreBackup(ctx context.Context, name string, options RestoreOpt
 			err = fmt.Errorf("%w. Wel al teruggezet: %s", err, strings.Join(done, ", "))
 		}
 		if err != nil && wasRunning && state.Installed && !running(a.process.Status().State) {
-			if command, commandErr := a.serverCommand(); commandErr == nil && a.process.Start(command) == nil {
+			if command, commandErr := a.startCommand(); commandErr == nil && a.process.Start(command) == nil {
 				say("De server is weer gestart.")
 			}
 		}
@@ -193,7 +193,7 @@ func (a *App) restoreBackup(ctx context.Context, name string, options RestoreOpt
 		done = append(done, "database "+db)
 	}
 	if options.Start && a.server.get().Installed {
-		command, err := a.serverCommand()
+		command, err := a.startCommand()
 		if err != nil {
 			return err
 		}

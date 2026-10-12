@@ -1,10 +1,12 @@
 package nl.pinda.framework.modules.panel;
 
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,8 +22,12 @@ final class PanelSessions {
     /** Hoe lang je hebt om de 2FA-code in te vullen. */
     private static final long PENDING_MS = 10 * 60 * 1000L;
 
-    /** Een inloglink die nog niet gebruikt is. */
-    record Token(UUID uuid, String name, long expires) {
+    /**
+     * Een inloglink die nog niet gebruikt is.
+     *
+     * @param dev aangemaakt door het dev-paneel (PindaHost): inloggen als beheerder, zonder speler
+     */
+    record Token(UUID uuid, String name, long expires, boolean dev) {
     }
 
     /** Een ingelogde browser. */
@@ -30,6 +36,8 @@ final class PanelSessions {
         final UUID uuid;
         final String name;
         final String ip;
+        /** Ingelogd vanuit het dev-paneel (zie {@link PanelModule#devUser}). */
+        final boolean dev;
         final long created;
         volatile long lastSeen;
         volatile PanelUser user;
@@ -40,11 +48,12 @@ final class PanelSessions {
         volatile String setupSecret;
         volatile int attempts;
 
-        Session(String id, UUID uuid, String name, String ip) {
+        Session(String id, UUID uuid, String name, String ip, boolean dev) {
             this.id = id;
             this.uuid = uuid;
             this.name = name;
             this.ip = ip;
+            this.dev = dev;
             this.created = System.currentTimeMillis();
             this.lastSeen = created;
         }
@@ -68,10 +77,27 @@ final class PanelSessions {
 
     /** Maakt een nieuwe inloglink. Oudere, ongebruikte links van dezelfde speler vervallen. */
     String createToken(UUID uuid, String name, long validMillis) {
-        tokens.values().removeIf(token -> token.uuid().equals(uuid));
+        return put(new Token(uuid, name, System.currentTimeMillis() + validMillis, false));
+    }
+
+    /** Een inloglink voor een gebruiker van het dev-paneel (zie /panel devlink). */
+    String createDevToken(String name, long validMillis) {
+        return put(new Token(devUuid(name), name, System.currentTimeMillis() + validMillis, true));
+    }
+
+    private String put(Token token) {
+        tokens.values().removeIf(old -> old.uuid().equals(token.uuid()));
         String id = randomId();
-        tokens.put(id, new Token(uuid, name, System.currentTimeMillis() + validMillis));
+        tokens.put(id, token);
         return id;
+    }
+
+    /**
+     * Een vaste UUID per gebruiker van het dev-paneel, zodat het logboek hem herkent. Botst nooit
+     * met een speler: Minecraft gebruikt willekeurige (versie 4) of "OfflinePlayer:"-UUID's.
+     */
+    static UUID devUuid(String name) {
+        return UUID.nameUUIDFromBytes(("PindaHost:" + name.toLowerCase(Locale.ROOT)).getBytes(StandardCharsets.UTF_8));
     }
 
     /** Gebruikt een inloglink. Null als hij niet bestaat, al gebruikt is of verlopen is. */
@@ -88,8 +114,8 @@ final class PanelSessions {
 
     // ============================================================ sessies
 
-    Session create(UUID uuid, String name, String ip) {
-        Session session = new Session(randomId(), uuid, name, ip);
+    Session create(UUID uuid, String name, String ip, boolean dev) {
+        Session session = new Session(randomId(), uuid, name, ip, dev);
         sessions.put(session.id, session);
         return session;
     }

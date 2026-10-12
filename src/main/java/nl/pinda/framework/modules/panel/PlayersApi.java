@@ -172,7 +172,7 @@ final class PlayersApi extends PanelApi {
                 }
             }
             boolean canPunish = !self && user.has(PanelUser.MODERATE)
-                    && Boolean.TRUE.equals(syncAwait(() -> service.canPunish(user.uuid(), uuid)));
+                    && Boolean.TRUE.equals(syncAwait(() -> service.canPunish(user.player(), uuid)));
             profile.put("moderation", map("history", list, "ban", ban == null ? null : punishment(ban),
                     "mute", mute == null ? null : punishment(mute), "canPunish", canPunish));
         }
@@ -330,11 +330,11 @@ final class PlayersApi extends PanelApi {
         if (type == Punishment.Type.KICK && !Boolean.TRUE.equals(sync(() -> plugin.getServer().getPlayer(uuid) != null))) {
             throw ApiException.badRequest(known.name() + " is niet online.");
         }
-        if (!Boolean.TRUE.equals(syncAwait(() -> service.canPunish(user.uuid(), uuid)))) {
+        if (!Boolean.TRUE.equals(syncAwait(() -> service.canPunish(user.player(), uuid)))) {
             throw ApiException.forbidden("Je kunt " + known.name() + " niet straffen: die heeft een gelijke of hogere rang.");
         }
 
-        Punishment punishment = await(service.punish(uuid, known.name(), type, reason, user.uuid(), user.name(), duration));
+        Punishment punishment = await(service.punish(uuid, known.name(), type, reason, user.player(), user.name(), duration));
         sync(() -> {
             service.applyEffects(punishment);
             service.announce(null, punishment);

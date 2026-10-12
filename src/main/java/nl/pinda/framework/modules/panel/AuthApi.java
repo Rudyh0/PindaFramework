@@ -56,17 +56,19 @@ final class AuthApi extends PanelApi {
             sessions.failed(request.ip());
             throw new ApiException(401, "Deze inloglink is ongeldig, al gebruikt of verlopen. Typ /panel in-game voor een nieuwe.");
         }
-        PanelUser user = await(module.loadUser(token.uuid(), token.name()));
+        // Een link uit het dev-paneel: daar is al ingelogd met wachtwoord en 2FA (van PindaHost),
+        // en alleen RCON (de console van de VPS zelf) kan zo'n link maken. Geen tweede code dus.
+        PanelUser user = token.dev() ? module.devUser(token.uuid(), token.name()) : await(module.loadUser(token.uuid(), token.name()));
         if (!user.has(PanelUser.USE)) {
             throw ApiException.forbidden("Je hebt geen toegang tot het paneel.");
         }
-        PanelSessions.Session session = sessions.create(token.uuid(), token.name(), request.ip());
+        PanelSessions.Session session = sessions.create(token.uuid(), token.name(), request.ip(), token.dev());
         session.user = user;
         session.userLoaded = System.currentTimeMillis();
         request.exchange().getResponseHeaders().add("Set-Cookie", PanelServer.COOKIE + "=" + session.id
                 + "; Path=/; HttpOnly; SameSite=Strict; Max-Age=" + module.maxMillis() / 1000
                 + (module.secureCookies() ? "; Secure" : ""));
-        if (!module.twoFactorRequired()) {
+        if (token.dev() || !module.twoFactorRequired()) {
             return finish(request, session, user);
         }
         session.pending = true;
@@ -168,8 +170,11 @@ final class AuthApi extends PanelApi {
         session.userLoaded = System.currentTimeMillis();
         request.session = session;
         request.user = user;
-        module.log().add(request, "inloggen", null, null);
-        TwoFactorStore.Entry entry = await(module.twoFactor().get(user.uuid()));
+        module.log().add(request, user.dev() ? "inloggen via het dev-paneel" : "inloggen", null, null);
+        if (user.dev()) {
+            plugin.getLogger().info("[Paneel] " + user.name() + " is ingelogd op het webpaneel via het dev-paneel (" + request.ip() + ").");
+        }
+        TwoFactorStore.Entry entry = user.dev() ? null : await(module.twoFactor().get(user.uuid()));
         return sync(() -> me(user, entry));
     }
 
@@ -185,7 +190,7 @@ final class AuthApi extends PanelApi {
 
     private Object me(PanelRequest request) throws Exception {
         PanelUser user = request.user();
-        TwoFactorStore.Entry entry = await(module.twoFactor().get(user.uuid()));
+        TwoFactorStore.Entry entry = user.dev() ? null : await(module.twoFactor().get(user.uuid()));
         return sync(() -> me(user, entry));
     }
 
@@ -208,6 +213,7 @@ final class AuthApi extends PanelApi {
         return map(
                 "uuid", user.uuid().toString(),
                 "name", user.name(),
+                "dev", user.dev(),
                 "rank", user.rankId() == null ? null
                         : map("id", user.rankId(), "name", user.rankName(), "color", user.rankColor(),
                         "weight", user.weight(), "operator", user.operator()),

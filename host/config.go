@@ -33,6 +33,8 @@ type Config struct {
 	SiteDomain  string `json:"siteDomain"`
 	GameAddress string `json:"gameAddress"`
 	GamePort    int    `json:"gamePort"`
+	// Het adres van het webpaneel van PindaFramework (alleen met een domein), bijv. panel.pindacraft.nl.
+	PanelDomain string `json:"panelDomain"`
 	Database    string `json:"database"`
 	SetupDone   bool   `json:"setupDone"`
 
