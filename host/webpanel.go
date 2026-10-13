@@ -55,6 +55,18 @@ var (
 	nginxReload = func() (string, error) { return runQuiet(30*time.Second, "systemctl", "reload", "nginx") }
 	// certbot vraagt een certificaat aan (in tests vervangen).
 	runCertbot = func(args ...string) (string, error) { return runQuiet(5*time.Minute, "certbot", args...) }
+	// Is certbot er? En anders installeren (achter Cloudflare zet de installer hem niet neer).
+	certbotInstalled = func() bool { _, err := exec.LookPath("certbot"); return err == nil }
+	installCertbot   = func() (string, error) {
+		cmd := exec.Command("apt-get", "install", "-y", "-q", "certbot")
+		cmd.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
+		out, err := cmd.CombinedOutput()
+		return string(out), err
+	}
+	// Komt Let's Encrypt via dit adres bij deze server uit (rechtstreeks, of via de proxy van Cloudflare)?
+	domainReachable = func(config Config, domain string) bool {
+		return pointsHere(domain) || config.Cloudflare && pointsToCloudflare(domain)
+	}
 )
 
 func nginxSitePath(name string) string {
@@ -67,6 +79,7 @@ func (a *App) registerWebpanel(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/webpanel", a.api(member, a.handleWebpanel))
 	mux.HandleFunc("POST /api/webpanel", a.api(admin, a.handleWebpanelSave))
 	mux.HandleFunc("POST /api/webpanel/login", a.api(member, a.handleWebpanelLogin))
+	mux.HandleFunc("POST /api/webpanel/certificate", a.api(admin, a.handleWebpanelCertificate))
 }
 
 // suggestedPanelDomain: panel.<domein>, bijv. panel.pindacraft.nl bij dev.pindacraft.nl.
@@ -112,23 +125,23 @@ func (a *App) handleWebpanel(q *Request) (any, error) {
 		exists = true
 	}
 	https := "none"
+	var certificate *CertInfo
 	if config.Mode == "domain" && config.PanelDomain != "" {
-		switch {
-		case config.Cloudflare:
+		if cert, err := letsEncryptCert(config.PanelDomain); err == nil {
+			// Een echt certificaat: werkt rechtstreeks én achter Cloudflare (ook in modus Full (strict)).
+			https, certificate = "letsencrypt", cert
+		} else if config.Cloudflare {
 			https = "cloudflare"
-		default:
-			if _, err := letsEncryptCert(config.PanelDomain); err == nil {
-				https = "letsencrypt"
-			} else {
-				https = "self-signed"
-			}
+		} else {
+			https = "self-signed"
 		}
 	}
 	_, siteErr := os.Stat(nginxSitePath(panelSiteName))
 	result := map[string]any{
 		"mode": config.Mode, "cloudflare": config.Cloudflare, "domain": config.PanelDomain,
 		"suggested": suggestedPanelDomain(config), "port": port, "url": panelURL(config, port),
-		"https": https, "site": siteErr == nil, "ready": config.Mode != "domain" || config.PanelDomain != "",
+		"https": https, "certificate": certificate, "certbot": certbotInstalled(),
+		"site": siteErr == nil, "ready": config.Mode != "domain" || config.PanelDomain != "",
 		"plugin": map[string]any{"exists": exists, "publicUrl": values["public-url"], "bind": values["web.bind"],
 			"behindProxy": values["behind-proxy"] == "true"},
 		"running": a.process.Status().State == "active",
@@ -246,20 +259,41 @@ func (a *App) setupWebpanel(previous string, say func(string, ...any)) error {
 	return nil
 }
 
-// requestPanelCertificate: zonder Cloudflare een certificaat van Let's Encrypt (lukt alleen als
-// het adres al naar deze server wijst). Mislukt het, dan blijft het eigen certificaat staan.
+// requestPanelCertificate: bij het instellen van het adres (zonder Cloudflare) meteen een
+// certificaat van Let's Encrypt proberen. Mislukt het, dan blijft het eigen certificaat staan.
 func (a *App) requestPanelCertificate(domain string, say func(string, ...any)) {
-	if _, err := exec.LookPath("certbot"); err != nil {
+	if !certbotInstalled() {
 		say("certbot is er niet: het webpaneel gebruikt voorlopig een eigen certificaat (je browser waarschuwt).")
 		return
 	}
-	if !pointsHere(domain) {
-		say("%s wijst (nog) niet naar deze server. Maak eerst het A-record aan en klik dan nog eens op Opslaan voor een certificaat van Let's Encrypt.", domain)
+	if err := a.obtainPanelCertificate(domain, say); err != nil {
+		say("%s", err.Error())
 		return
 	}
-	say("Certificaat aanvragen bij Let's Encrypt voor %s…", domain)
+}
+
+// obtainPanelCertificate vraagt een certificaat van Let's Encrypt aan voor het webpaneel en zet
+// het in nginx. Werkt ook achter Cloudflare: Let's Encrypt kijkt dan via Cloudflare naar
+// /.well-known/acme-challenge/ (op poort 80 of 443; nginx geeft dat op beide). Aanroepen met
+// webpanelMu vast.
+func (a *App) obtainPanelCertificate(domain string, say func(string, ...any)) error {
 	config := a.config.get()
-	out, err := runCertbot("certonly", "--webroot", "-w", filepath.Join(config.BaseDir, "acme"), "--non-interactive", "--agree-tos",
+	if !domainReachable(config, domain) {
+		if config.Cloudflare {
+			return fmt.Errorf("%s wijst (nog) niet naar deze server of naar Cloudflare. Maak eerst het A-record aan (proxy aan) en probeer het dan opnieuw", domain)
+		}
+		return fmt.Errorf("%s wijst (nog) niet naar deze server. Maak eerst het A-record aan en probeer het dan opnieuw", domain)
+	}
+	acme := filepath.Join(config.BaseDir, "acme")
+	if err := os.MkdirAll(acme, 0o755); err != nil {
+		return fmt.Errorf("map voor Let's Encrypt: %w", err)
+	}
+	// Eerst nginx: die moet de controle van Let's Encrypt kunnen beantwoorden.
+	if err := a.applyPanelSite(); err != nil {
+		return fmt.Errorf("nginx instellen: %w", err)
+	}
+	say("Certificaat aanvragen bij Let's Encrypt voor %s…", domain)
+	out, err := runCertbot("certonly", "--webroot", "-w", acme, "--non-interactive", "--agree-tos",
 		"--register-unsafely-without-email", "--keep-until-expiring", "--cert-name", domain, "-d", domain,
 		"--deploy-hook", "systemctl reload nginx")
 	if err != nil {
@@ -267,14 +301,68 @@ func (a *App) requestPanelCertificate(domain string, say func(string, ...any)) {
 		if len(lines) > 6 {
 			lines = lines[len(lines)-6:]
 		}
-		say("Let's Encrypt gaf geen certificaat:\n%s", strings.Join(lines, "\n"))
-		return
+		say("%s", strings.Join(lines, "\n"))
+		return errors.New("Let's Encrypt gaf geen certificaat; kijk of het A-record klopt")
+	}
+	if _, err := letsEncryptCert(domain); err != nil {
+		return errors.New("certbot is klaar, maar het certificaat staat er niet")
 	}
 	if err := a.applyPanelSite(); err != nil {
-		say("Certificaat ontvangen, maar nginx instellen lukte niet: %s", err.Error())
-		return
+		return fmt.Errorf("certificaat ontvangen, maar nginx instellen lukte niet: %w", err)
 	}
 	say("Certificaat ontvangen; het wordt vanzelf verlengd.")
+	return nil
+}
+
+// handleWebpanelCertificate: de knop "SSL-certificaat aanvragen" bij het webpaneel.
+func (a *App) handleWebpanelCertificate(q *Request) (any, error) {
+	config := a.config.get()
+	if config.Mode != "domain" || config.PanelDomain == "" {
+		return nil, badRequest("Kies eerst een adres voor het webpaneel.")
+	}
+	domain := config.PanelDomain
+	user, ip := q.user.Name, q.ip
+	job := a.jobs.start("SSL-certificaat voor "+domain, user, func(say func(string, ...any)) error {
+		webpanelMu.Lock()
+		defer webpanelMu.Unlock()
+		if !certbotInstalled() {
+			say("certbot (Let's Encrypt) installeren…")
+			if out, err := installCertbot(); err != nil || !certbotInstalled() {
+				lines := strings.Split(strings.TrimSpace(out), "\n")
+				if len(lines) > 4 {
+					lines = lines[len(lines)-4:]
+				}
+				say("%s", strings.Join(lines, "\n"))
+				return errors.New("certbot installeren lukte niet (sudo apt install certbot)")
+			}
+		}
+		if err := a.obtainPanelCertificate(domain, say); err != nil {
+			a.audit.add(user, ip, "certificaat webpaneel mislukt", domain, err.Error())
+			return err
+		}
+		a.audit.add(user, ip, "certificaat webpaneel aangevraagd", domain, "")
+		if config.Cloudflare {
+			say("Klaar: https://%s heeft een eigen certificaat. In Cloudflare kun je SSL/TLS nu op Full (strict) zetten.", domain)
+		} else {
+			say("Klaar: https://%s is beveiligd.", domain)
+		}
+		return nil
+	})
+	return job, nil
+}
+
+// pointsToCloudflare: wijst dit adres naar Cloudflare (A-record met de proxy aan)?
+func pointsToCloudflare(name string) bool {
+	addresses, err := net.LookupHost(name)
+	if err != nil {
+		return false
+	}
+	for _, address := range addresses {
+		if ip := net.ParseIP(address); ip != nil && isCloudflare(ip) {
+			return true
+		}
+	}
+	return false
 }
 
 // ============================================================ inloggen als beheerder
@@ -632,8 +720,9 @@ func (a *App) applyPanelSite() error {
 		return removeNginxSite(panelSiteName)
 	}
 	cert, key := "", ""
-	live := filepath.Join("/etc/letsencrypt/live", domain)
-	if _, err := letsEncryptCert(domain); err == nil && !config.Cloudflare {
+	live := filepath.Join(letsEncryptLive, domain)
+	// Een certificaat van Let's Encrypt gebruiken als het er is (ook achter Cloudflare: dan werkt ook Full (strict)).
+	if _, err := letsEncryptCert(domain); err == nil {
 		cert, key = filepath.Join(live, "fullchain.pem"), filepath.Join(live, "privkey.pem")
 	} else {
 		var err error
@@ -700,6 +789,11 @@ server {
 	ssl_protocols TLSv1.2 TLSv1.3;
 	client_max_body_size 16m;
 %[9]s
+	# Ook hier: met "Always Use HTTPS" in Cloudflare komt Let's Encrypt via https.
+	location /.well-known/acme-challenge/ {
+		root %[3]s;
+	}
+
 	location / {
 		proxy_pass http://127.0.0.1:%[10]d;
 		proxy_http_version 1.1;

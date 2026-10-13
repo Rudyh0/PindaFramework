@@ -339,6 +339,14 @@ permissions:
     description: Geen limiet op beperkte items (ze worden wel bijgehouden)
     default: false
 
+  # Regels
+  pinda.rules.use:
+    description: /regels, de regels van de server als boek
+    default: true
+  pinda.rules.others:
+    description: /regels <speler>, het regelboek bij iemand anders openen
+    default: op
+
   # Modpack-lock
   pinda.modpack.use:
     description: /modpack, de link naar de modpack en of je alle mods hebt

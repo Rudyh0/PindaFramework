@@ -435,3 +435,115 @@ func TestWebpanelWithoutDomain(t *testing.T) {
 		t.Errorf("status: %v", info)
 	}
 }
+
+// De knop "SSL-certificaat aanvragen": ook achter Cloudflare een echt certificaat voor het webpaneel.
+func TestWebpanelCertificate(t *testing.T) {
+	nginx, _ := fakeNginx(t)
+	oldLive, oldInstalled, oldInstall, oldReachable := letsEncryptLive, certbotInstalled, installCertbot, domainReachable
+	live := t.TempDir()
+	letsEncryptLive = live
+	installed := false
+	var installs, certbots atomic.Int32
+	certbotInstalled = func() bool { return installed }
+	installCertbot = func() (string, error) { installs.Add(1); installed = true; return "certbot geïnstalleerd", nil }
+	reachable := false
+	domainReachable = func(Config, string) bool { return reachable }
+	var lastArgs []string
+	runCertbot = func(args ...string) (string, error) {
+		certbots.Add(1)
+		lastArgs = args
+		domain := args[len(args)-3] // ... -d <domein> --deploy-hook ...
+		for i, arg := range args {
+			if arg == "-d" {
+				domain = args[i+1]
+			}
+		}
+		// Zoals certbot: fullchain.pem en privkey.pem in live/<domein>
+		old := nginxSSLDir
+		nginxSSLDir = filepath.Join(live, "tmp")
+		cert, key, err := selfSignedCert(domain)
+		nginxSSLDir = old
+		if err != nil {
+			return "", err
+		}
+		os.MkdirAll(filepath.Join(live, domain), 0o755)
+		data, _ := os.ReadFile(cert)
+		os.WriteFile(filepath.Join(live, domain, "fullchain.pem"), data, 0o644)
+		data, _ = os.ReadFile(key)
+		os.WriteFile(filepath.Join(live, domain, "privkey.pem"), data, 0o600)
+		return "Successfully received certificate.", nil
+	}
+	t.Cleanup(func() {
+		letsEncryptLive, certbotInstalled, installCertbot, domainReachable = oldLive, oldInstalled, oldInstall, oldReachable
+	})
+
+	app, _ := testApp(t)
+	_ = app.config.update(func(c *Config) {
+		c.Mode, c.Domain, c.Cloudflare = "domain", "dev.pindacraft.nl", true
+		c.SiteDomain, c.GameAddress = "pindacraft.nl", "play.pindacraft.nl"
+	})
+	server := httptest.NewServer(app.routes())
+	defer server.Close()
+	rudy := loggedIn(t, app, server, "rudy", true)
+	lisa := loggedIn(t, app, server, "lisa", false)
+
+	// Zonder adres kan het niet; een developer mag het niet.
+	if status, _ := rudy.post("/api/webpanel/certificate", nil); status != 400 {
+		t.Errorf("zonder adres: %d", status)
+	}
+	_ = app.config.update(func(c *Config) { c.PanelDomain = "panel.pindacraft.nl" })
+	if status, _ := lisa.post("/api/webpanel/certificate", nil); status != 403 {
+		t.Errorf("developer vraagt certificaat aan: %d", status)
+	}
+	if _, info := rudy.get("/api/webpanel"); info["https"] != "cloudflare" || info["certbot"] != false {
+		t.Errorf("status vooraf: %v %v", info["https"], info["certbot"])
+	}
+
+	// Het adres wijst nog nergens heen: certbot wel installeren, maar niet aanvragen.
+	status, job := rudy.post("/api/webpanel/certificate", nil)
+	if status != 200 {
+		t.Fatalf("aanvragen: %d %v", status, job)
+	}
+	done := waitJob(t, rudy, job)
+	if done["status"] != "failed" || installs.Load() != 1 || certbots.Load() != 0 {
+		t.Fatalf("zonder A-record: %v (installs %d, certbot %d)", done["status"], installs.Load(), certbots.Load())
+	}
+
+	// Nu wel: certificaat aanvragen en in nginx zetten (ook achter Cloudflare).
+	reachable = true
+	status, job = rudy.post("/api/webpanel/certificate", nil)
+	if status != 200 {
+		t.Fatalf("aanvragen: %d", status)
+	}
+	if done := waitJob(t, rudy, job); done["status"] != "done" {
+		t.Fatalf("taak: %v", done)
+	}
+	if installs.Load() != 1 || certbots.Load() != 1 {
+		t.Errorf("installs %d, certbot %d", installs.Load(), certbots.Load())
+	}
+	joined := strings.Join(lastArgs, " ")
+	for _, want := range []string{"certonly", "--webroot", "--cert-name panel.pindacraft.nl", "-d panel.pindacraft.nl", "--deploy-hook systemctl reload nginx"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("certbot mist %q: %s", want, joined)
+		}
+	}
+	site, err := os.ReadFile(filepath.Join(nginx, "sites-available", panelSiteName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"ssl_certificate " + filepath.Join(live, "panel.pindacraft.nl", "fullchain.pem") + ";",
+		"ssl_certificate_key " + filepath.Join(live, "panel.pindacraft.nl", "privkey.pem") + ";", "real_ip_header CF-Connecting-IP;"} {
+		if !strings.Contains(string(site), want) {
+			t.Errorf("nginx-blok mist %q", want)
+		}
+	}
+	// De controle van Let's Encrypt op poort 80 én 443 (Cloudflare met "Always Use HTTPS")
+	if strings.Count(string(site), "location /.well-known/acme-challenge/") != 2 {
+		t.Errorf("acme-challenge niet op beide poorten:\n%s", site)
+	}
+	_, info := rudy.get("/api/webpanel")
+	cert, _ := info["certificate"].(map[string]any)
+	if info["https"] != "letsencrypt" || cert == nil || info["certbot"] != true {
+		t.Errorf("status na aanvragen: %v %v %v", info["https"], cert, info["certbot"])
+	}
+}

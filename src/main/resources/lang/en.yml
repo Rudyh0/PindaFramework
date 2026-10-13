@@ -59,6 +59,13 @@ settings:
     close:
       name: "<error><bold>Close"
       lore: []
+    rules:
+      name: "<primary><bold>Rules"
+      lore:
+        - "<text>The rules of the server,"
+        - "<text>to read at your own pace."
+        - ""
+        - "<highlight>Click to read them"
     partners:
       name: "<primary><bold>Partners"
       lore:
@@ -1073,6 +1080,16 @@ modpack:
     checking: "<muted>Still being checked..."
     exempt: "<muted>Exempt: does not need the modpack."
     never: "<prefix><muted><player> has never played with the PindaCraft mod."
+
+rules:
+  # After closing the rule book
+  closed: "<prefix><text>You can always read the rules again with <primary>/rules</primary><text> or via <primary>/settings</primary><text>."
+  empty: "<prefix><muted>No rules have been set yet."
+  shown: "<prefix><text>Opened the rules for <primary><player></primary><text>."
+  # At the bottom of the book (the pages are light: pick a dark colour)
+  read-button: "<dark_green><bold>✔ Read</bold></dark_green>"
+  read-hover: "<gray>Click to close the book"
+  book-title: "Rules"
 
 world:
   # Time units: days, hours, minutes

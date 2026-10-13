@@ -892,6 +892,10 @@ details.manual .chips { margin-top: 8px; }
 .row .grow { flex: 1 1 240px; }
 .webpanel-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 .webpanel-form .field { flex: 1 1 240px; margin-top: 0; }
+.webpanel-ssl { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-2); }
+.webpanel-ssl > div { flex: 1 1 260px; min-width: 0; }
+.webpanel-ssl p { margin: 4px 0 0; }
+.webpanel-ssl .btn { flex: none; }
 .row .port { flex: 0 0 120px; }
 .small { font-size: 12.5px; }
 .wrap { overflow-wrap: anywhere; }

@@ -31,8 +31,11 @@ type CertInfo struct {
 	Expires int64    `json:"expires"`
 }
 
+// letsEncryptLive: waar certbot de certificaten neerzet (in tests een tijdelijke map).
+var letsEncryptLive = "/etc/letsencrypt/live"
+
 func letsEncryptCert(domain string) (*CertInfo, error) {
-	data, err := os.ReadFile(filepath.Join("/etc/letsencrypt/live", domain, "fullchain.pem"))
+	data, err := os.ReadFile(filepath.Join(letsEncryptLive, domain, "fullchain.pem"))
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +175,7 @@ func nginxHTTP2() (listen, line string) {
 // websiteSiteConfig: het nginx-blok voor de website met een certificaat van Let's Encrypt.
 func websiteSiteConfig(config Config, domains []string, listenSSL, http2Line string, ipv6 bool) string {
 	names := strings.Join(domains, " ")
-	live := filepath.Join("/etc/letsencrypt/live", config.SiteDomain)
+	live := filepath.Join(letsEncryptLive, config.SiteDomain)
 	listen6 := func(port string) string {
 		if !ipv6 {
 			return ""

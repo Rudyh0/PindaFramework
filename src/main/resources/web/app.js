@@ -69,6 +69,7 @@
     check: '<path d="M20 6L9 17l-5-5"/>',
     reload: '<path d="M3 12a9 9 0 0 1 15.4-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.4 6.4L3 16M3 21v-5h5"/>',
     box: '<path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+    book: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5A2.5 2.5 0 0 1 6.5 19H20M8 7h8M8 11h6"/>',
     puzzle: '<path d="M5 7h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4h-4a2 2 0 1 0-4 0H5v-4a2 2 0 1 0 0-4z"/>',
     trending: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>',
     award: '<circle cx="12" cy="8" r="6"/><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5"/>',
@@ -368,6 +369,7 @@
     { path: 'bossbars', title: 'Bossbars', icon: 'bossbar', perm: P.config, feature: 'bossbar', page: pageBossbars, group: 'Beheer' },
     { path: 'instellingen', title: 'Instellingen', icon: 'cog', perm: P.config, page: pageSettings, group: 'Beheer' },
     { path: 'teksten', title: 'Teksten', icon: 'type', perm: P.texts, page: pageTexts, group: 'Beheer' },
+    { path: 'regels', title: 'Regels', icon: 'book', perm: P.config, feature: 'rules', page: pageRules, group: 'Beheer' },
     { path: 'rangen', title: 'Rangen', icon: 'crown', perm: P.ranksEdit, feature: 'ranks', page: pageRanks, group: 'Beheer' },
     { path: 'discord', title: 'Discord', icon: 'chat', perm: P.config, feature: 'discord', page: pageDiscord, group: 'Beheer' },
     { path: 'console', title: 'Console', icon: 'terminal', perm: P.console, page: pageConsole, group: 'Beheer' },
@@ -680,7 +682,7 @@
     'modules/motd.yml': 'MOTD', 'modules/discord.yml': 'Discord', 'modules/panel.yml': 'Webpaneel',
     'modules/leaderboards.yml': 'Toplijsten', 'modules/bossbar.yml': 'Bossbars', 'modules/broadcasts.yml': 'Aankondigingen',
     'modules/antilag.yml': 'Antilag', 'modules/timber.yml': 'Bomen kappen', 'modules/backpack.yml': 'Rugtas', 'modules/world.yml': 'Wereld', 'modules/itemlimits.yml': 'Item-limiet',
-    'modules/modpack.yml': 'Modpack'
+    'modules/modpack.yml': 'Modpack', 'modules/rules.yml': 'Regels'
   };
   const fileName = path => FILE_NAMES[path] || path.replace(/^modules\//, '').replace(/\.yml$/, '');
   const prettyKey = key => {
@@ -842,7 +844,7 @@
     tpa: 'TPA', spawn: 'Spawn', back: 'Terug', msg: 'Privéberichten', gamemode: 'Spelmodus', afk: 'AFK', utility: 'Handige commando’s',
     vanish: 'Vanish', invsee: 'Invsee', economy: 'Economie', shop: 'Shops', lock: 'Sloten', partner: 'Partners', rank: 'Rangen',
     moderation: 'Moderatie', skills: 'Skills', sleep: 'Slapen', discord: 'Discord', panel: 'Webpaneel', admin: 'Beheer',
-    top: 'Toplijsten', bossbar: 'Bossbars', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen', backpack: 'Rugtas', world: 'Wereld', itemlimits: 'Item-limiet', modpack: 'Modpack'
+    top: 'Toplijsten', bossbar: 'Bossbars', broadcasts: 'Aankondigingen', antilag: 'Antilag', timber: 'Bomen kappen', backpack: 'Rugtas', world: 'Wereld', itemlimits: 'Item-limiet', modpack: 'Modpack', rules: 'Regels'
   };
 
   async function pageTexts(main, tab, alive) {
@@ -956,39 +958,12 @@
     });
   }
 
-  // =============================================================== server: MOTD, server.properties en spelregels
-
-  const PROPERTY_LABELS = {
-    'max-players': 'Maximaal aantal spelers', difficulty: 'Moeilijkheid', gamemode: 'Standaard spelmodus',
-    'force-gamemode': 'Spelmodus afdwingen bij joinen', pvp: 'PvP (spelers kunnen elkaar aanvallen)',
-    'view-distance': 'View distance (chunks)', 'simulation-distance': 'Simulation distance (chunks)',
-    'spawn-protection': 'Spawnbescherming (blokken rond de spawn)', 'player-idle-timeout': 'Kicken na inactief (minuten, 0 = nooit)',
-    'allow-flight': 'Vliegen toestaan (anders kick bij vliegen)', 'allow-nether': 'Nether aan', 'enable-command-block': 'Command blocks aan',
-    'hide-online-players': 'Spelersnamen verbergen in de serverlijst', 'entity-broadcast-range-percentage': 'Zichtafstand van mobs en items (%)',
-    'white-list': 'Whitelist aan', 'enforce-whitelist': 'Whitelist afdwingen (kickt wie er niet op staat)',
-    motd: 'MOTD uit server.properties (de MOTD-module gaat hier overheen)', 'resource-pack': 'Resourcepack (link)', 'require-resource-pack': 'Resourcepack verplicht'
-  };
-  const OPTION_LABELS = { peaceful: 'Vredig', easy: 'Makkelijk', normal: 'Normaal', hard: 'Moeilijk', survival: 'Survival', creative: 'Creative', adventure: 'Adventure', spectator: 'Toeschouwer' };
-  const GAMERULE_LABELS = {
-    keepinventory: 'Inventory houden bij doodgaan', dodaylightcycle: 'Dag en nacht wisselen', advancetime: 'Dag en nacht wisselen',
-    doweathercycle: 'Het weer verandert', advanceweather: 'Het weer verandert', mobgriefing: 'Mobs veranderen blokken (creepers, endermen)',
-    dofiretick: 'Vuur verspreidt zich', domobspawning: 'Mobs spawnen', spawnmobs: 'Mobs spawnen', announceadvancements: 'Advancements in de chat',
-    showdeathmessages: 'Doodsberichten in de chat', naturalregeneration: 'Levens herstellen vanzelf', doinsomnia: 'Phantoms spawnen',
-    spawnphantoms: 'Phantoms spawnen', doimmediaterespawn: 'Direct respawnen', randomtickspeed: 'Groeisnelheid (random tick speed)',
-    spawnradius: 'Spawngebied (blokken)', playerssleepingpercentage: 'Slaappercentage (vanilla; de slaapmodule regelt dit)',
-    dotraderspawning: 'Rondreizende handelaar spawnt', dopatrolspawning: 'Patrouilles spawnen', disableraids: 'Raids uitzetten',
-    falldamage: 'Valschade', firedamage: 'Vuurschade', drowningdamage: 'Verdrinkingsschade', freezedamage: 'Bevriezingsschade',
-    doentitydrops: 'Entities laten items vallen', dotiledrops: 'Blokken laten items vallen', maxentitycramming: 'Max mobs op één plek',
-    commandblockoutput: 'Command blocks melden in de chat', sendcommandfeedback: 'Feedback na commando’s', logadmincommands: 'Admin-commando’s loggen',
-    universalanger: 'Boze mobs vallen iedereen aan', forgivedeadplayers: 'Mobs vergeven dode spelers', dolimitedcrafting: 'Alleen ontgrendelde recepten',
-    reduceddebuginfo: 'Minder info op F3', spectatorsgeneratechunks: 'Toeschouwers laden nieuwe chunks', pvp: 'PvP'
-  };
-  const ruleLabel = name => GAMERULE_LABELS[name.toLowerCase().replace(/_/g, '')] || prettyKey(name);
+  // =============================================================== server: MOTD
 
   function serverTabs(active) {
     const tabs = [];
     if (can(P.server)) tabs.push(['', 'Beheer']);
-    if (can(P.config)) tabs.push(['motd', 'MOTD'], ['instellingen', 'server.properties'], ['spelregels', 'Spelregels']);
+    if (can(P.config)) tabs.push(['motd', 'MOTD']);
     return html`<div class="tabs">${tabs.map(([id, label]) => html`<a href="#/server${id ? `/${id}` : ''}" class="${active === id ? 'active' : ''}">${label}</a>`)}</div>`;
   }
 
@@ -1037,61 +1012,6 @@
         openTextEditor({ title: 'Nieuwe MOTD', value: '<primary><server></primary><newline><text>', placeholders: ['online', 'max'], onSave: value => save({ motds: [...data.motds, value] }) });
       }
     };
-  }
-
-  async function pageServerProperties(main, alive) {
-    const data = await api('/server/settings');
-    if (!alive()) return;
-    state.properties = Object.fromEntries(data.properties.map(p => [p.key, p.value]));
-    render(main, html`${pageHead('Server', 'Instellingen uit server.properties. Waar "direct" staat, werkt het meteen; de rest na een herstart.')}
-      ${serverTabs('instellingen')}
-      <form class="card" data-form="properties"><div class="card-body">
-        ${data.properties.map(p => html`<div class="cfg-row"><div class="cfg-text"><span class="cfg-label">${PROPERTY_LABELS[p.key] || p.key}</span>
-            <span class="cfg-help mono">${p.key} · ${p.live ? html`<span class="success-text">direct</span>` : 'na herstart'}</span></div>
-          ${p.type === 'boolean' ? html`<label class="switch"><input type="checkbox" data-prop="${p.key}" data-type="boolean" ${p.value === 'true' ? 'checked' : ''}><span></span></label>`
-            : p.type === 'select' ? html`<select class="input cfg-number" data-prop="${p.key}">${p.options.map(o => html`<option value="${o}" ${o === p.value ? 'selected' : ''}>${OPTION_LABELS[o] || o}</option>`)}</select>`
-            : p.type === 'integer' ? html`<input class="input cfg-number" type="number" data-prop="${p.key}" value="${p.value}">`
-            : html`<input class="input cfg-wide" data-prop="${p.key}" value="${p.value}">`}</div>`)}
-        <div class="save-bar"><span class="muted">Alleen gewijzigde instellingen worden opgeslagen.</span><button class="btn primary">${icon('save')} Opslaan</button></div>
-      </div></form>`);
-  }
-
-  async function pageGamerules(main, alive) {
-    const data = await api('/server/settings');
-    if (!alive()) return;
-    const rules = data.gamerules.rules;
-    const worlds = data.gamerules.worlds;
-    let world = state.ruleWorld && worlds.includes(state.ruleWorld) ? state.ruleWorld : worlds[0];
-    render(main, html`${pageHead('Server', 'Spelregels (gamerules) per wereld. Wijzigingen werken meteen.')}
-      ${serverTabs('spelregels')}
-      <section class="card"><div class="card-head"><h2>${icon('list')}Spelregels</h2>
-        <select class="input rule-world" aria-label="Wereld">${worlds.map(w => html`<option value="${w}" ${w === world ? 'selected' : ''}>${w}</option>`)}</select></div>
-        <div id="rule-list"></div></section>`);
-    const show = () => render($('#rule-list', main), html`<div class="card-body">${rules.map(r => {
-      const value = r.values[world];
-      const changed = value !== r.default;
-      return html`<div class="cfg-row"><div class="cfg-text"><span class="cfg-label">${ruleLabel(r.name)}${changed ? html` <span class="badge warning">aangepast</span>` : ''}</span>
-          <span class="cfg-help mono">${r.name} · standaard ${String(r.default)}</span></div>
-        ${r.type === 'boolean' ? html`<label class="switch"><input type="checkbox" data-rule="${r.name}" ${value ? 'checked' : ''}><span></span></label>`
-          : html`<input class="input cfg-number" type="number" data-rule="${r.name}" value="${value}">`}</div>`;
-    })}</div>`);
-    $('.rule-world', main).addEventListener('change', event => { world = state.ruleWorld = event.target.value; show(); });
-    $('#rule-list', main).addEventListener('change', async event => {
-      const input = event.target.closest('[data-rule]');
-      if (!input) return;
-      const value = input.type === 'checkbox' ? input.checked : input.value;
-      try {
-        const result = await post('/server/gamerule', { rule: input.dataset.rule, world, value });
-        const rule = rules.find(r => r.name === input.dataset.rule);
-        rule.values[world] = result.value;
-        toast(`${ruleLabel(rule.name)}: ${String(result.value)} in ${result.worlds}.`);
-        show();
-      } catch (error) {
-        if (error.status !== 401) toast(error.message, 'error');
-        show();
-      }
-    });
-    show();
   }
 
   // =============================================================== rangen
@@ -2049,6 +1969,122 @@
       const result = await busy(release, () => post(`/itemlimits/items/${encodeURIComponent(serial)}/release`));
       if (result) { toast('Vrijgegeven.'); navigate(); }
     };
+  }
+
+  // =============================================================== regels (als boek)
+
+  // Donkere kleuren: de bladzijden van een boek zijn licht.
+  const RULE_COLORS = [['black', '#000000'], ['dark_gray', '#555555'], ['dark_red', '#AA0000'], ['dark_green', '#00AA00'],
+    ['dark_blue', '#0000AA'], ['dark_aqua', '#00AAAA'], ['dark_purple', '#AA00AA'], ['gold', '#FFAA00']];
+  const fromMini = value => String(value || '').replace(/<newline>/g, '\n');
+  const ruleRow = text => html`<li class="rule-row"><textarea class="input" rows="2" data-rule maxlength="1000" placeholder="Een regel">${fromMini(text)}</textarea>
+    <div class="rule-actions"><button type="button" class="btn sm ghost icon-only" data-rule-up title="Omhoog" aria-label="Omhoog">↑</button><button type="button" class="btn sm ghost icon-only" data-rule-down title="Omlaag" aria-label="Omlaag">↓</button><button type="button" class="btn sm ghost icon-only" data-rule-remove title="Weghalen" aria-label="Weghalen">${icon('x')}</button></div></li>`;
+
+  async function pageRules(main, _, alive) {
+    const data = await api('/rules');
+    if (!alive()) return;
+    renderRules(main, data);
+  }
+
+  function renderRules(main, data) {
+    const r = data.content;
+    const book = { pages: data.pages, page: 0, timer: null, sequence: 0, focus: null, saved: true };
+    render(main, html`${pageHead('Regels', 'De regels van de server, als boek. Spelers lezen ze met /regels of via /instellingen; het boek komt niet in hun inventory.')}
+      <div class="rules-layout">
+        <form class="card" data-form="rules"><div class="card-head"><h2>${icon('edit')}Inhoud</h2><span class="count" id="rules-count"></span></div><div class="card-body">
+          <div class="rules-toolbar" aria-label="Opmaak">
+            ${RULE_COLORS.map(([name, color]) => html`<button type="button" class="te-swatch sm" data-wrap="${name}" title="${name}" style="--c:${color}"></button>`)}
+            <span class="te-sep"></span>
+            <button type="button" class="btn sm te-btn" data-wrap="bold" title="Vet"><b>B</b></button>
+            <button type="button" class="btn sm te-btn" data-wrap="italic" title="Cursief"><i>I</i></button>
+            <button type="button" class="btn sm te-btn" data-wrap="underlined" title="Onderstreept"><u>U</u></button>
+            <span class="muted small rules-tip">Selecteer tekst en kies een kleur of opmaak. Kies donkere kleuren: het boek is licht.</span>
+          </div>
+          <label class="field">${label('Titel', '(bovenaan de eerste bladzijde)')}<input class="input mono" name="title" value="${r.title}" maxlength="200" spellcheck="false"></label>
+          <label class="field">${label('Inleiding', '(onder de titel, mag leeg)')}<textarea class="input" name="intro" rows="2" maxlength="2000">${fromMini(r.intro)}</textarea></label>
+          <div class="field"><span class="field-label">Regels <span class="hint">(elke regel krijgt een nummer)</span></span>
+            <ol class="rules-list" id="rules-list">${r.rules.map(ruleRow)}</ol>
+            <div><button type="button" class="btn sm" data-rule-add>${icon('plus')} Regel toevoegen</button></div></div>
+          <label class="field">${label('Afsluiting', '(na de regels, mag leeg)')}<textarea class="input" name="outro" rows="2" maxlength="2000">${fromMini(r.outro)}</textarea></label>
+          <details class="rules-more"><summary>Meer opmaak</summary>
+            <label class="field">${label('Het nummer voor elke regel', '(&lt;number&gt; = 1, 2, 3, ...)')}<input class="input mono" name="number" value="${r.number}" maxlength="100" spellcheck="false"></label>
+            <p class="muted small">Ook te gebruiken in alle tekst: <span class="mono">&lt;player&gt;</span> (wie het leest) en <span class="mono">&lt;server&gt;</span> (de naam van de server).</p></details>
+          <div class="save-bar"><span class="muted" id="rules-status">Alles opgeslagen</span><button class="btn primary">${icon('save')} Opslaan</button></div>
+        </div></form>
+        <section class="card rules-preview"><div class="card-head"><h2>${icon('book')}Zo ziet het boek eruit</h2></div>
+          <div class="card-body">
+            <div class="mc-book" id="mc-book" aria-live="polite"></div>
+            <div class="book-nav"><button type="button" class="btn sm" data-book-prev aria-label="Vorige bladzijde">‹</button><span id="book-page" class="muted small"></span><button type="button" class="btn sm" data-book-next aria-label="Volgende bladzijde">›</button></div>
+            <p class="muted small">Het framework verdeelt de tekst zelf over de bladzijden. Onderaan staat een knop om het boek dicht te doen; daarna krijgt de speler een melding dat hij de regels altijd opnieuw kan lezen.</p>
+          </div></section>
+      </div>`);
+    const form = $('form[data-form=rules]', main);
+    const list = $('#rules-list', main);
+    const values = () => ({
+      title: form.elements.namedItem('title').value, intro: form.elements.namedItem('intro').value,
+      outro: form.elements.namedItem('outro').value, number: form.elements.namedItem('number').value,
+      rules: $$('[data-rule]', list).map(area => area.value.trim()).filter(Boolean)
+    });
+    const showPage = () => {
+      const total = book.pages.length;
+      book.page = Math.max(0, Math.min(book.page, total - 1));
+      const page = book.pages[book.page];
+      const lines = page ? page.lines : [];
+      $('#mc-book', main).innerHTML = total ? `<div class="mc-book-page"><div class="mc-book-num">Bladzijde ${book.page + 1} van ${total}</div>
+        <div class="mc-book-lines">${Array.from({ length: 14 }, (_, i) => `<div class="mc-book-line">${lines[i] || ''}</div>`).join('')}</div></div>`
+        : '<div class="mc-book-page empty"><span>Nog geen regels</span></div>';
+      $('#book-page', main).textContent = total ? `${book.page + 1} / ${total}` : '';
+      $('[data-book-prev]', main).disabled = book.page <= 0;
+      $('[data-book-next]', main).disabled = book.page >= total - 1;
+      const count = $$('[data-rule]', list).filter(area => area.value.trim()).length;
+      $('#rules-count', main).textContent = `${count} ${count === 1 ? 'regel' : 'regels'} · ${total} ${total === 1 ? 'bladzijde' : 'bladzijden'}`;
+    };
+    const refresh = () => {
+      book.saved = false;
+      $('#rules-status', main).textContent = 'Niet opgeslagen';
+      clearTimeout(book.timer);
+      book.timer = setTimeout(async () => {
+        const id = ++book.sequence;
+        try {
+          const result = await post('/rules/preview', values());
+          if (id !== book.sequence) return;
+          book.pages = result.pages;
+          showPage();
+        } catch (error) {
+          if (id === book.sequence && error.status !== 401) $('#rules-status', main).textContent = error.message;
+        }
+      }, 250);
+    };
+    form.addEventListener('input', refresh);
+    form.addEventListener('focusin', event => { if (event.target.matches('input[name], textarea')) book.focus = event.target; });
+    // Knoppen in de werkbalk: de selectie in het laatst gebruikte veld blijft staan.
+    $('.rules-toolbar', main).addEventListener('mousedown', event => { if (event.target.closest('button')) event.preventDefault(); });
+    $('.rules-toolbar', main).addEventListener('click', event => {
+      const button = event.target.closest('[data-wrap]');
+      if (!button) return;
+      const area = book.focus && document.body.contains(book.focus) ? book.focus : form.elements.namedItem('title');
+      wrapSelection(area, `<${button.dataset.wrap}>`, `</${button.dataset.wrap}>`);
+    });
+    main.onclick = event => {
+      if (event.target.closest('[data-book-prev]')) { book.page--; showPage(); return; }
+      if (event.target.closest('[data-book-next]')) { book.page++; showPage(); return; }
+      if (event.target.closest('[data-rule-add]')) {
+        list.insertAdjacentHTML('beforeend', part(ruleRow('')));
+        const area = $$('[data-rule]', list).pop();
+        area.focus();
+        refresh();
+        return;
+      }
+      const row = event.target.closest('.rule-row');
+      if (!row) return;
+      if (event.target.closest('[data-rule-up]') && row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
+      else if (event.target.closest('[data-rule-down]') && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
+      else if (event.target.closest('[data-rule-remove]')) row.remove();
+      else return;
+      refresh();
+    };
+    state.rulesForm = { values, done: result => { renderRules(main, result); } };
+    showPage();
   }
 
   // =============================================================== modpack
@@ -3053,8 +3089,7 @@
 
   function renderWorld(main, d) {
     const edit = can(P.config);
-    render(main, html`${pageHead('Wereld', 'Explosies, mobs, phantoms en de ender dragon. Wat je opslaat, werkt meteen.',
-        can(P.config) ? html`<a class="btn" href="#/server/spelregels">${icon('cog')} Spelregels per wereld</a>` : '')}
+    render(main, html`${pageHead('Wereld', 'Explosies, mobs, phantoms en de ender dragon. Wat je opslaat, werkt meteen.')}
       <div class="grid two">${dragonCard(d.dragon, edit)}${explosionsCard(d.explosions, edit)}</div>
       <div class="grid two">${spawningCard(d.spawning, edit)}${griefCard(d, edit)}</div>`);
     main.onclick = event => {
@@ -3201,8 +3236,6 @@
 
   async function pageServer(main, tab, alive) {
     if (tab === 'motd') return pageMotd(main, alive);
-    if (tab === 'instellingen') return pageServerProperties(main, alive);
-    if (tab === 'spelregels') return pageGamerules(main, alive);
     if (!can(P.server)) { location.replace('#/server/motd'); return; }
     const data = await api('/server');
     if (!alive()) return;
@@ -3249,7 +3282,7 @@
           <dt>View distance</dt><dd>${num(data.viewDistance)} chunks</dd>
           <dt>Simulation distance</dt><dd>${num(data.simulationDistance)} chunks</dd>
           <dt>Werelden</dt><dd>${num(data.worlds.length)}</dd></dl>
-          <p class="muted" style="margin-top:12px">Deze waarden pas je aan in server.properties.</p></div>`)}
+          <p class="muted" style="margin-top:12px">Deze waarden pas je aan in server.properties, bijvoorbeeld via de bestanden in het dev-paneel.</p></div>`)}
       </div>`);
   }
 
@@ -3538,6 +3571,13 @@
       if (result) { closeModal(); toast('Opgeslagen.'); state.itemLimits = result; afterItemLimitChange(result); }
     },
 
+    async rules(form, data, button) {
+      const editor = state.rulesForm;
+      if (!editor) return;
+      const result = await busy(button, () => post('/rules', editor.values()));
+      if (result) { toast('Regels opgeslagen. Spelers zien ze meteen met /regels.'); editor.done(result); }
+    },
+
     'modpack-mode'() {
       // Wordt meteen opgeslagen bij het kiezen (zie renderModpack).
     },
@@ -3674,17 +3714,6 @@
 
     async 'motd-settings'(form, data, button) {
       const result = await busy(button, () => post('/motd', { enabled: form.enabled.checked, hidePlayers: form.hidePlayers.checked, shownMax: Number(data.get('shownMax')) }));
-      if (result) { toast('Opgeslagen.'); navigate(); }
-    },
-
-    async properties(form, data, button) {
-      const values = {};
-      $$('[data-prop]', form).forEach(element => {
-        const value = element.type === 'checkbox' ? String(element.checked) : element.value.trim();
-        if (value !== String(state.properties[element.dataset.prop])) values[element.dataset.prop] = value;
-      });
-      if (!Object.keys(values).length) { toast('Er is niets veranderd.', 'error'); return; }
-      const result = await busy(button, () => post('/server/properties', { values }));
       if (result) { toast('Opgeslagen.'); navigate(); }
     },
 

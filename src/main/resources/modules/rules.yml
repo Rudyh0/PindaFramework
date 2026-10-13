@@ -1,0 +1,33 @@
+# ┌──────────────────────────────────────────────┐
+# │            PindaFramework - regels           │
+# └──────────────────────────────────────────────┘
+# De regels van de server, als boek. Spelers openen het met /regels of via /instellingen.
+# Het boek komt niet in je inventory: doe je het dicht, dan is het weg en krijg je een melding
+# dat je de regels altijd opnieuw kunt lezen.
+#
+# Het makkelijkst bewerk je dit in het webpaneel (Regels): daar zie je meteen hoe het boek
+# eruitziet. De tekst wordt vanzelf over de bladzijden verdeeld.
+# Opmaak mag (MiniMessage), maar kies donkere kleuren: de bladzijden zijn licht. Bijvoorbeeld
+# <dark_red>, <dark_green>, <dark_blue>, <dark_aqua>, <dark_purple>, <gold> of <dark_gray>.
+# <player> is de naam van wie het leest, <server> de naam van de server.
+
+# Bovenaan de eerste bladzijde
+title: "<bold><dark_aqua>Regels van <server></dark_aqua></bold>"
+
+# Onder de titel (mag leeg)
+intro: "Welkom, <player>! Lees de regels even door, dan heeft iedereen het naar zijn zin."
+
+# De regels: elke regel krijgt een nummer.
+rules:
+  - "Wees aardig tegen iedereen. Schelden, pesten en discrimineren mag niet."
+  - "Niet griefen of stelen: blijf van andermans spullen en bouwwerken af."
+  - "Geen hacks, cheats of X-ray. Mods die je een oneerlijk voordeel geven, zijn niet toegestaan."
+  - "Geen spam en geen reclame voor andere servers."
+  - "Een bug of dupe gevonden? Meld hem bij het team in plaats van hem te gebruiken."
+  - "Luister naar het team. Ben je het ergens niet mee eens, vraag het dan rustig."
+
+# Na de regels (mag leeg)
+outro: "<dark_gray>Veel plezier op de server!"
+
+# Het nummer voor elke regel. <number> = 1, 2, 3, ...
+number: "<bold><dark_aqua><number>.</dark_aqua></bold> "

@@ -31,6 +31,7 @@ modules:
   backpack: true
   itemlimits: true
   modpack: true
+  rules: true
   moderation: true
   skills: true
   sleep: true

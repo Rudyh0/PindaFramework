@@ -62,6 +62,13 @@ settings:
     close:
       name: "<error><bold>Sluiten"
       lore: []
+    rules:
+      name: "<primary><bold>Regels"
+      lore:
+        - "<text>De regels van de server,"
+        - "<text>om rustig door te lezen."
+        - ""
+        - "<highlight>Klik om ze te lezen"
     partners:
       name: "<primary><bold>Partners"
       lore:
@@ -1077,6 +1084,16 @@ modpack:
     checking: "<muted>Wordt nog gecontroleerd..."
     exempt: "<muted>Uitzondering: hoeft de modpack niet te hebben."
     never: "<prefix><muted><player> heeft nog nooit met de PindaCraft-mod gespeeld."
+
+rules:
+  # Na het dichtdoen van het regelboek
+  closed: "<prefix><text>Je kunt de regels altijd opnieuw lezen met <primary>/regels</primary><text> of via <primary>/instellingen</primary><text>."
+  empty: "<prefix><muted>Er zijn nog geen regels ingesteld."
+  shown: "<prefix><text>De regels zijn geopend bij <primary><player></primary><text>."
+  # Onderaan het boek (de bladzijden zijn licht: kies een donkere kleur)
+  read-button: "<dark_green><bold>✔ Gelezen</bold></dark_green>"
+  read-hover: "<gray>Klik om het boek dicht te doen"
+  book-title: "Regels"
 
 world:
   # Eenheden voor tijden: dagen, uren, minuten

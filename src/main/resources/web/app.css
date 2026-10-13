@@ -1082,3 +1082,42 @@ details.manual .chips { margin-top: 8px; }
   .apply-bar { left: 50%; bottom: 14px; width: calc(100vw - 32px); }
   .apply-text { flex: 1; }
 }
+
+/* ----------------------------------------------------------------- regels (boek) */
+
+.rules-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); gap: 16px; align-items: start; }
+.rules-preview { position: sticky; top: 16px; }
+.rules-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+.rules-tip { flex-basis: 100%; }
+.rules-list { list-style: none; margin: 4px 0 10px; padding: 0; display: grid; gap: 8px; counter-reset: rule; }
+.rule-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 8px; align-items: start; counter-increment: rule; }
+.rule-row::before { content: counter(rule) "."; font-weight: 700; color: var(--primary); padding-top: 10px; text-align: right; font-variant-numeric: tabular-nums; }
+.rule-row textarea { resize: vertical; min-height: 44px; }
+.rule-actions { display: flex; gap: 2px; padding-top: 4px; }
+.rule-actions .btn { width: 32px; padding: 0; justify-content: center; }
+.rules-more { margin-top: 14px; }
+.rules-more summary { cursor: pointer; color: var(--text-2); font-weight: 600; font-size: 13.5px; }
+.rules-more > * + * { margin-top: 10px; }
+/* Het boek: een lichte bladzijde zoals in Minecraft, 14 regels */
+.mc-book { display: grid; place-items: center; padding: 6px 0 10px; }
+.mc-book-page {
+  width: min(100%, 320px); aspect-ratio: 146 / 180; position: relative; box-sizing: border-box;
+  padding: 34px 24px 20px; border-radius: 6px; color: #000;
+  background: linear-gradient(90deg, rgba(120, 84, 40, .14), rgba(0, 0, 0, 0) 8%), #f6ecd2;
+  border: 3px solid #8b6a3e; box-shadow: inset 0 0 0 2px #d9c69b, 0 10px 30px rgba(0, 0, 0, .45);
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.55; text-shadow: none;
+}
+.mc-book-page.empty { display: grid; place-items: center; color: #8b7a5c; }
+.mc-book-num { position: absolute; top: 12px; right: 18px; font-size: 11px; color: #5d4a2c; }
+.mc-book-lines { display: grid; grid-template-rows: repeat(14, 1.55em); }
+.mc-book-line { white-space: pre; overflow: hidden; text-overflow: clip; min-height: 1.55em; }
+.mc-book-line .mc-click { text-decoration: underline; text-decoration-style: dotted; cursor: default; }
+.book-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px; }
+.book-nav .btn { min-width: 40px; justify-content: center; font-size: 18px; line-height: 1; }
+@media (max-width: 1100px) {
+  .rules-layout { grid-template-columns: minmax(0, 1fr); }
+  .rules-preview { position: static; }
+}
+@media (max-width: 520px) {
+  .mc-book-page { padding: 30px 16px 16px; font-size: 11.5px; }
+}

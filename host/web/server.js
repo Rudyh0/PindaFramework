@@ -161,9 +161,9 @@
   };
 
   const HTTPS_LABELS = {
-    cloudflare: 'Via Cloudflare (SSL/TLS-modus Full)',
-    letsencrypt: 'Let\'s Encrypt, wordt vanzelf verlengd',
-    'self-signed': 'Eigen certificaat: je browser waarschuwt. Klopt het A-record, klik dan nog eens op Opslaan voor Let\'s Encrypt.'
+    cloudflare: html`<span class="badge info">${icon('lock')} Via Cloudflare</span> <span class="muted small">(modus Full; met een eigen certificaat ook Full (strict))</span>`,
+    letsencrypt: html`<span class="badge success">${icon('lock')} Let's Encrypt</span> <span class="muted small">wordt vanzelf verlengd</span>`,
+    'self-signed': html`<span class="badge warning">${icon('warn')} Eigen certificaat</span> <span class="muted small">je browser waarschuwt</span>`
   };
 
   function webpanelView(info) {
@@ -177,6 +177,7 @@
     const status = info.domain ? html`<dl class="kv">
         <dt>Adres</dt><dd><a class="mono" href="${info.url}" target="_blank" rel="noopener noreferrer">${info.domain}</a></dd>
         <dt>HTTPS</dt><dd>${HTTPS_LABELS[info.https] || '—'}</dd>
+        ${info.certificate ? html`<dt>Geldig tot</dt><dd>${dateTime(info.certificate.expires)}</dd>` : ''}
         <dt>PindaFramework</dt><dd>${applied ? html`<span class="badge success">ingesteld</span>` : html`<span class="badge plain">bij de volgende start</span>`}</dd></dl>`
       : html`<div class="alert warning">${icon('warn')} <div>Het webpaneel heeft nog geen adres en is dus niet van buitenaf te bereiken. Kies er een, bijvoorbeeld <b class="mono">${info.suggested || 'panel.jouwdomein.nl'}</b>.</div></div>`;
     const dns = info.dns && info.dns.length ? html`<p class="muted small">Maak bij je domein${info.cloudflare ? ' in Cloudflare' : ''} dit record aan:</p>
@@ -184,12 +185,22 @@
         <thead><tr><th>Type</th><th>Naam</th><th>Waarde</th>${info.cloudflare ? html`<th>Proxy</th>` : ''}</tr></thead>
         <tbody>${info.dns.map(r => html`<tr><td><span class="badge plain">${r.type}</span></td><td class="mono">${r.name}</td><td class="mono">${r.content}</td>
           ${info.cloudflare ? html`<td class="nowrap">${r.proxy === 'aan' ? html`<span class="badge warning">Aan</span>` : html`<span class="badge plain">Uit</span>`}</td>` : ''}</tr>`)}</tbody></table></div>` : '';
+    const ssl = isAdmin() && info.domain ? html`<div class="webpanel-ssl">
+        <div><b>SSL-certificaat</b><p class="muted small">${info.https === 'letsencrypt'
+          ? 'Het webpaneel heeft een certificaat van Let\'s Encrypt. Vernieuwen gaat vanzelf; hier kan het ook meteen.'
+          : `Vraag een gratis certificaat van Let's Encrypt aan, zodat ${info.domain} beveiligd is${info.cloudflare ? ' (ook met Cloudflare in modus Full (strict))' : ''}. Het A-record moet al bestaan.`}</p></div>
+        <button class="btn ${info.https === 'letsencrypt' ? '' : 'primary'}" data-action="webpanel-cert">${icon('lock')} ${info.https === 'letsencrypt' ? 'Certificaat vernieuwen' : 'SSL aanvragen'}</button></div>` : '';
     const form = isAdmin() ? html`<form data-form="webpanel-domain" class="webpanel-form">
         <label class="field grow">Adres van het webpaneel<input class="input" name="domain" value="${info.domain || info.suggested || ''}" placeholder="${info.suggested || 'panel.jouwdomein.nl'}" autocomplete="off" spellcheck="false"></label>
         <button class="btn primary">${icon('save')} Opslaan</button></form>`
       : html`<p class="muted small">Alleen een beheerder kan het adres aanpassen.</p>`;
-    return html`<div class="stack">${intro}${status}${dns}${form}</div>`;
+    return html`<div class="stack">${intro}${status}${dns}${ssl}${form}</div>`;
   }
+
+  actions['webpanel-cert'] = async button => {
+    const job = await busy(button, () => post('/webpanel/certificate', {}));
+    if (job) watchJob(job, () => window.PH.reloadPage());
+  };
 
   async function loadWebpanel(alive) {
     let info;

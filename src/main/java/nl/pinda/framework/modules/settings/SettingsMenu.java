@@ -14,6 +14,7 @@ import nl.pinda.framework.menu.Menu;
 import nl.pinda.framework.menu.MenuClick;
 import nl.pinda.framework.modules.locks.LockModule;
 import nl.pinda.framework.modules.locks.PartnerMenu;
+import nl.pinda.framework.modules.rules.RulesModule;
 import nl.pinda.framework.player.PindaPlayer;
 import nl.pinda.framework.player.PlayerSetting;
 import org.bukkit.Material;
@@ -41,6 +42,7 @@ public final class SettingsMenu extends Menu {
     private static final int SETTINGS_ROW = 3;
     private static final int BUTTON_SLOT = 49;
     private static final int PARTNER_SLOT = 45;
+    private static final int RULES_SLOT = 53;
     private static final int MAX_SETTINGS = 7;
 
     private final Mode mode;
@@ -95,6 +97,24 @@ public final class SettingsMenu extends Menu {
                             () -> new SettingsMenu(plugin, viewer, Mode.NORMAL).open()).open());
                 });
             }
+        }
+
+        // De regels: het menu gaat dicht en het boek open
+        RulesModule rules = plugin.modules().get(RulesModule.class);
+        if (mode == Mode.NORMAL && rules != null && rules.isEnabled() && viewer.hasPermission(RulesModule.USE)
+                && !rules.content().rules().isEmpty()) {
+            set(RULES_SLOT, ItemBuilder.of(Material.WRITTEN_BOOK)
+                    .name(lang.component(code, "settings.menu.rules.name"))
+                    .lore(lang.components(code, "settings.menu.rules.lore"))
+                    .build(), click -> {
+                plugin.theme().play(viewer, "click");
+                closeLater();
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    if (viewer.isOnline()) {
+                        rules.open(viewer);
+                    }
+                }, 2L);
+            });
         }
 
         fillEmpty(ItemBuilder.of(Material.GRAY_STAINED_GLASS_PANE).hideTooltip().build());

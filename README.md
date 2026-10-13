@@ -104,6 +104,14 @@ Beperk hoeveel één speler van zeldzame items mag hebben (en eventueel hoeveel 
 - In creative en met `pinda.itemlimits.bypass` geldt geen limiet (de items worden wel bijgehouden).
 - **Cadeaus van de server:** geeft staff of de console een beperkt item met `/give` (of `/i`, `/item`, instelbaar) of via **Items geven** in het paneel, dan is het een cadeau. Het krijgt "cadeau" in de beschrijving en telt niet mee voor de limiet van wie het kreeg, en ook niet voor het maximum van de server. Geeft hij het door aan iemand anders, dan telt het bij die speler gewoon mee. In `/limieten` en het paneel staan cadeaus apart.
 
+## Regels
+
+De regels van de server, als boek. Spelers openen het met **`/regels`** of via de knop in **`/instellingen`**. Het boek komt niet in hun inventory: doen ze het dicht (of klikken ze onderaan op **✔ Gelezen**), dan is het weg en krijgen ze een melding dat ze de regels altijd opnieuw kunnen lezen.
+
+- Instellen in het paneel bij **Regels**: een titel, een inleiding, de regels (elk met een nummer, te verschuiven) en een afsluiting, met kleuren en opmaak. Ernaast zie je het boek zoals spelers het zien, bladzijde voor bladzijde.
+- Het framework verdeelt de tekst zelf over de bladzijden (14 regels per bladzijde, zoals in Minecraft), zonder een regel van de server over twee bladzijden te knippen als dat niet hoeft.
+- Staff opent het boek bij iemand anders met `/regels <speler>`.
+
 ## Modpack-lock
 
 Laat spelers alleen (of liever) spelen met de client-mods die nodig zijn, zoals Simple Voice Chat. Instellen in het paneel bij **Modpack**.
@@ -229,7 +237,7 @@ Wat er nu in zit:
   - **Console**: alles uit `logs/latest.log` live, en opdrachten sturen (via RCON, alleen vanaf de VPS zelf, over één vaste verbinding; ook lange antwoorden zoals `help` komen heel aan). Spelers online, geheugen en uptime staan erboven. Het geheugen is wat de game zelf gebruikt (zoals PindaFramework het meldt, met de TPS), niet wat Java van tevoren reserveert.
   - **Plugins**: alle plugins met versie, aan/uit zetten, verwijderen, en de standaardplugins met één knop bijwerken.
   - **Instellingen**: hoeveel geheugen de server krijgt (met de vlaggen van Aikar), en overstappen naar een andere versie of build (alleen `server.jar` wordt vervangen).
-  - **Webpaneel**: het webpaneel van PindaFramework (voor staff) krijgt een eigen adres, bijv. `panel.jouwdomein.nl` (in de setup voorgesteld, later aan te passen bij Instellingen). Het paneel zet het achter nginx met HTTPS (via Cloudflare, of een certificaat van Let's Encrypt), zorgt dat het echte IP van bezoekers doorkomt en zet bij elke start `public-url`, `bind` en `behind-proxy` goed in `modules/panel.yml`. Staat de server uit, dan krijg je een nette pagina in plaats van een fout. Zonder domein gaat poort 8085 open in de firewall. Met de knop **Webpaneel** bovenaan log je er meteen op in als beheerder.
+  - **Webpaneel**: het webpaneel van PindaFramework (voor staff) krijgt een eigen adres, bijv. `panel.jouwdomein.nl` (in de setup voorgesteld, later aan te passen bij Instellingen). Het paneel zet het achter nginx met HTTPS (via Cloudflare, of een certificaat van Let's Encrypt), zorgt dat het echte IP van bezoekers doorkomt. Met de knop **SSL aanvragen** krijgt het webpaneel een eigen certificaat van Let's Encrypt, ook achter Cloudflare (dan kan SSL/TLS in Cloudflare op Full (strict)); certbot wordt zo nodig eerst geïnstalleerd. Het zet bij elke start `public-url`, `bind` en `behind-proxy` goed in `modules/panel.yml`. Staat de server uit, dan krijg je een nette pagina in plaats van een fout. Zonder domein gaat poort 8085 open in de firewall. Met de knop **Webpaneel** bovenaan log je er meteen op in als beheerder.
 - **Bestanden**: een bestandsbrowser zoals in Pterodactyl voor de hele servermap. Bladeren, bestanden bewerken in een editor met kleuren (YAML, properties, JSON, …; Ctrl+S om op te slaan), uploaden met slepen (ook hele mappen, in stukken van 16 MB zodat het via Cloudflare werkt), downloaden (mappen als zip), hernoemen, verplaatsen, inpakken als zip en uitpakken (.zip, .tar, .tar.gz), verwijderen. Het paneel blijft altijd binnen de map: symlinks of trucs van een plugin brengen het nooit naar andere bestanden op de VPS.
 - **Website**: een eigen bestandsbrowser voor de website (`/opt/pinda/website`). Alles wat je daar uploadt, staat meteen online op het domein van de website; `index.html` is de voorpagina. Via Cloudflare werkt HTTPS meteen; zonder Cloudflare vraag je met één knop een certificaat aan bij Let's Encrypt.
 - **Backups**: de servermap, de website en alle databases samen in één zip. Elke nacht automatisch (vaste tijden of elke paar uur, per dag van de week), of nu met één knop en een notitie. De server kan blijven draaien: het paneel zet opslaan even uit (`save-off`, `save-all flush`) zodat de wereld heel in de backup komt. Cache, libraries, versions en logs gaan niet mee (instelbaar).
@@ -301,7 +309,8 @@ Het idee: PindaFramework installeren en daarna alles in de browser inrichten.
 
 - **Instellingen:** elk configbestand als formulier met schakelaars, getallen en lijsten, met de uitleg uit het bestand erbij. Pas je iets aan, dan komt onderin de vraag of je het toepast: met het kruisje gaat alles terug zoals het was, met het vinkje wordt het opgeslagen en herlaadt het hele framework. Spelers staan dan een paar tellen stil met de melding dat de server herlaadt (zo ook bij `/pinda reload`).
 - **Teksten:** elke melding, elk menu en elke tip, in elke taal. Met knoppen voor themakleuren, Minecraft-kleuren, eigen kleur, verloop, vet/cursief/onderstreept en placeholders, en een voorbeeld van hoe het er in Minecraft uitziet. Onder **Uiterlijk** pas je de servernaam, de prefix en de themakleuren aan.
-- **Server:** tijd, weer, mededelingen, whitelist, MOTD (met voorbeeld zoals in de serverlijst), `server.properties` (wat kan, werkt meteen) en spelregels per wereld.
+- **Server:** tijd, weer, mededelingen, whitelist en de MOTD (met voorbeeld zoals in de serverlijst). `server.properties` pas je aan via de bestanden in het dev-paneel, spelregels (gamerules) met `/gamerule`.
+- **Regels:** de regels van de server, met een voorbeeld van het boek.
 - **Rangen:** rangen maken en bewerken, met een lijst van alle bekende permissies om uit te kiezen.
 - **Toplijsten, Bossbars, Aankondigingen en Prestaties:** alle toplijsten, de bossbars (met bewegend voorbeeld), de automatische aankondigingen en de antilag.
 - **Wereld:** explosies, phantoms, hoeveel mobs er spawnen en de ender dragon (status, terug laten komen).
@@ -423,6 +432,8 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | `/limieten <speler>` | | `pinda.itemlimits.others` | op |
 | `/modpack` | | `pinda.modpack.use` | iedereen |
 | `/modpack <speler>` | | `pinda.modpack.others` | op |
+| `/regels` | `/rules` | `pinda.rules.use` | iedereen |
+| `/regels <speler>` | | `pinda.rules.others` | op |
 | `/lag`, `/lag chunks` | `/antilag` | `pinda.antilag.use` | Mod |
 | `/lag clear [seconden\|nu]`, `/lag tp <wereld> <x> <z>` | | `pinda.antilag.admin` | op |
 | `/dragon [respawn]` | `/draak`, `/enderdragon` | `pinda.world.dragon` | op |
@@ -494,6 +505,7 @@ plugins/PindaFramework/
     ├── backpack.yml    rugtas: grootte, spelmodi, gouden staaf, gevallen rugtas bij doodgaan
     ├── itemlimits.yml  item-limiet: welke items, hoeveel per speler en op de server, wat bij te veel
     ├── modpack.yml     modpack-lock: geen/soft/hard, verplichte mods, link, meldingen, uitzonderingen
+    ├── rules.yml       de regels (als boek): titel, inleiding, regels, afsluiting
     ├── motd.yml        de MOTD in de serverlijst (meerdere varianten)
     ├── leaderboards.yml welke toplijsten, hoe vaak bijwerken, verborgen spelers
     ├── bossbar.yml     bossbars: teksten, kleuren, balk, effecten, werelden en de wisselingen
