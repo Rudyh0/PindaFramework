@@ -8,6 +8,7 @@ import java.util.UUID;
 import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.module.PindaModule;
 import nl.pinda.framework.modules.backpack.BackpackModule;
+import nl.pinda.framework.modules.duel.DuelModule;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -95,10 +96,19 @@ public final class BackModule extends PindaModule implements Listener {
         return dx * dx + dz * dz <= 32 * 32 ? bag : null;
     }
 
+    /** Een 1v1: de teleports naar de arena en terug (en doodgaan daar) onthoudt /back niet. */
+    private boolean inDuel(Player player) {
+        DuelModule duel = plugin.modules().get(DuelModule.class);
+        return duel != null && duel.isEnabled() && (duel.ownTeleport(player) || duel.involved(player));
+    }
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onTeleport(PlayerTeleportEvent event) {
         PlayerTeleportEvent.TeleportCause cause = event.getCause();
         if (cause != PlayerTeleportEvent.TeleportCause.COMMAND && cause != PlayerTeleportEvent.TeleportCause.PLUGIN) {
+            return;
+        }
+        if (inDuel(event.getPlayer())) {
             return;
         }
         Location from = event.getFrom();
@@ -113,7 +123,7 @@ public final class BackModule extends PindaModule implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onDeath(PlayerDeathEvent event) {
         Player player = event.getPlayer();
-        if (!config().getBoolean("on-death", true) || !player.hasPermission(DEATH)) {
+        if (!config().getBoolean("on-death", true) || !player.hasPermission(DEATH) || inDuel(player)) {
             return;
         }
         lastLocations.put(player.getUniqueId(), player.getLocation().clone());

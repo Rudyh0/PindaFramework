@@ -120,7 +120,7 @@
         <p class="muted">Om een Minecraft-server te draaien moet je akkoord gaan met de End User License Agreement van Mojang. Daarin staat onder andere dat je geen geld mag vragen voor dingen die het spel oneerlijk maken.</p>
         <a class="btn" href="${url}" target="_blank" rel="noopener noreferrer">${icon('external')} De EULA lezen</a>
         <label class="check"><input type="checkbox" name="accept" required> Ik heb de EULA gelezen en ga ermee akkoord</label>
-        <p class="muted small">Daarna zet het paneel PindaFramework, ViaVersion, PlaceholderAPI, CoreProtect en WorldEdit neer (de nieuwste versies voor deze Minecraft-versie) en start de server.</p>
+        <p class="muted small">Daarna zet het paneel PindaFramework, ViaVersion, PlaceholderAPI, CoreProtect, WorldEdit en WorldGuard neer (de nieuwste versies voor deze Minecraft-versie) en start de server.</p>
       </div>
       <div class="modal-foot"><button type="button" class="btn ghost" data-action="close">Annuleren</button>
         <button class="btn primary">${icon('check')} Akkoord en starten</button></div></form>`);
@@ -355,7 +355,7 @@
     render($('#server-tab'), html`
       ${data.running ? html`<div class="alert plain small">${icon('warn')} <div>Nieuwe of bijgewerkte plugins werken pas na een herstart van de server.</div></div>` : ''}
       ${card('Standaardplugins', 'plug', html`<div class="card-body"><div class="plugin-grid">${managed}</div>
-        <p class="muted small" style="margin-top:14px">De rangen van PindaFramework regelen de rechten: PindaAdmin is operator en mag alles (ook WorldEdit), PindaMod mag met CoreProtect inspecteren, opzoeken en teleporteren. Aanpassen kan in <a href="${window.PH.editHash('bestanden', 'plugins/PindaFramework/modules/ranks.yml')}">ranks.yml</a>.</p></div>`,
+        <p class="muted small" style="margin-top:14px">De rangen van PindaFramework regelen de rechten: PindaAdmin is operator en mag alles (ook WorldEdit en WorldGuard), PindaMod mag met CoreProtect inspecteren, opzoeken en teleporteren. Aanpassen kan in <a href="${window.PH.editHash('bestanden', 'plugins/PindaFramework/modules/ranks.yml')}">ranks.yml</a>.</p></div>`,
         html`<button class="btn sm" data-action="plugins-update" data-keys="${data.managed.map(p => p.key).join(',')}" ${data.busy ? 'disabled' : ''}>${icon('refresh')} Alles bijwerken</button>`)}
       <div style="margin-top:16px">${card('Alle plugins', 'cube', html`<div class="table-wrap"><table>
         <thead><tr><th>Plugin</th><th class="hide-sm">Versie</th><th class="hide-sm">Bestand</th><th>Status</th><th></th></tr></thead>
@@ -461,7 +461,7 @@
         ${card('Wat er gebeurt', 'cube', html`<div class="card-body"><ol class="steps">
           <li><b>Installeren</b><span class="muted">Purpur wordt gedownload en gecontroleerd (controlegetal), en klaargezet als dienst.</span></li>
           <li><b>Starten en de EULA</b><span class="muted">Bij de eerste start ga je akkoord met de Minecraft EULA.</span></li>
-          <li><b>Plugins</b><span class="muted">PindaFramework, ViaVersion, PlaceholderAPI, CoreProtect en WorldEdit, de nieuwste versies voor jouw Minecraft-versie.</span></li>
+          <li><b>Plugins</b><span class="muted">PindaFramework, ViaVersion, PlaceholderAPI, CoreProtect, WorldEdit en WorldGuard, de nieuwste versies voor jouw Minecraft-versie.</span></li>
           <li><b>Spelen</b><span class="muted">Spelers komen erin via ${data.address || 'het adres uit de setup'}${data.port !== 25565 ? `:${data.port}` : ''}.</span></li>
         </ol></div>`)}
       </div>`);

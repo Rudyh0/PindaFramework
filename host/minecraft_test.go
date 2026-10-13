@@ -193,6 +193,7 @@ func TestInstallServerAndPlugins(t *testing.T) {
 	plugins := map[string][]byte{
 		"viaversion": fakeJar(t, "ViaVersion", "1.0"), "placeholderapi": fakeJar(t, "PlaceholderAPI", "1.0"),
 		"coreprotect": fakeJar(t, "CoreProtect", "1.0"), "worldedit": fakeJar(t, "WorldEdit", "1.0"),
+		"worldguard": fakeJar(t, "WorldGuard", "1.0"),
 	}
 	framework := fakeJar(t, "PindaFramework", "0.1.0-b30")
 	fakeAPIs(t, jar, plugins, framework)
@@ -271,7 +272,7 @@ func TestInstallServerAndPlugins(t *testing.T) {
 	for _, plugin := range list {
 		files[plugin.File] = plugin
 	}
-	for _, want := range []string{"PindaFramework-0.1.0-b30.jar", "viaversion-1.0.jar", "placeholderapi-1.0.jar", "coreprotect-1.0.jar", "worldedit-1.0.jar.disabled"} {
+	for _, want := range []string{"PindaFramework-0.1.0-b30.jar", "viaversion-1.0.jar", "placeholderapi-1.0.jar", "coreprotect-1.0.jar", "worldedit-1.0.jar.disabled", "worldguard-1.0.jar"} {
 		if _, ok := files[want]; !ok {
 			t.Errorf("plugin %s ontbreekt: %v", want, files)
 		}

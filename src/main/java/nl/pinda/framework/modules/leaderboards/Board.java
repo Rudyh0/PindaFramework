@@ -13,7 +13,8 @@ public enum Board {
     KILLS("kills", Material.IRON_SWORD, "spelerkills", "pvp", "kill"),
     MOB_KILLS("mobkills", Material.ZOMBIE_HEAD, "mobs", "monsters", "mobkill"),
     DEATHS("deaths", Material.SKELETON_SKULL, "doden", "dood", "death"),
-    TREES("trees", Material.OAK_SAPLING, "bomen", "boom", "timber", "tree");
+    TREES("trees", Material.OAK_SAPLING, "bomen", "boom", "timber", "tree"),
+    DUELS("duels", Material.GOLDEN_SWORD, "1v1", "duel", "gevechten", "gewonnen");
 
     private final String id;
     private final Material icon;

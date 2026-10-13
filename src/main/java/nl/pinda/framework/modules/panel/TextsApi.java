@@ -55,7 +55,15 @@ final class TextsApi extends PanelApi {
             Map.entry("location", "world 120, -340"), Map.entry("types", "cow 120, item 40"), Map.entry("mob", "Koe"),
             Map.entry("cx", "7"), Map.entry("cz", "-22"),
             Map.entry("missing", "Simple Voice Chat, Sodium"), Map.entry("url", "https://modrinth.com/modpack/pindacraft"),
-            Map.entry("client", "fabric 0.19.5"));
+            Map.entry("client", "fabric 0.19.5"),
+            Map.entry("one", "Rudyh0"), Map.entry("two", "Henk_Bouwt"), Map.entry("winner", "Rudyh0"), Map.entry("loser", "Henk_Bouwt"),
+            Map.entry("prize", "500 PindaCredits en 3 items"), Map.entry("score", "2 - 1"), Map.entry("round", "2"),
+            Map.entry("wins", "12"), Map.entry("losses", "5"), Map.entry("draws", "1"), Map.entry("ratio", "2,40"),
+            Map.entry("spot", "plek 1"), Map.entry("money", "500 PindaCredits"), Map.entry("big", "100 PindaCredits"));
+
+    /** Knoppen in berichten (zoals [ACCEPTEREN]): in het voorbeeld gewoon de tekst ertussen. */
+    private static final List<String> BUTTONS = List.of("accept", "deny", "withdraw", "watch", "challenge", "rematch", "stop",
+            "open", "cancel");
 
     private final ConfigEditor editor;
 
@@ -225,6 +233,9 @@ final class TextsApi extends PanelApi {
         List<TagResolver> resolvers = new ArrayList<>();
         for (Map.Entry<String, String> sample : SAMPLES.entrySet()) {
             resolvers.add(Text.p(sample.getKey(), sample.getValue()));
+        }
+        for (String button : BUTTONS) {
+            resolvers.add(net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.styling(button));
         }
         TagResolver all = TagResolver.resolver(resolvers);
         return sync(() -> ComponentHtml.render(plugin.lang().parse(source, all)));

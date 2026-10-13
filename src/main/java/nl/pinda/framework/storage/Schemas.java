@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import nl.pinda.framework.modules.backpack.BackpackModule;
+import nl.pinda.framework.modules.duel.DuelStore;
 import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.homes.HomesModule;
 import nl.pinda.framework.modules.itemlimits.ItemLimitModule;
@@ -37,6 +38,7 @@ public final class Schemas {
         all.put("backpack", BackpackModule.MIGRATIONS);
         all.put("itemlimits", ItemLimitModule.MIGRATIONS);
         all.put("modpack", ModpackModule.MIGRATIONS);
+        all.put("duel", DuelStore.MIGRATIONS);
         all.put("homes", HomesModule.MIGRATIONS);
         all.put("moderation", ModerationModule.MIGRATIONS);
         all.put("skills", SkillsModule.MIGRATIONS);

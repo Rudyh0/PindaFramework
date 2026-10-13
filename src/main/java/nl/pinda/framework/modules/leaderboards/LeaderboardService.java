@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.module.PindaModule;
+import nl.pinda.framework.modules.duel.DuelModule;
 import nl.pinda.framework.modules.economy.Account;
 import nl.pinda.framework.modules.economy.EconomyModule;
 import nl.pinda.framework.modules.economy.EconomyService;
@@ -105,6 +106,10 @@ public final class LeaderboardService {
                 PindaModule timber = plugin.modules().get(TimberModule.class);
                 yield timber != null && timber.isEnabled();
             }
+            case DUELS -> {
+                PindaModule duel = plugin.modules().get(DuelModule.class);
+                yield duel != null && duel.isEnabled();
+            }
             default -> true;
         };
     }
@@ -162,6 +167,7 @@ public final class LeaderboardService {
                             case MOB_KILLS -> stat(connection, "mob_kills");
                             case DEATHS -> stat(connection, "deaths");
                             case TREES -> trees(connection);
+                            case DUELS -> duels(connection);
                         };
                         if (!hidden.isEmpty()) {
                             entries.removeIf(entry -> entry.name() != null && hidden.contains(entry.name().toLowerCase(Locale.ROOT)));
@@ -253,6 +259,24 @@ public final class LeaderboardService {
         return list;
     }
 
+    /** Hoe vaak iemand een 1v1 won. */
+    private static List<Entry> duels(Connection connection) throws SQLException {
+        List<Entry> list = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT d.uuid, COALESCE(p.name, d.name, d.uuid) AS name, d.wins AS value
+                FROM pinda_duel_stats d LEFT JOIN pinda_players p ON p.uuid = d.uuid
+                WHERE d.wins > 0 ORDER BY d.wins DESC, d.losses ASC, name COLLATE NOCASE""");
+             ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                UUID uuid = uuid(result.getString("uuid"));
+                if (uuid != null) {
+                    list.add(new Entry(uuid, result.getString("name"), result.getLong("value")));
+                }
+            }
+        }
+        return list;
+    }
+
     private static UUID uuid(String text) {
         try {
             return UUID.fromString(text);
@@ -278,6 +302,10 @@ public final class LeaderboardService {
             }
             case SKILLS -> {
                 String template = plugin.lang().raw(code, "top.values.skills");
+                yield template == null ? String.valueOf(value) : template.replace("<value>", number(value, code));
+            }
+            case DUELS -> {
+                String template = plugin.lang().raw(code, "top.values.duels");
                 yield template == null ? String.valueOf(value) : template.replace("<value>", number(value, code));
             }
             case PLAYTIME -> duration(value, code);

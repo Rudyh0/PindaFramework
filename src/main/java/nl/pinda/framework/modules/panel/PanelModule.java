@@ -141,6 +141,7 @@ public final class PanelModule extends PindaModule {
         new ItemLimitsApi(this).register(created);
         new ModpackApi(this).register(created);
         new RulesApi(this).register(created);
+        new DuelApi(this).register(created);
         new WorldApi(this).register(created);
         String bind = bind();
         int port = port();

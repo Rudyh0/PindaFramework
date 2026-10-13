@@ -112,6 +112,25 @@ De regels van de server, als boek. Spelers openen het met **`/regels`** of via d
 - Het framework verdeelt de tekst zelf over de bladzijden (14 regels per bladzijde, zoals in Minecraft), zonder een regel van de server over twee bladzijden te knippen als dat niet hoeft.
 - Staff opent het boek bij iemand anders met `/regels <speler>`.
 
+## 1v1-gevechten
+
+PvP buiten een gevecht staat uit. Wie iemand slaat, krijgt een melding (in te stellen in het paneel), standaard: *"Vechten zonder consent? Dat mag niet! Daag elkaar uit en ga de ring in."*, met een knop **[Daag … uit]**.
+
+1. **Uitdagen:** met die knop of met **`/duel <speler>`** (ook `/1v1`, `/uitdagen`). De ander krijgt **[ACCEPTEREN] [WEIGEREN]** in de chat (of `/duel accepteer`). Een uitdaging verloopt na een minuut.
+2. **Naar de arena:** accepteert de ander, dan gaan ze allebei naar hun plek in de arena. Daar kiezen ze in een menu wat ze **inzetten**: klik op items in je inventory om ze in te zetten, stel met **+** en **−** (of door een bedrag te typen) in hoeveel geld je inzet, en klik op **klaar**. Je ziet ook de inzet van de ander. Verandert er iets, dan moet iedereen opnieuw op klaar.
+3. **Vechten:** zijn ze allebei klaar, dan gaat het geld van de rekening af, telt een grote titel af van 3 naar 1 en dan: **FIGHT!** Ze vechten tot de dood, maar niemand gaat echt dood: je houdt je inventory (behalve je inzet), je verliest geen geld of rugtas, `/back` gaat er niet heen en het telt niet als death. Wel telt het in een eigen stand: gewonnen, verloren en de **K/D** (gewonnen gedeeld door verloren).
+4. **De winnaar krijgt alles:** beide inzetten (wat niet in de inventory past, krijgt hij als hij terug is). De verliezer krijgt niets.
+5. **Rematch?** Daarna kiezen ze in een menu (of in de chat) voor een rematch, met een nieuwe inzet. Wil één van de twee niet (of kiest niemand op tijd), dan gaat iedereen terug naar de plek waar hij vóór het gevecht was.
+
+- **Kijken:** iedereen krijgt een melding als er een gevecht begint, met een knop **[Kijken]** (of `/duel kijken`). Toeschouwers gaan naar de toeschouwersplek en na het gevecht weer terug naar waar ze waren. Weggaan kan met `/duel verlaten`.
+- **De arena instellen:** ga op de plek staan, kijk de goede kant op, en typ **`/setarena 1`**, **`/setarena 2`** en **`/setarena kijken`** (toeschouwers). Er is één arena; is die bezet, dan moeten anderen even wachten (of kijken).
+- **Beschermd gebied:** de arena is beschermd: niemand bouwt of sloopt er, geen explosies, brand of monsters, en PvP alleen voor het 1v1 zelf. Staat **WorldGuard** op de server (een standaardplugin van het dev-paneel), dan maakt het framework er de WorldGuard-regio **`pinda_arena`** van (te bekijken met `/rg info pinda_arena`; eigen vlaggen die je daar zet, blijven staan). Zonder WorldGuard beschermt het framework de arena zelf (bouwen kan dan met `pinda.duel.build`). Het gebied kies je met de WorldEdit-bijl en **`/setarena gebied`** (of zonder WorldEdit: `/setarena hoek1` en `/setarena hoek2` op twee hoeken); dat is dan ook de grens tijdens een gevecht. Zonder ingesteld gebied is het automatisch alles rond de plekken (met een marge, standaard 15 blokken).
+- **Tijdens het gevecht:** iedereen in survival (geen vliegen), niet weg uit de arena (geen `/spawn`, `/home`, `/tpa`, ...; enderparels binnen de arena mogen), niet bouwen. Totems werken (instelbaar). Na een paar minuten (standaard 5) is het gelijkspel: iedereen krijgt zijn eigen inzet terug.
+- **Uitloggen of een crash:** uitloggen tijdens het vechten telt als verloren; daarvoor gaat het gevecht niet door. Wie weg was, gaat bij het joinen terug naar zijn plek en krijgt zijn inzet terug. Ook als de server midden in een gevecht stopt of crasht, krijgt iedereen zijn inzet terug.
+- Items met een limiet (item-limiet) kun je niet inzetten. Een lijst met andere items die niet mogen staat in het paneel.
+- `/duel stats [speler]` en `/duel top` tonen de stand; er is ook een toplijst **1v1** (meeste gewonnen). `/duel opgeven` geeft op tijdens een gevecht; `/duel annuleer` blaast het af zolang het nog niet begonnen is (staff met `pinda.duel.admin` breekt er zo elk gevecht mee af, iedereen krijgt dan zijn inzet terug).
+- In het paneel bij **1v1**: de melding bij slaan, alle tijden en regels, de arena en hoe die beschermd is, het gevecht dat nu bezig is (af te breken), de beste vechters en de laatste gevechten. Op elk spelersprofiel staat de 1v1-stand.
+
 ## Modpack-lock
 
 Laat spelers alleen (of liever) spelen met de client-mods die nodig zijn, zoals Simple Voice Chat. Instellen in het paneel bij **Modpack**.
@@ -148,7 +167,7 @@ Naar het voorbeeld van UltimateTimber: hak met een **bijl** het onderste blok va
 
 ## Toplijsten
 
-Zeven toplijsten: **rijkste spelers** (contant + bank), **hoogste skills** (totaal level), **langst online**, **meeste spelerkills**, **meeste mobkills**, **vaakst doodgegaan** en **meeste bomen gekapt**. Speeltijd, kills en doden komen uit de statistieken van Minecraft zelf, dus ook wat spelers deden voordat PindaFramework erop stond telt mee.
+Acht toplijsten: **rijkste spelers** (contant + bank), **hoogste skills** (totaal level), **langst online**, **meeste spelerkills**, **meeste mobkills**, **vaakst doodgegaan**, **meeste bomen gekapt** en **meeste 1v1's gewonnen**. Speeltijd, kills en doden komen uit de statistieken van Minecraft zelf, dus ook wat spelers deden voordat PindaFramework erop stond telt mee.
 
 - **`/top`** opent een menu met alle toplijsten en je eigen plek op elke lijst. **`/top geld`** (of `skills`, `speeltijd`, `kills`, `mobkills`, `doden`) zet een toplijst in de chat.
 - De toplijsten staan ook in de **bossbars** bovenin beeld (zie hieronder).
@@ -233,7 +252,7 @@ Wat er nu in zit:
 
 - **Dashboard**: draait de Minecraft-server, database, webserver, firewall? Plus processor, geheugen, schijf en hoe lang de VPS al aan staat.
 - **Server**: installeert **Purpur** (standaard de nieuwste stabiele versie; een oudere of nieuwere versie en build kiezen kan ook). De download wordt gecontroleerd met het controlegetal van Purpur. De server draait als eigen dienst (`pinda-minecraft`) onder de gebruiker `minecraft`, nooit als root, en start na een crash vanzelf opnieuw.
-  - Bij de **eerste start** accepteer je de **Minecraft EULA** in een venster. Daarna zet het paneel **PindaFramework** (van GitHub) en de nieuwste versies van **ViaVersion, PlaceholderAPI, CoreProtect en WorldEdit** (van Modrinth, voor jouw Minecraft-versie) in `plugins/`, en start de server. De rangen van PindaFramework regelen de rechten: PindaAdmin is operator en mag alles (ook WorldEdit), PindaMod mag met CoreProtect inspecteren, opzoeken en teleporteren.
+  - Bij de **eerste start** accepteer je de **Minecraft EULA** in een venster. Daarna zet het paneel **PindaFramework** (van GitHub) en de nieuwste versies van **ViaVersion, PlaceholderAPI, CoreProtect, WorldEdit en WorldGuard** (van Modrinth, voor jouw Minecraft-versie) in `plugins/`, en start de server. Staat een server al langer, dan zet je WorldGuard erbij met **Installeren** bij de standaardplugins (Server › Plugins). De rangen van PindaFramework regelen de rechten: PindaAdmin is operator en mag alles (ook WorldEdit en WorldGuard), PindaMod mag met CoreProtect inspecteren, opzoeken en teleporteren.
   - **Console**: alles uit `logs/latest.log` live, en opdrachten sturen (via RCON, alleen vanaf de VPS zelf, over één vaste verbinding; ook lange antwoorden zoals `help` komen heel aan). Spelers online, geheugen en uptime staan erboven. Het geheugen is wat de game zelf gebruikt (zoals PindaFramework het meldt, met de TPS), niet wat Java van tevoren reserveert.
   - **Plugins**: alle plugins met versie, aan/uit zetten, verwijderen, en de standaardplugins met één knop bijwerken.
   - **Instellingen**: hoeveel geheugen de server krijgt (met de vlaggen van Aikar), en overstappen naar een andere versie of build (alleen `server.jar` wordt vervangen).
@@ -316,6 +335,7 @@ Het idee: PindaFramework installeren en daarna alles in de browser inrichten.
 - **Wereld:** explosies, phantoms, hoeveel mobs er spawnen en de ender dragon (status, terug laten komen).
 - **Item-limiet:** welke items beperkt zijn en hoeveel per speler en op de server, wie ze heeft en waar ze liggen, en items vrijgeven.
 - **Modpack:** geen lock, softlock of hardlock, welke mods verplicht zijn, de meldingen, uitzonderingen en per speler welke mods hij heeft.
+- **1v1:** de melding als iemand een ander slaat, PvP aan/uit, tijden, inzet en regels tijdens het gevecht, de arena, het gevecht van nu (af te breken) en de stand.
 
 ## Webpaneel
 
@@ -351,6 +371,7 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | Rugtas | de rugtas van een speler bekijken (ook offline) en zien waar een gevallen rugtas ligt; items weghalen met `pinda.panel.players.manage` | `pinda.panel.players` | Mod |
 | Item-limiet | wie welke beperkte items heeft en waar ze liggen; regels en instellingen met `pinda.panel.config`, items vrijgeven met `pinda.panel.players.manage` | `pinda.panel.players` | Mod |
 | Modpack | per speler welke mods hij heeft en wat er ontbreekt; de lock, verplichte mods, meldingen en uitzonderingen met `pinda.panel.config` | `pinda.panel.players` | Mod |
+| 1v1 | het gevecht van nu, de stand en de laatste gevechten; instellingen, melding en arena met `pinda.panel.config`, afbreken met `pinda.panel.moderate` | `pinda.panel.players` | Mod |
 | 2FA resetten | de authenticator van iemand anders ontkoppelen | `pinda.panel.security` | Admin |
 | Shop sluiten | een shop dichtzetten | `pinda.panel.shops.manage` | Admin |
 | Server | tijd, weer, mededeling, whitelist, opslaan, `/pinda reload` | `pinda.panel.server` | Admin |
@@ -434,6 +455,9 @@ Een eigen beheerwebsite, ingebouwd in de plugin (geen extra software nodig).
 | `/modpack <speler>` | | `pinda.modpack.others` | op |
 | `/regels` | `/rules` | `pinda.rules.use` | iedereen |
 | `/regels <speler>` | | `pinda.rules.others` | op |
+| `/duel <speler>`, `/duel accepteer\|weiger [speler]`, `/duel stats [speler]`, `/duel top`, `/duel opgeven` | `/1v1`, `/uitdagen` | `pinda.duel.use` | iedereen |
+| `/duel kijken`, `/duel verlaten` | | `pinda.duel.spectate` | iedereen |
+| `/setarena [1\|2\|kijken\|gebied\|hoek1\|hoek2]`, `/setarena wis <plek>` | | `pinda.duel.admin` | op |
 | `/lag`, `/lag chunks` | `/antilag` | `pinda.antilag.use` | Mod |
 | `/lag clear [seconden\|nu]`, `/lag tp <wereld> <x> <z>` | | `pinda.antilag.admin` | op |
 | `/dragon [respawn]` | `/draak`, `/enderdragon` | `pinda.world.dragon` | op |
@@ -462,6 +486,7 @@ Extra permissies:
 | `pinda.sleep.exempt` | Telt niet mee bij het aantal spelers dat moet slapen | niemand |
 | `pinda.itemlimits.bypass` | Geen item-limiet (de items worden wel bijgehouden) | niemand |
 | `pinda.modpack.bypass` | Altijd mogen spelen, ook zonder de mods van de modpack | niemand |
+| `pinda.duel.build` | Bouwen in de beschermde 1v1-arena (zonder WorldGuard; met WorldGuard geldt de bypass van WorldGuard) | op |
 | `pinda.antilag.notify` | Een melding krijgen als de server laggt | Mod |
 | `pinda.timber.bypass-cooldown` | Geen wachttijd tussen twee bomen | op |
 
@@ -506,6 +531,7 @@ plugins/PindaFramework/
     ├── itemlimits.yml  item-limiet: welke items, hoeveel per speler en op de server, wat bij te veel
     ├── modpack.yml     modpack-lock: geen/soft/hard, verplichte mods, link, meldingen, uitzonderingen
     ├── rules.yml       de regels (als boek): titel, inleiding, regels, afsluiting
+    ├── duel.yml        1v1: melding bij slaan, PvP aan/uit, tijden, inzet, regels tijdens het gevecht, bescherming, de arena
     ├── motd.yml        de MOTD in de serverlijst (meerdere varianten)
     ├── leaderboards.yml welke toplijsten, hoe vaak bijwerken, verborgen spelers
     ├── bossbar.yml     bossbars: teksten, kleuren, balk, effecten, werelden en de wisselingen

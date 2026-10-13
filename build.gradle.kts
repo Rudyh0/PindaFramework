@@ -14,6 +14,10 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc"
     }
+    // WorldEdit en WorldGuard (optioneel op de server: de 1v1-arena als WorldGuard-regio)
+    maven("https://maven.enginehub.org/repo/") {
+        name = "enginehub"
+    }
     // PlaceholderAPI (optioneel op de server; alleen nodig om te compileren)
     maven("https://repo.extendedclip.com/releases/") {
         name = "placeholderapi"
@@ -27,6 +31,9 @@ dependencies {
     compileOnly("com.google.zxing:core:3.5.3")
     // %pinda_...% placeholders voor andere plugins, als PlaceholderAPI op de server staat
     compileOnly("me.clip:placeholderapi:2.11.6")
+    // De 1v1-arena als WorldGuard-regio, en /setarena gebied met de WorldEdit-selectie
+    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.19")
+    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.4")
 }
 
 java {

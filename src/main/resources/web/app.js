@@ -362,6 +362,7 @@
     { path: 'straffen', title: 'Straffen', icon: 'shield', perm: P.players, feature: 'moderation', page: pagePunishments },
     { path: 'itemlimiet', title: 'Item-limiet', icon: 'box', perm: P.players, feature: 'itemlimits', page: pageItemLimits },
     { path: 'modpack', title: 'Modpack', icon: 'puzzle', perm: P.players, feature: 'modpack', page: pageModpack },
+    { path: '1v1', title: '1v1', icon: 'sword', perm: P.players, feature: 'duel', page: pageDuel },
     { path: 'server', title: 'Server', icon: 'server', perm: [P.server, P.config], page: pageServer, group: 'Beheer' },
     { path: 'prestaties', title: 'Prestaties', icon: 'gauge', perm: P.server, feature: 'antilag', page: pagePerformance, group: 'Beheer' },
     { path: 'wereld', title: 'Wereld', icon: 'mountain', perm: P.server, feature: 'world', page: pageWorld, group: 'Beheer' },
@@ -1600,6 +1601,15 @@
         ${m.online ? '' : html`<dt>Gemeld</dt><dd>${dateTime(m.updated)}</dd>`}</dl>
         ${m.mods !== null && m.mods !== undefined ? html`<p style="margin-top:14px"><button class="btn sm" data-action="modpack-mods" data-uuid="${p.uuid}">${icon('puzzle')} Mods bekijken</button></p>` : ''}</div>`));
     }
+    if (p.duel) {
+      const du = p.duel;
+      sections.push(card('1v1', 'sword', html`<div class="card-body">
+        ${du.fights ? html`<div class="balance"><div><span>Gewonnen</span><b>${num(du.wins)}</b></div><div><span>Verloren</span><b>${num(du.losses)}</b></div><div><span>K/D</span><b>${duelRatio(du.ratio)}</b></div></div>
+          ${du.draws ? html`<p class="muted small">${num(du.draws)} keer gelijkspel.</p>` : ''}
+          ${du.recent.length ? html`<ul class="duel-fights" style="margin-top:12px">${du.recent.map(duelFightRow)}</ul>` : ''}
+          ${can(P.config) ? html`<p style="margin-top:14px"><button class="btn sm ghost" data-action="duel-reset" data-uuid="${p.uuid}" data-name="${p.name}">${icon('undo')} Stand wissen</button></p>` : ''}`
+          : html`<p class="muted">Heeft nog nooit een 1v1 gedaan.</p>`}</div>`, du.fights ? html`<span class="count">${num(du.fights)} ${du.fights === 1 ? 'gevecht' : 'gevechten'}</span>` : ''));
+    }
     if (p.shop) {
       sections.push(card('Shop', 'shop', html`<div class="card-body"><dl class="kv">
         <dt>Naam</dt><dd>${p.shop.name}</dd>
@@ -1800,7 +1810,7 @@
 
   // =============================================================== toplijsten
 
-  const BOARD_ICONS = { money: 'coin', skills: 'award', playtime: 'clock', kills: 'sword', mobkills: 'ghost', deaths: 'skull', trees: 'tree' };
+  const BOARD_ICONS = { money: 'coin', skills: 'award', playtime: 'clock', kills: 'sword', mobkills: 'ghost', deaths: 'skull', trees: 'tree', duels: 'trophy' };
 
   async function pageLeaderboards(main, _, alive) {
     const data = await api('/leaderboards');
@@ -2303,6 +2313,214 @@
         if (details && query) details.open = true;
       });
     }
+  }
+
+  // =============================================================== 1v1
+
+  const DUEL_PHASES = { wager: ['Inzet kiezen', 'info'], countdown: ['Aftellen', 'warning'], fight: ['Vechten', 'error'], rematch: ['Rematch?', 'info'], ended: ['Klaar', 'plain'] };
+  const DUEL_SPOTS = { spawn1: 'Plek 1', spawn2: 'Plek 2', spectate: 'Toeschouwers', area: 'Beschermd gebied' };
+  const DUEL_PROTECTION = {
+    worldguard: ['WorldGuard', 'success', a => `De regio ${a.region} beschermt de arena (bekijk met /rg info ${a.region}). Eigen vlaggen die je daar zet, blijven staan.`],
+    framework: ['PindaFramework', 'success', a => a.worldGuard ? 'WorldGuard gaf een fout; PindaFramework beschermt de arena nu zelf (zie het serverlog).' : 'PindaFramework beschermt de arena zelf. Met WorldGuard op de server wordt het een WorldGuard-regio.'],
+    none: ['Nog niet', 'warning', () => 'Stel eerst de plekken van de arena in.'],
+    off: ['Uit', 'plain', () => 'De bescherming staat uit (zie Instellingen).']
+  };
+  const DUEL_REASONS = { killed: 'verslagen', forfeit: 'opgegeven', quit: 'weggegaan', time: 'tijd om' };
+  const duelRatio = r => (r || 0).toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const duelDuration = s => s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s || 0}s`;
+
+  async function pageDuel(main, _, alive) {
+    const data = await api('/duel');
+    if (!alive()) return;
+    state.duel = data;
+    renderDuel(main, data);
+    // Alleen het gevecht van nu (en de lijsten) verversen: half ingevulde velden blijven staan.
+    every(4000, async () => {
+      try {
+        const fresh = await api('/duel');
+        if (!alive()) return;
+        state.duel = fresh;
+        duelRefresh(main, fresh);
+      } catch { /* volgende keer opnieuw */ }
+    });
+  }
+
+  function duelRefresh(main, d) {
+    const parts = { '#duel-stats': duelStats(d), '#duel-live': duelLive(d), '#duel-top': duelTop(d), '#duel-recent': duelRecent(d) };
+    for (const [selector, content] of Object.entries(parts)) {
+      const element = $(selector, main);
+      if (element) render(element, content);
+    }
+  }
+
+  function duelStats(d) {
+    const live = d.live;
+    const phase = live ? (DUEL_PHASES[live.phase] || [live.phase, 'plain']) : null;
+    return html`${stat('Gevechten', num(d.total), 'sinds de module aan staat', 'sword')}
+      ${stat('Nu bezig', live ? phase[0] : 'Niets', live ? `${live.players.map(p => p.name).join(' tegen ')}${live.round > 1 ? ` · ronde ${live.round}` : ''}` : d.invites ? `${num(d.invites)} ${d.invites === 1 ? 'uitdaging staat' : 'uitdagingen staan'} open` : 'de arena is vrij', 'zap', live ? 'warning' : '')}
+      ${stat('Arena', d.arena.ready ? 'Klaar' : 'Niet klaar', d.arena.ready ? (d.arena.spectate ? 'met plek voor toeschouwers' : 'zonder plek voor toeschouwers') : 'stel in met /setarena', 'mountain', d.arena.ready ? 'success' : 'error')}
+      ${stat('PvP buiten gevechten', d.settings.blockPvp ? 'Uit' : 'Aan', d.settings.blockPvp ? 'wie slaat, krijgt de melding' : 'zoals de gamerule pvp', 'shield', d.settings.blockPvp ? 'success' : '')}`;
+  }
+
+  function duelLive(d) {
+    const live = d.live;
+    if (!live) {
+      return html`<div class="card-body"><div class="empty">Er is nu geen 1v1 bezig.${d.arena.ready ? '' : html`<br><span class="muted small">Eerst moet de arena er zijn (zie Arena).</span>`}</div></div>`;
+    }
+    const phase = DUEL_PHASES[live.phase] || [live.phase, 'plain'];
+    const since = live.fightStarted || live.since;
+    const player = p => html`<div class="duel-player">
+        <div class="duel-player-head">${who(p.name, p.uuid, null)}${p.online ? '' : html`<span class="badge plain">offline</span>`}</div>
+        <dl class="kv">
+          ${p.health !== null && p.health !== undefined ? html`<dt>Levens</dt><dd><span class="duel-hearts">❤ ${fixed(p.health / 2, 1)}</span></dd>` : ''}
+          ${d.economy ? html`<dt>Geld ingezet</dt><dd>${p.moneyText || '0'}</dd>` : ''}
+          <dt>Items ingezet</dt><dd>${num(p.items)}</dd>
+          ${live.phase === 'wager' ? html`<dt>Klaar</dt><dd>${p.ready ? html`<span class="badge success">klaar</span>` : html`<span class="badge plain">nog niet</span>`}</dd>` : ''}
+          ${live.phase === 'rematch' ? html`<dt>Rematch</dt><dd>${p.rematch === true ? html`<span class="badge success">ja</span>` : p.rematch === false ? html`<span class="badge error">nee</span>` : html`<span class="badge plain">kiest nog</span>`}</dd>` : ''}
+          ${live.round > 1 || p.wins ? html`<dt>Gewonnen</dt><dd>${num(p.wins)}</dd>` : ''}
+        </dl></div>`;
+    return html`<div class="card-body">
+        <div class="duel-live-head"><span class="badge ${phase[1]}">${phase[0]}</span><span class="muted small">${live.round > 1 ? `ronde ${live.round} · ` : ''}${live.phase === 'fight' ? 'vechten sinds' : 'sinds'} ${clock(since)}</span></div>
+        <div class="duel-players">${player(live.players[0])}<div class="duel-vs">tegen</div>${player(live.players[1])}</div>
+        <p class="muted small" style="margin-top:12px">${live.watchers.length ? `Kijken mee: ${live.watchers.join(', ')}` : 'Niemand kijkt mee.'}</p>
+        ${d.canAbort ? html`<div class="save-bar"><span class="muted small">Afbreken: iedereen krijgt zijn inzet terug en gaat terug naar waar hij was.</span><button type="button" class="btn danger" data-duel-abort>${icon('x')} Afbreken</button></div>` : ''}
+      </div>`;
+  }
+
+  function duelArena(d) {
+    const row = key => {
+      const spot = d.arena[key];
+      return html`<tr><td><b>${DUEL_SPOTS[key]}</b></td>
+        <td>${spot ? html`<span class="mono small">${spot.text}</span>` : html`<span class="muted">niet ingesteld</span>`}</td>
+        <td class="actions">${spot && d.canEdit ? html`<button class="btn sm ghost" data-duel-clear="${key}" title="Weghalen">${icon('trash')}</button>` : ''}</td></tr>`;
+    };
+    const protection = DUEL_PROTECTION[d.arena.protection] || DUEL_PROTECTION.none;
+    const areaRow = html`<tr><td><b>${DUEL_SPOTS.area}</b></td>
+        <td>${d.arena.area ? html`<span class="mono small">${d.arena.area.text}</span>${d.arena.areaSet ? '' : html` <span class="badge plain">automatisch</span>`}` : html`<span class="muted">—</span>`}</td>
+        <td class="actions">${d.arena.areaSet && d.canEdit ? html`<button class="btn sm ghost" data-duel-clear="area" title="Terug naar automatisch">${icon('trash')}</button>` : ''}</td></tr>`;
+    return card('Arena', 'mountain', html`<div class="table-wrap"><table><tbody>${['spawn1', 'spawn2', 'spectate'].map(row)}${areaRow}</tbody></table></div>
+      <div class="card-body">
+        <div class="duel-protection"><span class="muted small">Beschermd door</span> <span class="badge ${protection[1]}">${protection[0]}</span><p class="muted small">${protection[2](d.arena)}</p></div>
+        ${d.arena.ready && !d.arena.sameWorld ? html`<div class="alert warning">Plek 1 en 2 liggen in verschillende werelden: dan is er geen grens om de arena.</div>` : ''}
+        <p class="muted small">Ga in-game op de plek staan, kijk in de richting waarin spelers daar moeten kijken en typ <span class="kbd">/setarena 1</span>, <span class="kbd">/setarena 2</span> of <span class="kbd">/setarena kijken</span> (de plek voor toeschouwers). Het beschermde gebied (ook de grens tijdens een gevecht): selecteer het met de WorldEdit-bijl en typ <span class="kbd">/setarena gebied</span>. Zonder gebied is het automatisch alles rond de plekken.</p></div>`);
+  }
+
+  function duelTop(d) {
+    const rows = d.top.length ? d.top.map((p, i) => html`<tr><td class="num">${i + 1}</td><td>${who(p.name || '?', p.uuid, null)}</td>
+        <td class="num">${num(p.wins)}</td><td class="num">${num(p.losses)}</td><td class="num hide-sm">${num(p.draws)}</td><td class="num"><b>${duelRatio(p.ratio)}</b></td></tr>`)
+      : emptyRow(6, 'Er is nog geen 1v1 gevochten.');
+    return html`<div class="table-wrap"><table><thead><tr><th class="num">#</th><th>Speler</th><th class="num" title="Gewonnen">W</th><th class="num" title="Verloren">V</th><th class="num hide-sm" title="Gelijkspel">G</th><th class="num" title="Gewonnen gedeeld door verloren">K/D</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  }
+
+  function duelFightRow(f) {
+    const stake = [f.moneyText, f.items ? `${num(f.items)} ${f.items === 1 ? 'item' : 'items'}` : ''].filter(Boolean).join(' + ') || 'geen inzet';
+    return html`<li><div class="duel-fight">
+        ${f.draw ? html`<span><b>${f.winnerName}</b> <span class="muted">en</span> <b>${f.loserName}</b> <span class="badge warning">gelijk</span></span>`
+          : html`<span><b>${f.winnerName}</b> <span class="muted">won van</span> ${f.loserName}</span>`}
+        <span class="muted small">${ago(f.time)}</span></div>
+        <div class="muted small">${stake} · ${duelDuration(f.seconds)}${f.reason && !f.draw ? ` · ${DUEL_REASONS[f.reason] || f.reason}` : ''}</div></li>`;
+  }
+
+  function duelRecent(d) {
+    return d.recent.length ? html`<ul class="duel-fights">${d.recent.map(duelFightRow)}</ul>` : html`<div class="empty">Nog geen gevechten.</div>`;
+  }
+
+  function renderDuel(main, d) {
+    const s = d.settings;
+    const toggle = (name, title, help, disabled = false) => html`<div class="cfg-row"><div class="cfg-text"><span class="cfg-label">${title}</span>${help ? html`<span class="cfg-help">${help}</span>` : ''}</div>
+      <label class="switch"><input type="checkbox" name="${name}" ${s[name] ? 'checked' : ''} ${disabled || !d.canEdit ? 'disabled' : ''}><span></span></label></div>`;
+    const number = (name, title, help, min, max, step = 1) => html`<div class="cfg-row"><div class="cfg-text"><span class="cfg-label">${title}</span>${help ? html`<span class="cfg-help">${help}</span>` : ''}</div>
+      <input class="input duel-number" type="number" name="${name}" min="${min}" max="${max}" step="${step}" value="${s[name]}" ${d.canEdit ? '' : 'disabled'} required></div>`;
+    const message = card('Melding bij slaan', 'chat', html`<div class="card-body">
+        <div class="mp-message"><div class="mp-message-head"><div><b>Wie iemand slaat buiten een gevecht</b><span class="muted small">${s.blockPvp ? ' · in de chat' : ' · staat uit (PvP is aan)'}</span></div>
+          ${d.canEdit ? html`<button type="button" class="btn sm" data-duel-message>${icon('edit')} Bewerken</button>` : ''}</div>
+          <div class="mc-preview sm">${s.pvpMessage ? mc(s.pvpMessage) : html`<span class="muted">(geen melding)</span>`}</div></div>
+        <p class="muted small mp-note">Te gebruiken: <span class="mono">&lt;player&gt;</span> (wie er geslagen werd). Wat tussen <span class="mono">&lt;challenge&gt;</span> en <span class="mono">&lt;/challenge&gt;</span> staat, is een knop om die speler uit te dagen. De andere teksten van de 1v1 staan bij Teksten (alles onder <span class="mono">duel.</span>).</p></div>`);
+    const settings = html`<form class="card" data-form="duel-settings"><div class="card-head"><h2>${icon('cog')}Instellingen</h2></div><div class="card-body">
+        ${toggle('blockPvp', 'PvP buiten gevechten tegenhouden', 'Wie iemand slaat, krijgt de melding hiernaast. Uit = PvP zoals de gamerule pvp.')}
+        ${number('pvpCooldown', 'Melding hooguit elke', 'seconden', 1, 300)}
+        <h3 class="cfg-group">Tijden</h3>
+        ${number('inviteSeconds', 'Uitdaging geldig', 'seconden', 10, 600)}
+        ${number('wagerSeconds', 'Tijd voor de inzet', 'seconden om op klaar te klikken', 20, 900)}
+        ${number('maxFightMinutes', 'Gevecht duurt hooguit', 'minuten; daarna gelijkspel (0 = geen limiet)', 0, 60)}
+        ${number('rematchSeconds', 'Tijd om te kiezen voor een rematch', 'seconden', 5, 120)}
+        <h3 class="cfg-group">Inzet</h3>
+        ${toggle('stakeMoney', 'Geld inzetten', d.economy ? '' : 'De module economy staat uit.', !d.economy)}
+        ${toggle('stakeItems', 'Items inzetten', 'Items met een limiet (item-limiet) kunnen nooit.')}
+        ${number('moneyStep', 'Stap van + en -', `${currency()} (shift-klik: 10 keer zoveel)`, 0.01, 1000000000, 0.01)}
+        ${number('maxMoney', 'Hooguit inzetten', `${currency()} (0 = geen maximum)`, 0, 1000000000, 0.01)}
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Items die niet mogen</span><span class="cfg-help">Minecraft-namen, gescheiden door komma's (bijv. dragon_egg).</span></div>
+          <input class="input mono duel-text" name="blockedItems" value="${s.blockedItems.join(', ')}" placeholder="dragon_egg" spellcheck="false" ${d.canEdit ? '' : 'disabled'}></div>
+        <h3 class="cfg-group">Het gevecht</h3>
+        ${toggle('allowTotems', 'Totems werken', 'Uit = een dodelijke klap telt altijd.')}
+        ${toggle('forceSurvival', 'Iedereen in survival', 'Geen creative of vliegen; daarna wordt het teruggezet.')}
+        ${toggle('healOnStart', 'Beginnen met volle levens', '')}
+        ${number('arenaRadius', 'Grens om de arena', 'blokken vanaf het midden tussen plek 1 en 2 (0 = geen grens)', 0, 1000)}
+        <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Commando's tijdens een gevecht</span><span class="cfg-help">Gescheiden door komma's, zonder /. De rest (zoals /spawn en /home) kan pas na het gevecht.</span></div>
+          <input class="input mono duel-text" name="allowedCommands" value="${s.allowedCommands.join(', ')}" placeholder="msg, r" spellcheck="false" ${d.canEdit ? '' : 'disabled'}></div>
+        <h3 class="cfg-group">Bescherming</h3>
+        ${toggle('protect', 'Arena beschermen', 'Niemand bouwt of sloopt er; geen explosies, brand of monsters. Met WorldGuard als regio pinda_arena.')}
+        ${number('protectMargin', 'Marge rond de plekken', 'blokken; alleen zonder ingesteld gebied (/setarena gebied)', 0, 200)}
+        <h3 class="cfg-group">Meldingen voor iedereen</h3>
+        ${toggle('broadcastStart', 'Als een gevecht begint', 'Met een knop om te komen kijken.')}
+        ${toggle('broadcastResult', 'Wie er won', '')}
+        ${d.canEdit ? html`<div class="save-bar"><span></span><button class="btn primary">${icon('save')} Opslaan</button></div>` : ''}
+      </div></form>`;
+    const help = card('Zo werkt het', 'list', html`<div class="card-body"><ol class="il-help">
+        <li>Spelers dagen elkaar uit met <span class="kbd">/duel &lt;speler&gt;</span>, of slaan iemand en klikken op de knop in de melding.</li>
+        <li>Neemt de ander de uitdaging aan, dan gaan ze allebei naar de arena. In een menu zetten ze geld en items in en klikken ze op klaar.</li>
+        <li>Een grote titel telt af van 3 naar 1, en dan: vechten tot de dood. Niemand gaat echt dood: je houdt je inventory (behalve je inzet) en het telt niet als death.</li>
+        <li>De winnaar krijgt beide inzetten. Er is een eigen stand: gewonnen en verloren, en de verhouding (K/D). Spelers zien die met <span class="kbd">/duel stats</span> en <span class="kbd">/duel top</span>, en er is een toplijst <b>1v1</b>.</li>
+        <li>Daarna kiezen ze voor een rematch. Wil iemand niet, dan gaat iedereen terug naar waar hij was.</li>
+        <li>Iedereen krijgt een melding als er een gevecht begint en kan komen kijken met <span class="kbd">/duel kijken</span>. Na het gevecht gaan ook zij terug.</li>
+        <li>De arena is een beschermd gebied: niemand bouwt of sloopt er. Staat WorldGuard op de server, dan is het de WorldGuard-regio <span class="mono">pinda_arena</span>.</li>
+        <li>Stopt de server midden in een gevecht, of logt iemand uit, dan krijgt iedereen zijn inzet terug (bij het joinen) en gaat hij terug naar waar hij was. Uitloggen tijdens het vechten telt als verloren.</li>
+      </ol></div>`);
+
+    main.onchange = null;
+    render(main, html`${pageHead('1v1', 'Spelers dagen elkaar uit, zetten geld en items in en vechten in de arena. De winnaar krijgt alles.')}
+      <div class="grid stats" id="duel-stats">${duelStats(d)}</div>
+      <div class="grid two" style="margin-top:16px">${card('Nu bezig', 'zap', html`<div id="duel-live">${duelLive(d)}</div>`)}${duelArena(d)}</div>
+      <div class="grid two duel-columns" style="margin-top:16px">${settings}
+        <div class="duel-stack">${message}${card('Beste vechters', 'trophy', html`<div id="duel-top">${duelTop(d)}</div>`)}${card('Laatste gevechten', 'clock', html`<div class="card-body" id="duel-recent">${duelRecent(d)}</div>`)}</div></div>
+      <div style="margin-top:16px">${help}</div>`);
+
+    main.onclick = async event => {
+      if (event.target.closest('[data-duel-message]')) {
+        openTextEditor({ title: 'Melding bij slaan', subtitle: 'in de chat, voor wie iemand slaat buiten een gevecht', value: state.duel.settings.pvpMessage,
+          placeholders: ['player'], onSave: async value => {
+            const result = await post('/duel/settings', { pvpMessage: value });
+            toast('Melding opgeslagen.');
+            duelUpdate(result);
+            return result;
+          } });
+        return;
+      }
+      const clear = event.target.closest('[data-duel-clear]');
+      if (clear) {
+        const key = clear.dataset.duelClear;
+        const text = key === 'spectate' ? 'Dan kan niemand meer komen kijken, tot je een nieuwe plek instelt.'
+          : key === 'area' ? 'Dan is de arena automatisch beschermd rond de plekken (met de marge uit de instellingen).' : 'Zonder plek 1 en 2 kan niemand een 1v1 beginnen.';
+        const ok = await confirmDialog({ title: `${DUEL_SPOTS[key]} weghalen?`, text, confirm: 'Weghalen', danger: true });
+        if (!ok) return;
+        const result = await busy(clear, () => post(`/duel/arena/${encodeURIComponent(key)}/delete`));
+        if (result) { toast('Weggehaald.'); duelUpdate(result); }
+        return;
+      }
+      const abort = event.target.closest('[data-duel-abort]');
+      if (abort) {
+        const ok = await confirmDialog({ title: 'Gevecht afbreken?', text: 'Iedereen krijgt zijn inzet terug en gaat terug naar waar hij was. Het telt niet mee in de stand.', confirm: 'Afbreken', danger: true });
+        if (!ok) return;
+        const result = await busy(abort, () => post('/duel/abort'));
+        if (result) { toast('Het gevecht is afgebroken.'); duelUpdate(result); }
+      }
+    };
+  }
+
+  function duelUpdate(result) {
+    state.duel = result;
+    if (location.hash.startsWith('#/1v1')) renderDuel($('#main'), result);
   }
 
   // =============================================================== bossbars
@@ -3376,6 +3594,12 @@
     'modpack-mods'(button) {
       openModpackPlayer(button.dataset.uuid);
     },
+    async 'duel-reset'(button) {
+      const ok = await confirmDialog({ title: `1v1-stand van ${button.dataset.name} wissen?`, text: 'Gewonnen, verloren en gelijkspel gaan terug naar 0. De lijst met gevechten blijft.', confirm: 'Wissen', danger: true });
+      if (!ok) return;
+      const result = await busy(button, () => post(`/duel/players/${encodeURIComponent(button.dataset.uuid)}/reset`));
+      if (result) { toast('De stand is gewist.'); navigate(); }
+    },
     async 'player-action'(button) {
       const kind = button.dataset.kind;
       if (kind === 'clear-inventory') {
@@ -3601,6 +3825,22 @@
       const name = (data.get('name') || '').trim();
       const result = await busy(button, () => post('/modpack/exempt', { name }));
       if (result) { toast(`${name} mag altijd spelen.`); mpUpdate(result); }
+    },
+
+    async 'duel-settings'(form, data, button) {
+      const list = name => String(data.get(name) || '').split(',').map(x => x.trim()).filter(Boolean);
+      const body = {
+        blockPvp: !!data.get('blockPvp'), stakeItems: !!data.get('stakeItems'), allowTotems: !!data.get('allowTotems'),
+        forceSurvival: !!data.get('forceSurvival'), healOnStart: !!data.get('healOnStart'), protect: !!data.get('protect'),
+        broadcastStart: !!data.get('broadcastStart'), broadcastResult: !!data.get('broadcastResult'),
+        pvpCooldown: Number(data.get('pvpCooldown')), inviteSeconds: Number(data.get('inviteSeconds')), wagerSeconds: Number(data.get('wagerSeconds')),
+        maxFightMinutes: Number(data.get('maxFightMinutes')), rematchSeconds: Number(data.get('rematchSeconds')), arenaRadius: Number(data.get('arenaRadius')), protectMargin: Number(data.get('protectMargin')),
+        moneyStep: Number(data.get('moneyStep')), maxMoney: Number(data.get('maxMoney')),
+        blockedItems: list('blockedItems'), allowedCommands: list('allowedCommands')
+      };
+      if (state.duel && state.duel.economy) body.stakeMoney = !!data.get('stakeMoney');
+      const result = await busy(button, () => post('/duel/settings', body));
+      if (result) { toast('Instellingen opgeslagen.'); duelUpdate(result); }
     },
 
     async 'itemlimit-settings'(form, data, button) {

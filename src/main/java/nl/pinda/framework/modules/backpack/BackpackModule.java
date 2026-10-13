@@ -578,6 +578,11 @@ public final class BackpackModule extends PindaModule implements Listener {
         if (!config().getBoolean("death.drop", true)) {
             return false;
         }
+        // Doodgaan in een 1v1 kost je niets (behalve je inzet)
+        nl.pinda.framework.modules.duel.DuelModule duel = plugin.modules().get(nl.pinda.framework.modules.duel.DuelModule.class);
+        if (duel != null && duel.isEnabled() && duel.involved(event.getEntity())) {
+            return false;
+        }
         return !(event.getKeepInventory() && config().getBoolean("death.honor-keep-inventory", true));
     }
 

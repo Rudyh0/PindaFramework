@@ -32,6 +32,7 @@ modules:
   itemlimits: true
   modpack: true
   rules: true
+  duel: true
   moderation: true
   skills: true
   sleep: true

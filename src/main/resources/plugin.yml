@@ -5,7 +5,7 @@ api-version: '26.1'
 author: Rudyh0
 description: Het all-in-one framework voor de server.
 # Optioneel: met PlaceholderAPI werken %placeholders% in onze teksten en %pinda_...% in andere plugins
-softdepend: [PlaceholderAPI]
+softdepend: [PlaceholderAPI, WorldEdit, WorldGuard]
 
 # SQLite-driver voor de database en ZXing voor QR-codes (2FA). Paper downloadt deze automatisch bij de eerste start.
 libraries:
@@ -345,6 +345,24 @@ permissions:
     default: true
   pinda.rules.others:
     description: /regels <speler>, het regelboek bij iemand anders openen
+    default: op
+
+  # 1v1-gevechten
+  pinda.duel.use:
+    description: /duel (/1v1, /uitdagen), iemand uitdagen voor een 1v1, en de stand bekijken
+    default: true
+  pinda.duel.spectate:
+    description: /duel kijken, toeschouwer zijn bij een 1v1
+    default: true
+  pinda.duel.admin:
+    description: /setarena (de arena instellen) en een lopend 1v1 afbreken met /duel annuleer
+    default: op
+    children:
+      pinda.duel.use: true
+      pinda.duel.spectate: true
+      pinda.duel.build: true
+  pinda.duel.build:
+    description: Toch bouwen in de beschermde arena (zonder WorldGuard; met WorldGuard geldt de bypass van WorldGuard)
     default: op
 
   # Modpack-lock

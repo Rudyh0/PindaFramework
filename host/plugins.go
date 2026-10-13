@@ -37,6 +37,8 @@ var managedPlugins = []ManagedPlugin{
 		About: "Houdt bij wie welk blok plaatste of brak; grief terugdraaien. Mods mogen inspecteren en opzoeken."},
 	{Key: "worldedit", Name: "WorldEdit", Source: "modrinth", Project: "worldedit",
 		About: "Snel bouwen en aanpassen in de wereld. Alleen voor PindaAdmin (operator)."},
+	{Key: "worldguard", Name: "WorldGuard", Source: "modrinth", Project: "worldguard",
+		About: "Beschermde gebieden (regio's). PindaFramework maakt er de 1v1-arena mee tot beschermd gebied (regio pinda_arena)."},
 }
 
 func managedByKey(key string) (ManagedPlugin, bool) {

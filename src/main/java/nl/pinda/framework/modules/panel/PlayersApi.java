@@ -12,6 +12,7 @@ import java.util.UUID;
 import nl.pinda.framework.event.PindaNotifyEvent;
 import nl.pinda.framework.lang.Text;
 import nl.pinda.framework.modules.afk.AfkModule;
+import nl.pinda.framework.modules.duel.DuelModule;
 import nl.pinda.framework.modules.economy.Account;
 import nl.pinda.framework.modules.economy.EconomyService;
 import nl.pinda.framework.modules.economy.Money;
@@ -199,6 +200,11 @@ final class PlayersApi extends PanelApi {
         ModpackModule modpack = enabled(ModpackModule.class);
         if (modpack != null) {
             profile.put("modpack", ModpackApi.profile(this, modpack, uuid));
+        }
+
+        DuelModule duel = enabled(DuelModule.class);
+        if (duel != null) {
+            profile.put("duel", DuelApi.profile(this, duel, uuid));
         }
 
         ShopModule shops = shops();

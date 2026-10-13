@@ -9,6 +9,7 @@ import nl.pinda.framework.modules.backpack.BackpackModule;
 import nl.pinda.framework.modules.bossbar.BossBarModule;
 import nl.pinda.framework.modules.broadcasts.BroadcastsModule;
 import nl.pinda.framework.modules.discord.DiscordModule;
+import nl.pinda.framework.modules.duel.DuelModule;
 import nl.pinda.framework.modules.economy.EconomyService;
 import nl.pinda.framework.modules.homes.HomesModule;
 import nl.pinda.framework.modules.itemlimits.ItemLimitModule;
@@ -240,6 +241,7 @@ final class AuthApi extends PanelApi {
                         "itemlimits", enabled(ItemLimitModule.class) != null,
                         "modpack", enabled(ModpackModule.class) != null,
                         "rules", enabled(RulesModule.class) != null,
+                        "duel", enabled(DuelModule.class) != null,
                         "world", enabled(WorldControlModule.class) != null),
                 "ranks", ranks,
                 "currency", currency,

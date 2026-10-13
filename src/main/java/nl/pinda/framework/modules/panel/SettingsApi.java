@@ -39,7 +39,7 @@ final class SettingsApi extends PanelApi {
         List<Map<String, Object>> files = new ArrayList<>();
         for (String path : editor.settingsFiles()) {
             if (path.equals("modules/ranks.yml") || path.equals("modules/bossbar.yml") || path.equals("modules/itemlimits.yml")
-                    || path.equals("modules/modpack.yml") || path.equals("modules/rules.yml")
+                    || path.equals("modules/modpack.yml") || path.equals("modules/rules.yml") || path.equals("modules/duel.yml")
                     || (path.equals("modules/panel.yml") && !request.user().operator())) {
                 continue; // Rangen, bossbars, de item-limiet en de modpack hebben een eigen pagina; het paneel zelf alleen voor operators
             }
@@ -74,6 +74,9 @@ final class SettingsApi extends PanelApi {
         }
         if ("modules/rules.yml".equals(path)) {
             throw ApiException.forbidden("De regels pas je aan op de pagina Regels.");
+        }
+        if ("modules/duel.yml".equals(path)) {
+            throw ApiException.forbidden("De 1v1-gevechten pas je aan op de pagina 1v1.");
         }
         if ("modules/panel.yml".equals(path) && !user.operator()) {
             throw ApiException.forbidden("De instellingen van het webpaneel kan alleen een operator aanpassen.");

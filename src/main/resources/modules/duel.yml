@@ -1,0 +1,93 @@
+# ┌──────────────────────────────────────────────┐
+# │        PindaFramework - 1v1-gevechten        │
+# └──────────────────────────────────────────────┘
+# Spelers dagen elkaar uit met /duel <speler> (of slaan iemand en klikken op de knop in de
+# melding). Accepteert de ander, dan gaan ze allebei naar de arena, kiezen ze in een menu wat ze
+# inzetten (geld en items) en vechten ze tot de dood. De winnaar krijgt alles.
+# Niemand gaat echt dood: je houdt je inventory (behalve je inzet), het telt niet als death,
+# en er is een eigen stand: gewonnen/verloren (/duel stats, /duel top).
+# Na het gevecht kun je kiezen voor een rematch. Anderen kunnen komen kijken (/duel kijken).
+# Alles is ook in te stellen in het webpaneel (1v1).
+#
+# De arena stel je in-game in, op de plek waar je staat en de kant die je op kijkt:
+#   /setarena 1       de plek van speler 1
+#   /setarena 2       de plek van speler 2 (in dezelfde wereld)
+#   /setarena kijken  de plek voor toeschouwers
+#   /setarena gebied  het beschermde gebied (je selectie met de WorldEdit-bijl), zie protection
+
+# PvP buiten een gevecht tegenhouden. Wie iemand slaat, krijgt de melding hieronder.
+# Uit = PvP werkt zoals de server het instelt (de gamerule pvp).
+block-pvp: true
+
+messages:
+  # De melding als je iemand slaat buiten een gevecht. <player> = wie je sloeg.
+  # Wat tussen <challenge> en </challenge> staat, is een knop om die speler uit te dagen.
+  pvp: "<prefix><error>Vechten zonder consent? Dat mag niet!</error> <text>Daag elkaar uit en ga de ring in. <challenge><primary>[Daag <player> uit]</primary></challenge>"
+
+# Hoe vaak (seconden) iemand die melding hooguit krijgt.
+pvp-message-cooldown: 5
+
+# Hoe lang een uitdaging geldig blijft (seconden).
+invite-seconds: 60
+# Hoe lang spelers hebben om hun inzet te kiezen en op klaar te klikken (seconden).
+wager-seconds: 120
+# Hoe lang spelers na het gevecht hebben om voor een rematch te kiezen (seconden).
+rematch-seconds: 20
+# Hoe lang een gevecht hooguit duurt (minuten, 0 = geen limiet). Is de tijd om, dan is het
+# gelijkspel: iedereen krijgt zijn eigen inzet terug.
+max-fight-minutes: 5
+# Hoe ver (blokken) spelers tijdens een gevecht van het midden tussen plek 1 en 2 mogen komen
+# (0 = geen grens). Verder weg? Dan gaan ze terug naar hun plek.
+arena-radius: 40
+
+stakes:
+  # Geld inzetten (contant en bank, net als bij betalen)
+  money: true
+  # Items inzetten
+  items: true
+  # Hoeveel de knoppen + en - doen (shift-klik: 10 keer zoveel)
+  money-step: 10
+  # Hoeveel geld iemand hooguit inzet (0 = geen maximum)
+  max-money: 0
+  # Items die niemand mag inzetten (materiaalnamen, bijv. DRAGON_EGG).
+  # Items met een limiet (item-limiet) kunnen nooit worden ingezet.
+  blocked-items: []
+
+fight:
+  # Werkt een Totem of Undying in het gevecht? Uit = een dodelijke klap telt altijd.
+  allow-totems: true
+  # Iedereen vecht in survival, zonder vliegen. Na het gevecht wordt dat teruggezet.
+  force-survival: true
+  # Beide spelers beginnen met volle levens en een volle maag.
+  heal-on-start: true
+  # Commando's die spelers tijdens een 1v1 mogen gebruiken (/duel zelf mag altijd).
+  # Al het andere (zoals /spawn, /home, /tpa, /back) kan pas weer na het gevecht.
+  allowed-commands:
+    - msg
+    - tell
+    - w
+    - r
+    - reply
+    - regels
+    - rules
+
+# De arena is een beschermd gebied: niemand kan er bouwen of slopen (behalve met
+# pinda.duel.build), geen explosies, brand of monsters die er spawnen.
+# Staat WorldGuard op de server, dan wordt het een WorldGuard-regio met de naam pinda_arena (te
+# zien met /rg info pinda_arena; eigen vlaggen die je daar zet, blijven staan). Zonder WorldGuard
+# beschermt PindaFramework de arena zelf.
+# Het gebied: selecteer het met de WorldEdit-bijl en typ /setarena gebied (of ga op twee hoeken
+# staan: /setarena hoek1 en /setarena hoek2). Dat gebied is dan ook de grens tijdens een gevecht.
+# Zonder ingesteld gebied: alles rond de plekken van de arena (1, 2 en toeschouwers), plus de marge.
+protection:
+  enabled: true
+  # Zoveel blokken extra rond de plekken, als er geen gebied is ingesteld
+  margin: 15
+
+broadcast:
+  # Iedereen een melding als er een gevecht begint, met een knop om te komen kijken
+  start: true
+  # En wie er won
+  result: true
+
+# De plekken van de arena staan hieronder zodra ze met /setarena zijn ingesteld.
