@@ -203,7 +203,7 @@ final class ServerApi extends PanelApi {
     }
 
     private Object reload(PanelRequest request) throws Exception {
-        long time = sync(() -> plugin.reload());
+        long time = syncAwait(() -> plugin.reloadWithPause());
         module.log().add(request, "herladen", null, time + "ms");
         return map("time", time);
     }

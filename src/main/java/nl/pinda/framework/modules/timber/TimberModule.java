@@ -173,6 +173,19 @@ public final class TimberModule extends PindaModule implements Listener {
         return !current.axeOnly || player.getInventory().getItemInMainHand().getType().name().endsWith("_AXE");
     }
 
+    /** True terwijl een boom omvalt (de blok-events die dan komen, zijn van ons). */
+    public boolean isFelling() {
+        return feller != null && feller.isFelling();
+    }
+
+    /** Skills-XP voor het hout dat met de boom meeviel. */
+    void awardXp(Player player, List<Material> blocks) {
+        SkillsModule skills = plugin.modules().get(SkillsModule.class);
+        if (skills != null && skills.isEnabled() && !blocks.isEmpty()) {
+            skills.addTimberXp(player, blocks);
+        }
+    }
+
     private boolean isPlaced(Block block) {
         SkillsModule skills = plugin.modules().get(SkillsModule.class);
         return skills != null && skills.isEnabled() && skills.isPlaced(block);

@@ -953,6 +953,27 @@ public final class BackpackModule extends PindaModule implements Listener {
         });
     }
 
+    /**
+     * Laat de gevallen rugtassen van iemand meteen verdwijnen, met alles erin (bijv. als hij met
+     * /back teruggaat naar waar hij doodging). Geeft terug hoeveel het er waren.
+     */
+    public int destroyDropped(UUID owner) {
+        int count = 0;
+        for (DroppedBackpack bag : new ArrayList<>(dropped.values())) {
+            if (bag.owner.equals(owner) && !bag.removed) {
+                poof(bag);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** Een bedrag contant geld als tekst (zoals in de meldingen), of leeg zonder economie. */
+    public String cashText(long cash) {
+        EconomyService economy = economy();
+        return economy == null ? "" : economy.format(cash);
+    }
+
     /** De gevallen rugtas van iemand (of null). */
     public DroppedInfo droppedOf(UUID owner) {
         for (DroppedBackpack bag : dropped.values()) {

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import nl.pinda.framework.PindaFramework;
+import nl.pinda.framework.modules.timber.TimberModule;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -38,6 +39,7 @@ import org.bukkit.persistence.PersistentDataType;
 /** Alle manieren om XP te verdienen. */
 final class SkillListener implements Listener {
 
+    private final PindaFramework plugin;
     private final SkillService service;
     private final PlacedBlocks placed;
     private final NamespacedKey reducedKey;
@@ -45,6 +47,7 @@ final class SkillListener implements Listener {
     private final Map<String, UUID> brewers = new HashMap<>();
 
     SkillListener(PindaFramework plugin, SkillService service, PlacedBlocks placed) {
+        this.plugin = plugin;
         this.service = service;
         this.placed = placed;
         this.reducedKey = new NamespacedKey(plugin, "reduced_xp");
@@ -60,6 +63,9 @@ final class SkillListener implements Listener {
         boolean wasPlaced = rules.tracked.contains(type) && placed.isPlaced(block);
         if (wasPlaced) {
             placed.unmark(block);
+        }
+        if (timberFelling()) {
+            return; // bomen kappen: de XP voor de hele boom komt in één keer (zie SkillsModule.addTimberXp)
         }
         Player player = event.getPlayer();
 
@@ -88,6 +94,11 @@ final class SkillListener implements Listener {
         if (value != null) {
             service.addXp(player, Skill.WOODCUTTING, value);
         }
+    }
+
+    private boolean timberFelling() {
+        TimberModule timber = plugin.modules().get(TimberModule.class);
+        return timber != null && timber.isEnabled() && timber.isFelling();
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

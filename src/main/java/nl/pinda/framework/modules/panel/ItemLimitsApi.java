@@ -60,9 +60,10 @@ final class ItemLimitsApi extends PanelApi {
             List<Map<String, Object>> rules = new ArrayList<>();
             for (LimitRule rule : limits.rules()) {
                 Map<String, Object> map = rule.toMap();
-                int[] total = totals.getOrDefault(rule.id(), new int[2]);
+                int[] total = totals.getOrDefault(rule.id(), new int[3]);
                 map.put("active", total[0]);
                 map.put("owners", total[1]);
+                map.put("gifts", total[2]);
                 rules.add(map);
             }
             YamlConfiguration settings = limits.settings();
@@ -70,7 +71,8 @@ final class ItemLimitsApi extends PanelApi {
                     "rules", rules,
                     "settings", map("overLimit", "remove".equalsIgnoreCase(settings.getString("over-limit", "keep")) ? "remove" : "keep",
                             "markItems", settings.getBoolean("mark-items", true),
-                            "notifyFreed", settings.getBoolean("notify-freed", true)),
+                            "notifyFreed", settings.getBoolean("notify-freed", true),
+                            "giftCommands", settings.getStringList("gift-commands")),
                     "canEdit", canEdit,
                     "canRelease", request.user().has(PanelUser.PLAYERS_MANAGE));
             if (canEdit) {
@@ -105,7 +107,7 @@ final class ItemLimitsApi extends PanelApi {
             for (LimitedItem item : limits.itemsOfRule(rule.id())) {
                 Map<String, Object> entry = map("serial", item.serial(), "location", item.location(),
                         "where", PlainTextComponentSerializer.plainText().serialize(limits.describe(item.location(), code)),
-                        "since", item.created(), "updated", item.updated());
+                        "since", item.created(), "updated", item.updated(), "gift", item.gift());
                 if (item.owner() == null) {
                     ownerless.add(entry);
                 } else {
@@ -114,10 +116,15 @@ final class ItemLimitsApi extends PanelApi {
                 }
             }
             List<Map<String, Object>> owners = new ArrayList<>();
-            perOwner.forEach((uuid, items) -> owners.add(map("uuid", uuid.toString(), "name", names.get(uuid), "count", items.size(),
-                    "online", plugin.getServer().getPlayer(uuid) != null,
-                    "over", rule.perPlayer() > 0 && items.size() > rule.perPlayer(), "items", items)));
-            owners.sort(Comparator.comparingInt((Map<String, Object> owner) -> -(int) owner.get("count"))
+            perOwner.forEach((uuid, items) -> {
+                // Cadeaus (voor hemzelf) tellen niet mee voor zijn limiet.
+                int gifts = (int) items.stream().filter(item -> Boolean.TRUE.equals(item.get("gift"))).count();
+                int count = items.size() - gifts;
+                owners.add(map("uuid", uuid.toString(), "name", names.get(uuid), "count", count, "gifts", gifts,
+                        "online", plugin.getServer().getPlayer(uuid) != null,
+                        "over", rule.perPlayer() > 0 && count > rule.perPlayer(), "items", items));
+            });
+            owners.sort(Comparator.comparingInt((Map<String, Object> owner) -> -((int) owner.get("count") + (int) owner.get("gifts")))
                     .thenComparing(owner -> String.valueOf(owner.get("name")).toLowerCase(Locale.ROOT)));
             return map("rule", rule.toMap(), "owners", owners, "ownerless", ownerless);
         });
@@ -138,16 +145,20 @@ final class ItemLimitsApi extends PanelApi {
         List<Map<String, Object>> list = new ArrayList<>();
         for (LimitRule rule : limits.rules()) {
             List<Map<String, Object>> own = new ArrayList<>();
+            int gifts = 0;
             for (LimitedItem item : items) {
                 if (item.rule().equals(rule.id())) {
-                    own.add(map("serial", item.serial(),
+                    own.add(map("serial", item.serial(), "gift", item.gift(),
                             "where", PlainTextComponentSerializer.plainText().serialize(limits.describe(item.location(), code))));
+                    if (item.gift()) {
+                        gifts++;
+                    }
                 }
             }
             if (rule.enabled() || !own.isEmpty()) {
                 list.add(map("id", rule.id(), "name", rule.name(), "material", rule.material().getKey().getKey(),
                         "enchantment", rule.enchantment() == null ? "" : rule.enchantment().getKey().getKey(),
-                        "enabled", rule.enabled(), "max", rule.perPlayer(), "count", own.size(), "items", own));
+                        "enabled", rule.enabled(), "max", rule.perPlayer(), "count", own.size() - gifts, "gifts", gifts, "items", own));
             }
         }
         return list;
@@ -303,6 +314,32 @@ final class ItemLimitsApi extends PanelApi {
         }
         if (body.has("notifyFreed")) {
             yaml.set("notify-freed", bool(body.get("notifyFreed")));
+        }
+        if (body.has("giftCommands")) {
+            List<String> commands = new ArrayList<>();
+            JsonElement element = body.get("giftCommands");
+            if (element == null || !element.isJsonArray()) {
+                throw ApiException.badRequest("Ongeldige lijst met commando's.");
+            }
+            for (JsonElement command : element.getAsJsonArray()) {
+                if (!command.isJsonNull() && !command.isJsonPrimitive()) {
+                    throw ApiException.badRequest("Ongeldige lijst met commando's.");
+                }
+                String label = command.isJsonNull() ? "" : command.getAsString().strip().toLowerCase(Locale.ROOT);
+                if (label.startsWith("/")) {
+                    label = label.substring(1);
+                }
+                if (label.isEmpty()) {
+                    continue;
+                }
+                if (!label.matches("[a-z0-9_.:-]{1,48}")) {
+                    throw ApiException.badRequest("'" + label + "' is geen commando (alleen de naam, zonder spaties).");
+                }
+                if (!commands.contains(label) && commands.size() < 20) {
+                    commands.add(label);
+                }
+            }
+            yaml.set("gift-commands", commands);
         }
         editor.write(FILE, yaml);
         sync(() -> {

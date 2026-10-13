@@ -190,11 +190,9 @@ final class SettingsApi extends PanelApi {
             throw ApiException.badRequest("Er is niets veranderd.");
         }
         editor.write(path, yaml);
-        sync(() -> {
-            editor.reload(path);
-            return null;
-        });
-        module.log().add(request, "instellingen", path, String.join(", ", changed));
+        // Toepassen = het hele framework herladen; spelers staan zolang even stil met een melding.
+        long time = syncAwait(() -> plugin.reloadWithPause());
+        module.log().add(request, "instellingen", path, String.join(", ", changed) + " (herladen in " + time + "ms)");
         YamlConfiguration fresh = editor.read(path);
         return map("path", path, "description", clean(fresh.options().getHeader()), "fields", fields(fresh, fresh, ""));
     }

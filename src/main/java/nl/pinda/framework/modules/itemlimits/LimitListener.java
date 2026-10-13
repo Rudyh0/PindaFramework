@@ -34,6 +34,8 @@ import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -61,6 +63,26 @@ final class LimitListener implements Listener {
     LimitListener(PindaFramework plugin, ItemLimitModule module) {
         this.plugin = plugin;
         this.module = module;
+    }
+
+    // ============================================================ cadeaus: /give en dergelijke
+
+    /** Staff gebruikt /give (of een vergelijkbaar commando): wat er nu opduikt, is een cadeau. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+        Player player = event.getPlayer();
+        if (module.isGiftCommand(event.getMessage()) && (player.isOp() || player.hasPermission("minecraft.command.give")
+                || player.hasPermission("essentials.give") || player.hasPermission("essentials.item"))) {
+            module.giftCommand();
+        }
+    }
+
+    /** Hetzelfde vanuit de console of RCON (bijv. het dev-paneel). */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onServerCommand(ServerCommandEvent event) {
+        if (module.isGiftCommand(event.getCommand())) {
+            module.giftCommand();
+        }
     }
 
     // ============================================================ binnenkomen: oppakken

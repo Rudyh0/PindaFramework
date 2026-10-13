@@ -18,10 +18,20 @@
 #  - Spelers met pinda.itemlimits.bypass (en iedereen in creative) hebben geen limiet; hun
 #    items worden wel bijgehouden.
 
-# Wat er gebeurt als iemand meer heeft dan mag (bijvoorbeeld van vóór de limiet, of via /give):
+# Wat er gebeurt als iemand meer heeft dan mag (bijvoorbeeld van vóór de limiet, of via een
+# andere plugin):
 #   keep   = mag hij houden, maar hij krijgt er pas weer een bij als hij onder het maximum zit
 #   remove = wat boven het maximum zit, wordt weggehaald
 over-limit: keep
+
+# Cadeaus van de server: beperkte items die staff of de console geeft met deze commando's (of
+# met "Items geven" in het paneel). Een cadeau krijgt "cadeau" in de beschrijving en telt niet
+# mee voor de limiet van wie het kreeg, en ook niet voor het maximum van de server. Geeft hij
+# het door aan iemand anders, dan telt het bij die speler gewoon mee.
+gift-commands:
+  - give
+  - i
+  - item
 
 # Een regel "Beperkt item" in de beschrijving van beperkte items.
 mark-items: true

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.logging.Level;
 import net.kyori.adventure.text.Component;
 import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.lang.LanguageManager;
@@ -67,15 +66,16 @@ public final class AdminCommand extends PindaCommand {
         if (!checkPermission(sender, RELOAD)) {
             return;
         }
-        try {
-            long millis = plugin.reload();
-            plugin.lang().send(sender, "admin.reloaded", Text.p("time", millis));
-            plugin.theme().play(sender, "success");
-        } catch (Exception e) {
-            plugin.getLogger().log(Level.SEVERE, "Herladen mislukt", e);
-            plugin.lang().send(sender, "admin.reload-failed");
-            plugin.theme().play(sender, "error");
-        }
+        // Spelers staan even stil met een melding, zodat er niets half gebeurt tijdens het herladen.
+        plugin.reloadWithPause().whenComplete((millis, error) -> {
+            if (error != null) {
+                plugin.lang().send(sender, "admin.reload-failed");
+                plugin.theme().play(sender, "error");
+            } else {
+                plugin.lang().send(sender, "admin.reloaded", Text.p("time", millis));
+                plugin.theme().play(sender, "success");
+            }
+        });
     }
 
     private void modules(CommandSender sender) {

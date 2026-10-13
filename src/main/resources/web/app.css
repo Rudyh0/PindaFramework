@@ -1048,3 +1048,37 @@ details.manual .chips { margin-top: 8px; }
   .mp-players td:nth-child(5)::before { content: 'Ontbreekt: '; color: var(--muted); }
   .mp-players td:nth-child(6) { grid-area: act; align-self: center; }
 }
+
+/* ----------------------------------------------------------------- toepassen (instellingen) */
+
+.apply-bar {
+  position: fixed; bottom: 22px; left: calc(50% + 126px); transform: translateX(-50%); z-index: 40;
+  display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 18px; max-width: calc(100vw - 32px);
+  border-radius: 16px; background: rgba(33, 29, 24, .97); border: 1px solid var(--border-strong);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .5); backdrop-filter: blur(10px); animation: apply-in .22s ease-out;
+}
+.apply-bar[hidden] { display: none; }
+.apply-text { display: grid; gap: 1px; margin-right: 8px; min-width: 0; }
+.apply-text b { font-weight: 650; color: var(--text); font-size: 14px; }
+.apply-text span { color: var(--text-2); font-size: 13px; }
+.apply-btn {
+  flex: none; width: 46px; height: 46px; border-radius: 12px; border: 1px solid var(--border-strong);
+  display: grid; place-items: center; cursor: pointer; background: var(--surface-2); color: var(--text);
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.apply-btn .i { width: 22px; height: 22px; stroke-width: 2.4; }
+.apply-btn:active { transform: scale(.96); }
+.apply-btn.no { color: var(--error); }
+.apply-btn.no:hover { background: rgba(255, 107, 107, .12); border-color: rgba(255, 107, 107, .4); }
+.apply-btn.yes { color: #10220f; background: var(--success); border-color: var(--success); }
+.apply-btn.yes:hover { filter: brightness(1.08); }
+.apply-btn:disabled { opacity: .5; cursor: default; }
+.apply-btn.busy .i { visibility: hidden; }
+.apply-btn.busy { position: relative; }
+.apply-btn.busy::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgba(16, 34, 15, .35); border-top-color: #10220f; animation: spin .7s linear infinite; }
+.cfg-form { padding-bottom: 90px; }
+@keyframes apply-in { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@media (max-width: 920px) {
+  .apply-bar { left: 50%; bottom: 14px; width: calc(100vw - 32px); }
+  .apply-text { flex: 1; }
+}

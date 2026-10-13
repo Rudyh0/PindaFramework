@@ -694,7 +694,7 @@
     if (!alive()) return;
     const files = list.files;
     const current = file && files.some(f => f.path === file) ? file : files[0].path;
-    render(main, html`${pageHead('Instellingen', 'Alle instellingen van PindaFramework. Na opslaan worden ze meteen herladen.')}
+    render(main, html`${pageHead('Instellingen', 'Alle instellingen van PindaFramework. Pas iets aan en kies onderin of je het toepast: dan herlaadt het framework.')}
       <div class="settings-layout">
         <nav class="card settings-files">
           <select class="input settings-select" aria-label="Kies een onderdeel">${files.map(f => html`<option value="${f.path}" ${f.path === current ? 'selected' : ''}>${fileName(f.path)}</option>`)}</select>
@@ -712,7 +712,7 @@
     const original = {};
     const collect = fields => fields.forEach(f => { if (f.type === 'section') collect(f.fields); else original[f.path] = f.value; });
     collect(data.fields);
-    state.settings = { path: data.path, original };
+    state.settings = { path: data.path, original, file };
     const field = f => {
       const label = html`<span class="cfg-label">${prettyKey(f.key)}</span>`;
       const help = f.help && f.help.length ? html`<span class="cfg-help">${f.help.filter(Boolean).join(' ')}</span>` : '';
@@ -757,10 +757,24 @@
       <form class="card-body cfg-form" data-form="settings">
         ${data.description && data.description.length ? html`<div class="alert info cfg-intro">${data.description.filter(Boolean).map(line => html`${line}<br>`)}</div>` : ''}
         ${data.fields.map(field)}
-        <div class="save-bar"><span class="muted" id="settings-dirty">Geen wijzigingen</span><button class="btn primary">${icon('save')} Opslaan en herladen</button></div>
+        <div class="apply-bar" id="settings-apply" role="region" aria-label="Wijzigingen toepassen" hidden>
+          <div class="apply-text"><b id="settings-dirty"></b><span id="settings-question">Toepassen en het framework herladen?</span></div>
+          <button type="button" class="apply-btn no" data-settings-discard title="Niet toepassen" aria-label="Niet toepassen">${icon('x')}</button>
+          <button class="apply-btn yes" title="Toepassen en herladen" aria-label="Toepassen en herladen">${icon('check')}</button>
+        </div>
       </form>`);
     const form = $('.cfg-form', container);
-    const markDirty = () => { const count = Object.keys(settingsChanges(form)).length; $('#settings-dirty', container).textContent = count ? `${count} ${count === 1 ? 'wijziging' : 'wijzigingen'}` : 'Geen wijzigingen'; };
+    const bar = $('#settings-apply', container);
+    const markDirty = () => {
+      const count = Object.keys(settingsChanges(form)).length;
+      bar.hidden = !count;
+      $('#settings-dirty', container).textContent = `${count} ${count === 1 ? 'wijziging' : 'wijzigingen'}`;
+    };
+    $('[data-settings-discard]', container).addEventListener('click', () => {
+      // Niet toepassen: alles terug zoals het was (er is nog niets opgeslagen).
+      renderSettingsForm(container, data, file);
+      toast('Niet toegepast: alles staat weer zoals het was.');
+    });
     form.addEventListener('input', event => {
       const target = event.target;
       if (target.dataset.colorFor) { const input = $(`[data-path="${CSS.escape(target.dataset.colorFor)}"]`, form); input.value = target.value.toUpperCase(); }
@@ -1653,8 +1667,8 @@
     }
     if (p.itemLimits && p.itemLimits.length) {
       sections.push(card('Beperkte items', 'box', html`<div class="card-body"><ul class="il-profile">${p.itemLimits.map(r => html`<li>
-          <div class="il-row"><a href="#/itemlimiet/${esc(r.id)}">${ilName(r)}</a>${r.enabled ? ilCount(r.count, r.max) : html`<span class="badge plain">uit</span>`}</div>
-          ${r.items.length ? html`<ul class="il-items">${r.items.map(i => html`<li><span class="mono">#${i.serial}</span><span class="muted">${i.where}</span></li>`)}</ul>` : ''}</li>`)}</ul></div>`));
+          <div class="il-row"><a href="#/itemlimiet/${esc(r.id)}">${ilName(r)}</a>${r.enabled ? html`<span>${ilCount(r.count, r.max)}${ilGifts(r.gifts)}</span>` : html`<span class="badge plain">uit</span>`}</div>
+          ${r.items.length ? html`<ul class="il-items">${r.items.map(i => html`<li><span class="mono">#${i.serial}</span>${i.gift ? html`<span class="badge info">cadeau</span>` : ''}<span class="muted">${i.where}</span></li>`)}</ul>` : ''}</li>`)}</ul></div>`));
     }
     if (p.modpack) {
       const m = p.modpack;
@@ -1895,6 +1909,8 @@
   const ilPretty = key => String(key || '').split('_').map((word, i) => i > 0 && IL_SMALL.has(word) ? word : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   const ilName = r => r.name || `${ilPretty(r.material)}${r.enchantment ? ` (${ilPretty(r.enchantment)})` : ''}`;
   const ilCount = (count, max) => html`<span class="badge ${max && count > max ? 'error' : max && count >= max ? 'warning' : 'plain'}">${num(count)}${max ? ` / ${num(max)}` : ''}</span>`;
+  /** Cadeaus van de server: tellen niet mee voor de limiet van wie ze kreeg. */
+  const ilGifts = gifts => gifts ? html` <span class="badge info" title="Cadeau van de server: telt niet mee voor de limiet">+${num(gifts)} cadeau</span>` : '';
 
   async function pageItemLimits(main, id, alive) {
     if (id) return pageItemLimit(main, id, alive);
@@ -1910,7 +1926,7 @@
         <td><b>${ilName(r)}</b><div class="muted small mono">${r.material}${r.enchantment ? ` · ${r.enchantment}` : ''}</div></td>
         <td class="num">${r.perPlayer ? num(r.perPlayer) : '—'}</td>
         <td class="num hide-sm">${r.serverMax ? num(r.serverMax) : '—'}</td>
-        <td class="num">${num(r.active)}${r.serverMax ? html`<div class="meter il-meter ${r.active >= r.serverMax ? 'warning' : ''}"><i style="width:${Math.min(100, Math.round(r.active / r.serverMax * 100))}%"></i></div>` : ''}</td>
+        <td class="num">${num(r.active)}${r.gifts ? html`<div class="muted small" title="Cadeaus van de server: tellen niet mee">+${num(r.gifts)} cadeau</div>` : ''}${r.serverMax ? html`<div class="meter il-meter ${r.active >= r.serverMax ? 'warning' : ''}"><i style="width:${Math.min(100, Math.round(r.active / r.serverMax * 100))}%"></i></div>` : ''}</td>
         <td class="num hide-sm">${num(r.owners)}</td>
         <td>${r.enabled ? html`<span class="badge success">Aan</span>` : html`<span class="badge plain">Uit</span>`}</td>
         <td class="actions">${data.canEdit ? html`<button class="btn sm" data-il-edit="${r.id}">Bewerken</button>` : ''}</td></tr>`)
@@ -1928,12 +1944,15 @@
           <li>Gaat een item op (een totem die afgaat, opgegeten, kapot, verbrand, in de void, opgeruimd of als blok geplaatst), dan mag de speler er weer een.</li>
           <li>Beperkte items stapelen niet: elk exemplaar heeft een eigen nummer.</li>
           <li>Spelers zien met <span class="kbd">/limieten</span> hoeveel ze hebben, staff met <span class="kbd">/limieten &lt;speler&gt;</span> ook waar ze liggen. In creative of met <span class="mono">pinda.itemlimits.bypass</span> geldt geen limiet.</li>
+          <li><b>Cadeaus:</b> geef je een beperkt item via <b>Items geven</b> op een spelersprofiel of met <span class="kbd">/give</span>, dan is het een cadeau van de server. Het krijgt "cadeau" in de beschrijving en telt niet mee voor de limiet van wie het kreeg (en niet voor het maximum van de server). Geeft hij het door, dan telt het bij de ander gewoon mee.</li>
         </ul></div></section>
         ${data.canEdit ? html`<form class="card" data-form="itemlimit-settings"><div class="card-head"><h2>${icon('cog')}Instellingen</h2></div><div class="card-body">
-          <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Meer dan het maximum</span><span class="cfg-help">Van vóór de limiet, of gekregen via /give of een andere plugin.</span></div>
+          <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Meer dan het maximum</span><span class="cfg-help">Van vóór de limiet, of via een andere plugin. (Wat staff geeft, is een cadeau en telt niet mee.)</span></div>
             <select name="overLimit" class="input il-select"><option value="keep" ${s.overLimit === 'keep' ? 'selected' : ''}>Mag hij houden</option><option value="remove" ${s.overLimit === 'remove' ? 'selected' : ''}>Wordt weggehaald</option></select></div>
           <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">"Beperkt item" in de beschrijving</span><span class="cfg-help">Zo zien spelers waarom het niet stapelt.</span></div><label class="switch"><input type="checkbox" name="markItems" ${s.markItems ? 'checked' : ''}><span></span></label></div>
           <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Melding als je er weer een mag</span><span class="cfg-help">Bijvoorbeeld als je totem afgaat.</span></div><label class="switch"><input type="checkbox" name="notifyFreed" ${s.notifyFreed ? 'checked' : ''}><span></span></label></div>
+          <div class="cfg-row"><div class="cfg-text"><span class="cfg-label">Commando's die cadeaus geven</span><span class="cfg-help">Wat staff of de console hiermee geeft, is een cadeau (telt niet mee). Gescheiden door komma's, zonder /.</span></div>
+            <input class="input mono il-select" name="giftCommands" value="${(s.giftCommands || []).join(', ')}" placeholder="give, i, item" spellcheck="false"></div>
           <div class="save-bar"><span></span><button class="btn primary">${icon('save')} Opslaan</button></div></div></form>` : ''}
       </div>`);
     main.onclick = event => {
@@ -1992,12 +2011,13 @@
   function renderItemLimit(main, data) {
     const r = data.rule;
     const over = data.owners.filter(o => o.over).length;
-    const total = data.owners.reduce((sum, o) => sum + o.count, 0) + data.ownerless.length;
-    const item = it => html`<li><span class="mono">#${it.serial}</span><span class="muted">${it.where}</span>
+    const total = data.owners.reduce((sum, o) => sum + o.count, 0) + data.ownerless.filter(it => !it.gift).length;
+    const gifts = data.owners.reduce((sum, o) => sum + (o.gifts || 0), 0);
+    const item = it => html`<li><span class="mono">#${it.serial}</span>${it.gift ? html`<span class="badge info">cadeau</span>` : ''}<span class="muted">${it.where}</span>
       ${data.canRelease ? html`<button class="btn sm ghost" data-il-release="${it.serial}" title="Telt niet meer mee (alleen als het item echt weg is)">Vrijgeven</button>` : ''}</li>`;
     const owners = data.owners.length ? data.owners.map(o => html`<tr class="${o.over ? 'il-over' : ''}">
         <td><div class="il-who">${who(o.name, o.uuid, null)}${o.online ? html`<span class="badge success sm-badge">online</span>` : ''}</div></td>
-        <td class="num">${ilCount(o.count, r.perPlayer)}</td>
+        <td class="num">${ilCount(o.count, r.perPlayer)}${ilGifts(o.gifts)}</td>
         <td><ul class="il-items">${o.items.map(item)}</ul></td></tr>`)
       : emptyRow(3, 'Niemand heeft dit item (met een nummer).');
     const recent = data.recent.length ? data.recent.map(g => html`<tr><td class="mono">#${g.serial}</td><td class="hide-sm">${g.name || '—'}</td><td>${g.reason || '—'}</td><td class="muted nowrap">${ago(g.time)}</td></tr>`)
@@ -2006,9 +2026,9 @@
       ${pageHead(ilName(r), `${r.material}${r.enchantment ? ` met ${ilPretty(r.enchantment)}` : ''}${r.enabled ? '' : ' · staat uit'}`,
         data.canEdit ? html`<button class="btn" data-il-edit>${icon('edit')} Bewerken</button>` : '')}
       <div class="grid stats">
-        ${stat('In omloop', num(total), r.serverMax ? `max ${num(r.serverMax)} op de server` : 'geen maximum op de server', 'box', r.serverMax && total >= r.serverMax ? 'warning' : '')}
+        ${stat('In omloop', num(total), `${r.serverMax ? `max ${num(r.serverMax)} op de server` : 'geen maximum op de server'}${gifts ? ` · +${num(gifts)} cadeau` : ''}`, 'box', r.serverMax && total >= r.serverMax ? 'warning' : '')}
         ${stat('Spelers', num(data.owners.length), r.perPlayer ? `max ${num(r.perPlayer)} per speler` : 'geen maximum per speler', 'players')}
-        ${stat('Boven het maximum', num(over), over ? 'van vóór de limiet of via /give' : 'iedereen zit eronder', 'warn', over ? 'warning' : '')}
+        ${stat('Boven het maximum', num(over), over ? 'van vóór de limiet of via een andere plugin' : 'iedereen zit eronder', 'warn', over ? 'warning' : '')}
       </div>
       <div style="margin-top:16px">${card('Wie heeft ze', 'players', html`<div class="table-wrap"><table class="il-owners"><thead><tr><th>Speler</th><th class="num">Aantal</th><th>Nummers en waar ze liggen</th></tr></thead>
         <tbody>${owners}</tbody></table></div>`, html`<span class="count">${num(data.owners.length)}</span>`)}</div>
@@ -3545,7 +3565,8 @@
 
     async 'itemlimit-settings'(form, data, button) {
       const result = await busy(button, () => post('/itemlimits/settings', {
-        overLimit: data.get('overLimit'), markItems: !!data.get('markItems'), notifyFreed: !!data.get('notifyFreed')
+        overLimit: data.get('overLimit'), markItems: !!data.get('markItems'), notifyFreed: !!data.get('notifyFreed'),
+        giftCommands: String(data.get('giftCommands') || '').split(',').map(c => c.trim()).filter(Boolean)
       }));
       if (result) { toast('Instellingen opgeslagen.'); state.itemLimits = result; renderItemLimits($('#main'), result); }
     },
@@ -3626,8 +3647,18 @@
     async settings(form, data, button) {
       const changes = settingsChanges(form);
       if (!Object.keys(changes).length) { toast('Er is niets veranderd.', 'error'); return; }
+      const question = $('#settings-question', form);
+      const discard = $('[data-settings-discard]', form);
+      if (question) question.textContent = 'Toepassen… spelers staan even stil terwijl het framework herlaadt.';
+      if (discard) discard.disabled = true;
       const result = await busy(button, () => post('/settings/file', { path: state.settings.path, values: changes }));
-      if (result) { toast('Opgeslagen en herladen.'); renderSettingsForm(form.closest('.settings-form'), result, null); }
+      if (result) {
+        toast('Toegepast: het framework is herladen.');
+        renderSettingsForm(form.closest('.settings-form'), result, state.settings.file);
+      } else {
+        if (question) question.textContent = 'Toepassen en het framework herladen?';
+        if (discard) discard.disabled = false;
+      }
     },
 
     async appearance(form, data, button) {

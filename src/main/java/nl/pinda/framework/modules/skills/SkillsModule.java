@@ -1,6 +1,7 @@
 package nl.pinda.framework.modules.skills;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import nl.pinda.framework.PindaFramework;
@@ -107,6 +108,29 @@ public final class SkillsModule extends PindaModule implements Listener {
     /** Heeft een speler dit blok neergezet? (Alleen bekend voor blokken die skills bijhoudt, zoals hout en erts.) */
     public boolean isPlaced(org.bukkit.block.Block block) {
         return placed != null && placed.isPlaced(block);
+    }
+
+    /**
+     * XP voor het hout dat bij bomen kappen meevalt (het blok dat de speler zelf hakte, gaf al de
+     * gewone XP): een deel van de gewone XP, met een maximum per boom (skills.woodcutting.timber).
+     */
+    public void addTimberXp(Player player, Collection<Material> blocks) {
+        if (service == null) {
+            return;
+        }
+        SkillRules rules = service.rules();
+        double total = 0;
+        for (Material block : blocks) {
+            Double value = rules.woodcutting.get(block);
+            if (value != null) {
+                total += value;
+            }
+        }
+        total *= rules.timberMultiplier;
+        if (rules.timberMaxPerTree > 0) {
+            total = Math.min(total, rules.timberMaxPerTree);
+        }
+        service.addXp(player, Skill.WOODCUTTING, total);
     }
 
     /** Opent de skills-ranglijst (totaal level) voor een speler, bijv. vanuit /top. */

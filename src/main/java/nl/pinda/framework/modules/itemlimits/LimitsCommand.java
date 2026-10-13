@@ -3,6 +3,7 @@ package nl.pinda.framework.modules.itemlimits;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
+import net.kyori.adventure.text.Component;
 import nl.pinda.framework.PindaFramework;
 import nl.pinda.framework.command.PindaCommand;
 import nl.pinda.framework.lang.Text;
@@ -60,19 +61,24 @@ final class LimitsCommand extends PindaCommand {
         String code = plugin.lang().languageOf(sender);
         plugin.lang().send(sender, "itemlimits.list.header", Text.p("player", name));
         List<LimitedItem> items = module.itemsOf(uuid);
+        Component giftTag = plugin.lang().component(code, "itemlimits.list.gift-tag");
         for (LimitRule rule : rules) {
-            long count = items.stream().filter(item -> item.rule().equals(rule.id())).count();
+            // Cadeaus (voor hemzelf) tellen niet mee: die staan er apart achter.
+            long count = items.stream().filter(item -> item.rule().equals(rule.id()) && !item.gift()).count();
+            long gifts = items.stream().filter(item -> item.rule().equals(rule.id()) && item.gift()).count();
+            Component giftText = gifts > 0 ? plugin.lang().component(code, "itemlimits.list.gifts", Text.p("count", gifts)) : Component.empty();
             if (rule.perPlayer() > 0) {
                 plugin.lang().send(sender, count >= rule.perPlayer() ? "itemlimits.list.line-full" : "itemlimits.list.line",
-                        Text.c("item", rule.displayName()), Text.p("count", count), Text.p("max", rule.perPlayer()));
+                        Text.c("item", rule.displayName()), Text.p("count", count), Text.p("max", rule.perPlayer()), Text.c("gifts", giftText));
             } else {
-                plugin.lang().send(sender, "itemlimits.list.line-nomax", Text.c("item", rule.displayName()), Text.p("count", count));
+                plugin.lang().send(sender, "itemlimits.list.line-nomax", Text.c("item", rule.displayName()), Text.p("count", count),
+                        Text.c("gifts", giftText));
             }
             if (details) {
                 for (LimitedItem item : items) {
                     if (item.rule().equals(rule.id())) {
                         plugin.lang().send(sender, "itemlimits.list.item", Text.p("serial", item.serial()),
-                                Text.c("where", module.describe(item.location(), code)));
+                                Text.c("where", module.describe(item.location(), code)), Text.c("gift", item.gift() ? giftTag : Component.empty()));
                     }
                 }
             }

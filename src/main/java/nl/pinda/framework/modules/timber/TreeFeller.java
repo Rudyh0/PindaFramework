@@ -117,6 +117,14 @@ final class TreeFeller {
                 damage(player, slot, tool, logs, settings.protectTool);
             }
             module.record(player, logs + 1);
+            List<Material> wood = new ArrayList<>();
+            for (Block block : removed) {
+                Material type = tree.snapshot().get(block).getMaterial();
+                if (!tree.type().leaves().contains(type)) {
+                    wood.add(type);
+                }
+            }
+            module.awardXp(player, wood);
             if (settings.animate && !removed.isEmpty()) {
                 animate(player, tree, settings, removed, drops, dropper);
                 return;

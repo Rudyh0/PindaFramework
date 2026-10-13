@@ -241,6 +241,12 @@ back:
   teleported: "<prefix><text>You're back at your previous spot."
   none: "<prefix><error>There's no previous spot to go back to."
   death-hint: "<prefix><text>Go back to where you died? <click:run_command:/back><hover:show_text:'<text>Click to go back'><primary>[/back]</primary></hover></click>"
+  # Same, when your backpack is still lying there (/back then costs your backpack)
+  death-hint-backpack: "<prefix><text>Your backpack is still where you died. Walk there yourself to pick it up: with <primary>/back</primary> it will be lost."
+  # Warning before /back to where you died, if your backpack is still lying there
+  backpack-warning: "<prefix><warning>Careful: if you go back with /back, your dropped backpack disappears with everything in it (<items> items).</warning><newline><text>Better walk there yourself, or <click:run_command:/back confirm><hover:show_text:'<error>Your backpack will be lost'><error><u>go back anyway</u></error></hover></click> <muted>(or type /back again within <seconds> seconds)."
+  backpack-warning-cash: "<prefix><warning>Careful: if you go back with /back, your dropped backpack disappears with everything in it (<items> items and <amount> cash).</warning><newline><text>Better walk there yourself, or <click:run_command:/back confirm><hover:show_text:'<error>Your backpack will be lost'><error><u>go back anyway</u></error></hover></click> <muted>(or type /back again within <seconds> seconds)."
+  backpack-lost: "<prefix><error>Your dropped backpack has disappeared, with everything in it."
 
 msg:
   usage: "<prefix><text>Usage: <primary>/msg <player> <message>"
@@ -1011,6 +1017,9 @@ backpack:
 itemlimits:
   # The line in the description of a limited item
   mark: "<gray>Limited item"
+  # Same, for a gift from the server (does not count towards the limit of whoever received it)
+  mark-gift: "<gray>Limited item · gift"
+  gifted: "<prefix><success>You received <highlight><amount>x</highlight> <item> as a gift from the server.</success> <muted>Does not count towards your limit."
   blocked: "[actionbar]<error>You already have <highlight><count>/<max></highlight> <item>. Lose one first."
   server-full: "[actionbar]<error>There are already <max> <item> on the server: no more can be added right now."
   partial: "[actionbar]<warning>You could only take <amount>: you have reached the maximum for <item>."
@@ -1019,10 +1028,14 @@ itemlimits:
   removed: "<prefix><error>You had too many <item> (max <max>): <amount> removed."
   list:
     header: "<primary><bold>Limited items</bold></primary> <muted>· <text><player>"
-    line: "<muted>• <text><item><muted>: <highlight><count></highlight><muted>/<max>"
-    line-full: "<muted>• <text><item><muted>: <error><count>/<max></error> <muted>(full)"
-    line-nomax: "<muted>• <text><item><muted>: <highlight><count></highlight>"
-    item: "<muted>    #<serial> <dark_gray>· <text><where>"
+    line: "<muted>• <text><item><muted>: <highlight><count></highlight><muted>/<max><gifts>"
+    line-full: "<muted>• <text><item><muted>: <error><count>/<max></error> <muted>(full)<gifts>"
+    line-nomax: "<muted>• <text><item><muted>: <highlight><count></highlight><gifts>"
+    # <gifts> in the lines above: gifts that do not count
+    gifts: " <muted>+ <highlight><count></highlight> gift"
+    item: "<muted>    #<serial> <dark_gray>· <text><where><gift>"
+    # <gift> in the line above
+    gift-tag: " <highlight>(gift)"
     none: "<prefix><muted>There are no limited items (yet)."
   # Where an item is (/limits <player> and the web panel)
   where:
@@ -1152,6 +1165,13 @@ admin:
     - " <primary>/pinda setup [player]</primary> <muted>» <text>Open the setup menu (again)"
   reloaded: "<prefix><success>Reloaded in <highlight><time>ms</highlight>."
   reload-failed: "<prefix><error>Reload failed. Check the console for details."
+  reload-pause:
+    # Title and subtitle while the framework reloads (players stand still for a few seconds)
+    title: "<primary><bold>Hold on"
+    subtitle: "<text>The server is reloading, you can continue in a few seconds"
+    wait: "[actionbar]<muted>The server is reloading, hold on..."
+    done: "[actionbar]<success>Done! You can continue playing."
+    failed: "[actionbar]<warning>Reload failed, but you can just continue playing."
   modules-header: "<prefix><text>Modules <muted>(<count>)</muted>"
   modules-entry: " <muted>• <primary><module></primary> <muted>» <status>"
   modules-footer: "<muted>Turn modules on or off in config.yml (restart required)."

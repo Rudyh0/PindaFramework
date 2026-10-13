@@ -62,7 +62,9 @@ public final class ItemLimitModule extends PindaModule {
                     )""",
                     "CREATE INDEX IF NOT EXISTS idx_pinda_item_limits_owner ON pinda_item_limits (owner)",
                     "CREATE INDEX IF NOT EXISTS idx_pinda_item_limits_status ON pinda_item_limits (status, rule, updated)"
-            )
+            ),
+            // Cadeaus van de server: voor wie (telt voor die speler niet mee)
+            List.of("ALTER TABLE pinda_item_limits ADD COLUMN gift_for TEXT")
     );
 
     /** Wat er gebeurt als iemand meer heeft dan mag (van vóór de limiet, via /give, ...). */
@@ -89,6 +91,9 @@ public final class ItemLimitModule extends PindaModule {
     private final Map<UUID, Map<String, Integer>> pending = new HashMap<>();
     private final Set<UUID> scanQueued = new HashSet<>();
     private final Map<UUID, Long> lastMessage = new HashMap<>();
+    /** Tot en met deze tick zijn nieuwe items zonder nummer een cadeau (na /give en dergelijke). */
+    private int giftUntilTick = -1;
+    private final Set<String> giftCommands = new HashSet<>();
     private LimitTags tags;
     private Ledger ledger;
     private OverLimit overLimit = OverLimit.KEEP;
@@ -163,6 +168,16 @@ public final class ItemLimitModule extends PindaModule {
         overLimit = "remove".equalsIgnoreCase(config().getString("over-limit", "keep")) ? OverLimit.REMOVE : OverLimit.KEEP;
         markItems = config().getBoolean("mark-items", true);
         notifyFreed = config().getBoolean("notify-freed", true);
+        giftCommands.clear();
+        for (String command : config().getStringList("gift-commands")) {
+            String label = command.strip().toLowerCase(Locale.ROOT);
+            if (label.startsWith("/")) {
+                label = label.substring(1);
+            }
+            if (!label.isEmpty()) {
+                giftCommands.add(label);
+            }
+        }
     }
 
     // ============================================================ regels
@@ -321,9 +336,13 @@ public final class ItemLimitModule extends PindaModule {
             if (entry != null && uuid.equals(entry.owner)) {
                 return; // is al van hem
             }
+            UUID giftFor = !tagged ? null : entry != null ? entry.giftFor : tags.giftFor(leaf);
+            if (uuid.equals(giftFor)) {
+                return; // zijn eigen cadeau: telt voor hem niet mee
+            }
             int amount = tagged ? 1 : leaf.getAmount();
             needs.merge(rule.id(), amount, Integer::sum);
-            if (entry == null) {
+            if (entry == null && giftFor == null) {
                 fresh.merge(rule.id(), amount, Integer::sum);
             }
         });
@@ -439,8 +458,8 @@ public final class ItemLimitModule extends PindaModule {
         }
     }
 
-    private Component mark() {
-        return markItems ? plugin.lang().component(plugin.lang().defaultLanguage(), "itemlimits.mark") : null;
+    private Component mark(boolean gift) {
+        return markItems ? plugin.lang().component(plugin.lang().defaultLanguage(), gift ? "itemlimits.mark-gift" : "itemlimits.mark") : null;
     }
 
     /**
@@ -448,16 +467,90 @@ public final class ItemLimitModule extends PindaModule {
      * gedeeltelijk oppakken of uit een kist halen.
      */
     List<ItemStack> claimNew(Player player, ItemStack template, LimitRule rule, int amount, String location) {
+        return claimNew(player, template, rule, amount, location, false);
+    }
+
+    /** @param gift een cadeau van de server: telt voor deze speler niet mee (en nooit voor de server) */
+    private List<ItemStack> claimNew(Player player, ItemStack template, LimitRule rule, int amount, String location, boolean gift) {
         List<ItemStack> units = new ArrayList<>();
+        UUID giftFor = gift ? player.getUniqueId() : null;
         for (int i = 0; i < amount; i++) {
             ItemStack unit = template.clone();
             unit.setAmount(1);
             String serial = newSerial();
-            tags.tag(unit, rule.id(), serial, mark());
-            ledger.register(serial, rule.id(), player.getUniqueId(), player.getName(), location);
+            tags.tag(unit, rule.id(), serial, mark(gift), giftFor);
+            ledger.register(serial, rule.id(), player.getUniqueId(), player.getName(), location, giftFor);
             units.add(unit);
         }
         return units;
+    }
+
+    // ============================================================ cadeaus van de server
+
+    /**
+     * Een cadeau van de server (bijv. "Items geven" in het paneel): de beperkte items krijgen een
+     * nummer als cadeau voor deze speler. Geeft de items terug om te geven, of null als het geen
+     * beperkt item is (geef dan gewoon het item zelf).
+     */
+    public List<ItemStack> gift(Player player, ItemStack template, int amount) {
+        if (!isEnabled() || isContainer(template.getType())) {
+            return null;
+        }
+        LimitRule rule = ruleFor(template);
+        if (rule == null) {
+            return null;
+        }
+        ItemStack base = template.clone();
+        if (tags.serial(base) != null) {
+            tags.untag(base);
+        }
+        List<ItemStack> units = claimNew(player, base, rule, Math.max(1, amount), IN_INVENTORY, true);
+        tellGift(player, rule, units.size());
+        return units;
+    }
+
+    /**
+     * Er werd een commando gebruikt dat items geeft (/give en dergelijke): wat er deze en de
+     * volgende tick zonder nummer in een inventory opduikt, is een cadeau van de server.
+     */
+    void giftCommand() {
+        if (!isEnabled() || byMaterial.isEmpty()) {
+            return;
+        }
+        giftUntilTick = plugin.getServer().getCurrentTick() + 1;
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            claimSoon(player);
+        }
+    }
+
+    /** Is dit een commando dat items geeft (zie gift-commands in itemlimits.yml)? Met of zonder / en namespace. */
+    boolean isGiftCommand(String line) {
+        if (line == null || giftCommands.isEmpty()) {
+            return false;
+        }
+        String text = line.strip();
+        if (text.startsWith("/")) {
+            text = text.substring(1);
+        }
+        int space = text.indexOf(' ');
+        String label = (space < 0 ? text : text.substring(0, space)).toLowerCase(Locale.ROOT);
+        int colon = label.indexOf(':');
+        return giftCommands.contains(colon < 0 ? label : label.substring(colon + 1));
+    }
+
+    private boolean gifting() {
+        return plugin.getServer().getCurrentTick() <= giftUntilTick;
+    }
+
+    private void tellGift(Player player, LimitRule rule, int amount) {
+        if (amount > 0 && rule.perPlayer() > 0) {
+            plugin.lang().send(player, "itemlimits.gifted", Text.p("amount", amount), Text.c("item", rule.displayName()));
+        }
+    }
+
+    /** Hoeveel cadeaus (voor hemzelf) iemand van deze regel heeft. */
+    public int gifts(UUID player, LimitRule rule) {
+        return ledger.gifts(player, rule.id());
     }
 
     // ============================================================ in de inventory kijken
@@ -492,12 +585,14 @@ public final class ItemLimitModule extends PindaModule {
         Set<String> seen = new HashSet<>();
         List<ItemStack> overflow = new ArrayList<>();
         Map<String, Integer> removedPerRule = new HashMap<>();
+        Map<String, Integer> giftedPerRule = new HashMap<>();
+        Map<String, Integer> gifted = gifting() ? giftedPerRule : null;
         for (int slot = 0; slot < inventory.getSize(); slot++) {
             ItemStack item = inventory.getItem(slot);
             if (!mayInvolve(item)) {
                 continue;
             }
-            List<ItemStack> result = LimitTags.map(item, leaf -> claim(player, leaf, IN_INVENTORY, seen, removedPerRule));
+            List<ItemStack> result = LimitTags.map(item, leaf -> claim(player, leaf, IN_INVENTORY, seen, removedPerRule, gifted));
             if (result == null) {
                 continue;
             }
@@ -506,7 +601,7 @@ public final class ItemLimitModule extends PindaModule {
         }
         ItemStack cursor = player.getItemOnCursor();
         if (mayInvolve(cursor)) {
-            List<ItemStack> result = LimitTags.map(cursor, leaf -> claim(player, leaf, IN_INVENTORY, seen, removedPerRule));
+            List<ItemStack> result = LimitTags.map(cursor, leaf -> claim(player, leaf, IN_INVENTORY, seen, removedPerRule, gifted));
             if (result != null) {
                 player.setItemOnCursor(result.isEmpty() ? null : result.get(0));
                 overflow.addAll(result.subList(Math.min(1, result.size()), result.size()));
@@ -527,10 +622,20 @@ public final class ItemLimitModule extends PindaModule {
         if (!removedPerRule.isEmpty()) {
             plugin.theme().play(player, "error");
         }
+        giftedPerRule.forEach((id, amount) -> {
+            LimitRule rule = rules.get(id);
+            tellGift(player, rule, amount);
+            plugin.getLogger().info("[Item-limiet] " + amount + "x " + rule.id() + " als cadeau voor " + player.getName() + ".");
+        });
     }
 
-    /** Wat er met één item in de inventory moet gebeuren (zie {@link #scan}). */
-    private List<ItemStack> claim(Player player, ItemStack item, String location, Set<String> seen, Map<String, Integer> removed) {
+    /**
+     * Wat er met één item in de inventory moet gebeuren (zie {@link #scan}).
+     *
+     * @param gifted niet null: nieuwe items zonder nummer zijn een cadeau van de server (hier geteld)
+     */
+    private List<ItemStack> claim(Player player, ItemStack item, String location, Set<String> seen, Map<String, Integer> removed,
+                                  Map<String, Integer> gifted) {
         LimitRule rule = ruleFor(item);
         String serial = tags.serial(item);
         UUID uuid = player.getUniqueId();
@@ -551,9 +656,10 @@ public final class ItemLimitModule extends PindaModule {
                 ledger.locate(entry, location);
                 return null;
             }
-            if (free || room(player, rule, entry == null) > 0) {
+            UUID giftFor = entry != null ? entry.giftFor : tags.giftFor(item);
+            if (free || uuid.equals(giftFor) || room(player, rule, entry == null && giftFor == null) > 0) {
                 if (entry == null) {
-                    ledger.register(serial, rule.id(), uuid, player.getName(), location);
+                    ledger.register(serial, rule.id(), uuid, player.getName(), location, giftFor);
                 } else {
                     ledger.transfer(entry, uuid, player.getName(), location);
                 }
@@ -561,7 +667,7 @@ public final class ItemLimitModule extends PindaModule {
             }
             removed.merge(rule.id(), 1, Integer::sum);
             if (entry == null) {
-                ledger.register(serial, rule.id(), uuid, player.getName(), location);
+                ledger.register(serial, rule.id(), uuid, player.getName(), location, giftFor);
             }
             ledger.gone(serial, "boven het maximum, weggehaald");
             return List.of();
@@ -581,6 +687,11 @@ public final class ItemLimitModule extends PindaModule {
             tags.untag(base);
         }
         int amount = base.getAmount();
+        if (gifted != null && serial == null) {
+            // Net gegeven met /give (of iets dergelijks): een cadeau, dat voor hem niet meetelt.
+            gifted.merge(rule.id(), amount, Integer::sum);
+            return claimNew(player, base, rule, amount, location, true);
+        }
         int allowed = free ? amount : Math.min(amount, room(player, rule, true));
         if (allowed < amount) {
             removed.merge(rule.id(), amount - allowed, Integer::sum);
@@ -770,17 +881,17 @@ public final class ItemLimitModule extends PindaModule {
         return config();
     }
 
-    /** Overzicht per regel: hoeveel er zijn en bij hoeveel spelers. */
+    /** Overzicht per regel: hoeveel er zijn (zonder cadeaus), bij hoeveel spelers, en hoeveel cadeaus. */
     public Map<String, int[]> totals() {
         Map<String, int[]> totals = new HashMap<>();
         Map<String, Set<UUID>> owners = new HashMap<>();
         for (Ledger.Entry entry : ledger.all()) {
-            totals.computeIfAbsent(entry.rule, key -> new int[2])[0]++;
+            totals.computeIfAbsent(entry.rule, key -> new int[3])[entry.giftFor == null ? 0 : 2]++;
             if (entry.owner != null) {
                 owners.computeIfAbsent(entry.rule, key -> new HashSet<>()).add(entry.owner);
             }
         }
-        owners.forEach((rule, set) -> totals.computeIfAbsent(rule, key -> new int[2])[1] = set.size());
+        owners.forEach((rule, set) -> totals.computeIfAbsent(rule, key -> new int[3])[1] = set.size());
         return totals;
     }
 

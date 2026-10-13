@@ -50,6 +50,22 @@ func (a *App) handleServer(q *Request) (any, error) {
 		"webpanelReady": config.Mode != "domain" || config.PanelDomain != "",
 	}
 	result["memTotal"], _ = memory()
+	// Het geheugen van de game zelf (zoals PindaFramework het meldt), niet wat het proces vasthoudt.
+	result["memoryLimit"] = int64(memoryMB) * 1024 * 1024
+	result["memorySource"] = "process"
+	if status.State == "active" {
+		if game, ok := readGameStatus(config.serverDir(), status.PID, time.Now()); ok {
+			result["memoryUsed"] = game.HeapUsed
+			result["memoryLimit"] = game.HeapMax
+			result["memorySource"] = "game"
+			result["tps"] = game.TPS
+		} else if status.PID > 0 {
+			// Zonder PindaFramework: wat het Java-proces zelf in gebruik heeft (zonder de cache eromheen).
+			if rss := processMemory(status.PID); rss > 0 {
+				result["memoryUsed"] = rss
+			}
+		}
+	}
 	if status.State == "active" {
 		if players, version, err := pingServer(port, 2*time.Second); err == nil {
 			result["players"] = players

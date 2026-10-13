@@ -60,7 +60,7 @@ Acht skills zoals in RuneScape: **Mijnbouw, Houthakken, Vissen, Vechten, Koken, 
 | Skill | XP voor |
 |---|---|
 | Mijnbouw | steen en ertsen (zeldzamer = meer XP) |
-| Houthakken | stammen en paddenstoelblokken |
+| Houthakken | stammen en paddenstoelblokken (bij bomen kappen: het hout dat meevalt geeft 30% XP, hooguit 15 per boom) |
 | Vissen | vis, schatten en rommel |
 | Vechten | mobs verslaan met zwaard, bijl of hand |
 | Koken | gebakken eten uit een oven/smoker halen, eten craften |
@@ -85,6 +85,7 @@ Een extra inventory van 3 rijen, te openen met **`/backpack`**, `/bp`, `/rugtas`
 - Het laatste vakje is een **vaste gouden staaf** die laat zien hoeveel contant geld je bij je hebt. Die kun je er niet uit halen; klik erop voor de bank.
 - **Doodgaan:** je rugtas (alles erin) en je contante geld liggen dan als zwevende rugtas op de plek waar je doodging, met je naam erboven. De eerste **2 minuten** kan alleen jij hem openen, daarna iedereen. Het geld pak je door op de gouden staaf te klikken.
 - **Wie hem opent en weer sluit, laat hem in rook opgaan:** wat er nog in zat, is dan weg. Opent niemand hem, dan verdwijnt hij na **15 minuten** met alles erin.
+- **Terug met `/back`:** ligt je rugtas nog waar je doodging, dan kost `/back` daarheen je rugtas. Je krijgt eerst een waarschuwing; met `/back bevestig` (of binnen 20 seconden nog een keer `/back`) ga je toch, en is je rugtas meteen weg. Wil je je spullen terug, loop er dan zelf heen. Uit te zetten met `death-loses-backpack` in `back.yml`.
 - Staat keepInventory aan, dan houd je je rugtas en je geld.
 - Staff bekijkt rugtassen met `/backpack <speler>` (ook offline) en in het paneel op het spelersprofiel, waar je ook items kunt weghalen en ziet waar een gevallen rugtas ligt.
 - Instellingen in het paneel onder **Instellingen › Rugtas** (grootte, spelmodi, werelden, tijden).
@@ -101,6 +102,7 @@ Beperk hoeveel één speler van zeldzame items mag hebben (en eventueel hoeveel 
 - **Dupes:** hetzelfde nummer twee keer in één inventory komt in de console, en het tweede exemplaar telt gewoon mee.
 - Spelers zien met **`/limieten`** hoeveel ze hebben. Staff ziet met `/limieten <speler>` ook de nummers en waar ze liggen; in het paneel staat per item wie het heeft en waar, wat er onlangs verdween, en op elk spelersprofiel hoeveel hij heeft. Telt een item mee dat echt weg is (bijv. na `/clear`), dan geef je het daar vrij.
 - In creative en met `pinda.itemlimits.bypass` geldt geen limiet (de items worden wel bijgehouden).
+- **Cadeaus van de server:** geeft staff of de console een beperkt item met `/give` (of `/i`, `/item`, instelbaar) of via **Items geven** in het paneel, dan is het een cadeau. Het krijgt "cadeau" in de beschrijving en telt niet mee voor de limiet van wie het kreeg, en ook niet voor het maximum van de server. Geeft hij het door aan iemand anders, dan telt het bij die speler gewoon mee. In `/limieten` en het paneel staan cadeaus apart.
 
 ## Modpack-lock
 
@@ -224,7 +226,7 @@ Wat er nu in zit:
 - **Dashboard**: draait de Minecraft-server, database, webserver, firewall? Plus processor, geheugen, schijf en hoe lang de VPS al aan staat.
 - **Server**: installeert **Purpur** (standaard de nieuwste stabiele versie; een oudere of nieuwere versie en build kiezen kan ook). De download wordt gecontroleerd met het controlegetal van Purpur. De server draait als eigen dienst (`pinda-minecraft`) onder de gebruiker `minecraft`, nooit als root, en start na een crash vanzelf opnieuw.
   - Bij de **eerste start** accepteer je de **Minecraft EULA** in een venster. Daarna zet het paneel **PindaFramework** (van GitHub) en de nieuwste versies van **ViaVersion, PlaceholderAPI, CoreProtect en WorldEdit** (van Modrinth, voor jouw Minecraft-versie) in `plugins/`, en start de server. De rangen van PindaFramework regelen de rechten: PindaAdmin is operator en mag alles (ook WorldEdit), PindaMod mag met CoreProtect inspecteren, opzoeken en teleporteren.
-  - **Console**: alles uit `logs/latest.log` live, en opdrachten sturen (via RCON, alleen vanaf de VPS zelf, over één vaste verbinding; ook lange antwoorden zoals `help` komen heel aan). Spelers online, geheugen en uptime staan erboven.
+  - **Console**: alles uit `logs/latest.log` live, en opdrachten sturen (via RCON, alleen vanaf de VPS zelf, over één vaste verbinding; ook lange antwoorden zoals `help` komen heel aan). Spelers online, geheugen en uptime staan erboven. Het geheugen is wat de game zelf gebruikt (zoals PindaFramework het meldt, met de TPS), niet wat Java van tevoren reserveert.
   - **Plugins**: alle plugins met versie, aan/uit zetten, verwijderen, en de standaardplugins met één knop bijwerken.
   - **Instellingen**: hoeveel geheugen de server krijgt (met de vlaggen van Aikar), en overstappen naar een andere versie of build (alleen `server.jar` wordt vervangen).
   - **Webpaneel**: het webpaneel van PindaFramework (voor staff) krijgt een eigen adres, bijv. `panel.jouwdomein.nl` (in de setup voorgesteld, later aan te passen bij Instellingen). Het paneel zet het achter nginx met HTTPS (via Cloudflare, of een certificaat van Let's Encrypt), zorgt dat het echte IP van bezoekers doorkomt en zet bij elke start `public-url`, `bind` en `behind-proxy` goed in `modules/panel.yml`. Staat de server uit, dan krijg je een nette pagina in plaats van een fout. Zonder domein gaat poort 8085 open in de firewall. Met de knop **Webpaneel** bovenaan log je er meteen op in als beheerder.
@@ -297,7 +299,7 @@ Webhook maken: in Discord bij het kanaal **Kanaal bewerken › Integraties › W
 
 Het idee: PindaFramework installeren en daarna alles in de browser inrichten.
 
-- **Instellingen:** elk configbestand als formulier met schakelaars, getallen en lijsten, met de uitleg uit het bestand erbij. Opslaan herlaadt de module meteen.
+- **Instellingen:** elk configbestand als formulier met schakelaars, getallen en lijsten, met de uitleg uit het bestand erbij. Pas je iets aan, dan komt onderin de vraag of je het toepast: met het kruisje gaat alles terug zoals het was, met het vinkje wordt het opgeslagen en herlaadt het hele framework. Spelers staan dan een paar tellen stil met de melding dat de server herlaadt (zo ook bij `/pinda reload`).
 - **Teksten:** elke melding, elk menu en elke tip, in elke taal. Met knoppen voor themakleuren, Minecraft-kleuren, eigen kleur, verloop, vet/cursief/onderstreept en placeholders, en een voorbeeld van hoe het er in Minecraft uitziet. Onder **Uiterlijk** pas je de servernaam, de prefix en de themakleuren aan.
 - **Server:** tijd, weer, mededelingen, whitelist, MOTD (met voorbeeld zoals in de serverlijst), `server.properties` (wat kan, werkt meteen) en spelregels per wereld.
 - **Rangen:** rangen maken en bewerken, met een lijst van alle bekende permissies om uit te kiezen.

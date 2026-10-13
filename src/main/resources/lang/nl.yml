@@ -245,6 +245,12 @@ back:
   teleported: "<prefix><text>Je bent terug op je vorige plek."
   none: "<prefix><error>Er is geen vorige plek om naar terug te gaan."
   death-hint: "<prefix><text>Terug naar waar je doodging? <click:run_command:/back><hover:show_text:'<text>Klik om terug te gaan'><primary>[/back]</primary></hover></click>"
+  # Zelfde, als je rugtas daar nog ligt (/back kost dan je rugtas)
+  death-hint-backpack: "<prefix><text>Je rugtas ligt nog waar je doodging. Loop er zelf heen om hem op te halen: met <primary>/back</primary> gaat hij verloren."
+  # Waarschuwing vóór /back naar je sterfplek, als je rugtas daar nog ligt
+  backpack-warning: "<prefix><warning>Let op: ga je met /back terug, dan verdwijnt je gevallen rugtas met alles erin (<items> items).</warning><newline><text>Loop er liever zelf heen, of <click:run_command:/back bevestig><hover:show_text:'<error>Je rugtas gaat verloren'><error><u>ga toch terug</u></error></hover></click> <muted>(of typ binnen <seconds> seconden nog een keer /back)."
+  backpack-warning-cash: "<prefix><warning>Let op: ga je met /back terug, dan verdwijnt je gevallen rugtas met alles erin (<items> items en <amount> contant).</warning><newline><text>Loop er liever zelf heen, of <click:run_command:/back bevestig><hover:show_text:'<error>Je rugtas gaat verloren'><error><u>ga toch terug</u></error></hover></click> <muted>(of typ binnen <seconds> seconden nog een keer /back)."
+  backpack-lost: "<prefix><error>Je gevallen rugtas is verdwenen, met alles erin."
 
 msg:
   usage: "<prefix><text>Gebruik: <primary>/msg <speler> <bericht>"
@@ -1015,6 +1021,9 @@ backpack:
 itemlimits:
   # De regel in de beschrijving van een beperkt item
   mark: "<gray>Beperkt item"
+  # Zelfde, voor een cadeau van de server (telt niet mee voor de limiet van wie het kreeg)
+  mark-gift: "<gray>Beperkt item · cadeau"
+  gifted: "<prefix><success>Je kreeg <highlight><amount>x</highlight> <item> cadeau van de server.</success> <muted>Telt niet mee voor je limiet."
   blocked: "[actionbar]<error>Je hebt al <highlight><count>/<max></highlight> <item>. Raak er eerst een kwijt."
   server-full: "[actionbar]<error>Er zijn al <max> <item> op de server: er kan er nu geen bij."
   partial: "[actionbar]<warning>Je kon er maar <amount> pakken: je zit aan het maximum voor <item>."
@@ -1023,10 +1032,14 @@ itemlimits:
   removed: "<prefix><error>Je had te veel <item> (max <max>): <amount> weggehaald."
   list:
     header: "<primary><bold>Beperkte items</bold></primary> <muted>· <text><player>"
-    line: "<muted>• <text><item><muted>: <highlight><count></highlight><muted>/<max>"
-    line-full: "<muted>• <text><item><muted>: <error><count>/<max></error> <muted>(vol)"
-    line-nomax: "<muted>• <text><item><muted>: <highlight><count></highlight>"
-    item: "<muted>    #<serial> <dark_gray>· <text><where>"
+    line: "<muted>• <text><item><muted>: <highlight><count></highlight><muted>/<max><gifts>"
+    line-full: "<muted>• <text><item><muted>: <error><count>/<max></error> <muted>(vol)<gifts>"
+    line-nomax: "<muted>• <text><item><muted>: <highlight><count></highlight><gifts>"
+    # <gifts> in de regels hierboven: cadeaus die niet meetellen
+    gifts: " <muted>+ <highlight><count></highlight> cadeau"
+    item: "<muted>    #<serial> <dark_gray>· <text><where><gift>"
+    # <gift> in de regel hierboven
+    gift-tag: " <highlight>(cadeau)"
     none: "<prefix><muted>Er zijn (nog) geen beperkte items."
   # Waar een item ligt (/limieten <speler> en het webpaneel)
   where:
@@ -1156,6 +1169,13 @@ admin:
     - " <primary>/pinda setup [speler]</primary> <muted>» <text>Het setupmenu (opnieuw) openen"
   reloaded: "<prefix><success>Herladen in <highlight><time>ms</highlight>."
   reload-failed: "<prefix><error>Herladen mislukt. Kijk in de console voor details."
+  reload-pause:
+    # Titel en ondertitel als het framework herlaadt (spelers staan dan een paar tellen stil)
+    title: "<primary><bold>Even geduld"
+    subtitle: "<text>De server herlaadt, over een paar tellen kun je verder spelen"
+    wait: "[actionbar]<muted>De server herlaadt, nog even geduld..."
+    done: "[actionbar]<success>Klaar! Je kunt weer verder spelen."
+    failed: "[actionbar]<warning>Herladen mislukt, maar je kunt gewoon verder spelen."
   modules-header: "<prefix><text>Modules <muted>(<count>)</muted>"
   modules-entry: " <muted>• <primary><module></primary> <muted>» <status>"
   modules-footer: "<muted>Modules aan- of uitzetten doe je in config.yml (herstart nodig)."

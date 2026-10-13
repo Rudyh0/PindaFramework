@@ -9,6 +9,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import nl.pinda.framework.lang.Text;
 import nl.pinda.framework.modules.homes.Home;
 import nl.pinda.framework.modules.homes.HomesModule;
+import nl.pinda.framework.modules.itemlimits.ItemLimitModule;
 import nl.pinda.framework.modules.shop.ShopService;
 import nl.pinda.framework.modules.spawn.SpawnModule;
 import org.bukkit.GameMode;
@@ -127,6 +128,15 @@ final class PlayerActionsApi extends PanelApi {
                         throw ApiException.badRequest("Onbekend item.");
                     }
                     int count = Math.max(1, Math.min(64 * 36, amount));
+                    // Beperkte items zijn een cadeau van de server: ze tellen niet mee voor de limiet van de speler.
+                    ItemLimitModule limits = enabled(ItemLimitModule.class);
+                    List<ItemStack> gifts = limits == null ? null : limits.gift(player, new ItemStack(material), count);
+                    if (gifts != null) {
+                        for (ItemStack rest : player.getInventory().addItem(gifts.toArray(ItemStack[]::new)).values()) {
+                            player.getWorld().dropItemNaturally(player.getLocation(), rest);
+                        }
+                        return count + "x " + material.name().toLowerCase(Locale.ROOT) + " aan " + player.getName() + " (cadeau)";
+                    }
                     int left = count;
                     while (left > 0) {
                         int stack = Math.min(left, material.getMaxStackSize());

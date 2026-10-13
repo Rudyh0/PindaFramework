@@ -40,6 +40,9 @@ final class SkillRules {
 
     final Map<Material, Double> mining = new EnumMap<>(Material.class);
     final Map<Material, Double> woodcutting = new EnumMap<>(Material.class);
+    /** Bomen kappen: het hout dat meevalt geeft dit deel van de gewone XP, samen hooguit timberMaxPerTree. */
+    final double timberMultiplier;
+    final double timberMaxPerTree;
     final Map<Material, Double> fish = new EnumMap<>(Material.class);
     final double fishTreasure;
     final double fishJunk;
@@ -105,6 +108,8 @@ final class SkillRules {
 
         materials(config, "skills.mining.blocks", mining, logger);
         materials(config, "skills.woodcutting.blocks", woodcutting, logger);
+        timberMultiplier = Math.max(0, config.getDouble("skills.woodcutting.timber.multiplier", 0.3));
+        timberMaxPerTree = Math.max(0, config.getDouble("skills.woodcutting.timber.max-per-tree", 15));
         materials(config, "skills.fishing.fish", fish, logger);
         fishTreasure = config.getDouble("skills.fishing.treasure", 40);
         fishJunk = config.getDouble("skills.fishing.junk", 5);

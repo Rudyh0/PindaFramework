@@ -106,23 +106,31 @@ skills:
 
   woodcutting:
     enabled: true
-    # XP per blok
+    # XP per blok hout dat je zelf hakt
     blocks:
-      OAK_LOG: 6
-      SPRUCE_LOG: 6
-      BIRCH_LOG: 6
-      JUNGLE_LOG: 6
-      ACACIA_LOG: 6
-      DARK_OAK_LOG: 7
-      MANGROVE_LOG: 7
-      CHERRY_LOG: 7
-      PALE_OAK_LOG: 8
-      CRIMSON_STEM: 8
-      WARPED_STEM: 8
-      MANGROVE_ROOTS: 2
-      MUSHROOM_STEM: 3
-      RED_MUSHROOM_BLOCK: 2
-      BROWN_MUSHROOM_BLOCK: 2
+      OAK_LOG: 2
+      SPRUCE_LOG: 2
+      BIRCH_LOG: 2
+      JUNGLE_LOG: 2
+      ACACIA_LOG: 2
+      DARK_OAK_LOG: 2.5
+      MANGROVE_LOG: 2.5
+      CHERRY_LOG: 2.5
+      PALE_OAK_LOG: 3
+      CRIMSON_STEM: 3
+      WARPED_STEM: 3
+      MANGROVE_ROOTS: 0.5
+      MUSHROOM_STEM: 1
+      RED_MUSHROOM_BLOCK: 0.5
+      BROWN_MUSHROOM_BLOCK: 0.5
+    # Een hele boom in één keer omhakken (bomen kappen): het blok dat je zelf hakt geeft de gewone
+    # XP, het hout dat meevalt maar een deel daarvan, en dat samen hooguit zoveel XP per boom.
+    # Zo levert omhakken veel meer hout op, maar niet ook nog veel meer XP.
+    timber:
+      # 0.3 = 30% van de gewone XP voor elk blok dat meevalt
+      multiplier: 0.3
+      # Hooguit zoveel XP voor het hout dat meevalt, per boom (0 = geen maximum)
+      max-per-tree: 15
 
   fishing:
     enabled: true

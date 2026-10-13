@@ -1,5 +1,6 @@
 package nl.pinda.framework;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import nl.pinda.framework.command.AdminCommand;
 import nl.pinda.framework.command.CommandManager;
@@ -77,6 +78,8 @@ public final class PindaFramework extends JavaPlugin {
     private ChatInput input;
     private DisplayNames display;
     private Economy economy = new DisabledEconomy();
+    private HostStatus hostStatus;
+    private ReloadPause reloadPause;
 
     @Override
     public void onEnable() {
@@ -106,6 +109,8 @@ public final class PindaFramework extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new MenuListener(this), this);
             getServer().getPluginManager().registerEvents(teleports, this);
             getServer().getPluginManager().registerEvents(input, this);
+            reloadPause = new ReloadPause(this);
+            getServer().getPluginManager().registerEvents(reloadPause, this);
 
             Placeholders.init(this);
             modules = new ModuleManager(this);
@@ -148,6 +153,9 @@ public final class PindaFramework extends JavaPlugin {
             players.loadOnlinePlayers();
             players.startCleanupTask();
 
+            hostStatus = new HostStatus(this);
+            hostStatus.start();
+
             getLogger().info("PindaFramework v" + version() + " gestart in "
                     + (System.currentTimeMillis() - start) + "ms ("
                     + modules.enabledCount() + " modules actief).");
@@ -159,6 +167,9 @@ public final class PindaFramework extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (hostStatus != null) {
+            hostStatus.stop();
+        }
         Placeholders.unregister();
         if (modules != null) {
             modules.disableAll();
@@ -189,6 +200,14 @@ public final class PindaFramework extends JavaPlugin {
         teleports.reload();
         modules.reloadAll();
         return (System.nanoTime() - start) / 1_000_000L;
+    }
+
+    /**
+     * Alles herladen terwijl spelers even stilstaan, met een melding (voor /pinda reload en het
+     * paneel). Klaar als spelers weer verder kunnen; de waarde is de duur van het herladen in ms.
+     */
+    public CompletableFuture<Long> reloadWithPause() {
+        return reloadPause.reload();
     }
 
     public String version() {

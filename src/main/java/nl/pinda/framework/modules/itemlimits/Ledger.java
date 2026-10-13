@@ -28,14 +28,17 @@ final class Ledger {
         final String serial;
         final String rule;
         final long created;
+        /** Een cadeau van de server voor deze speler (of null): telt voor hem niet mee, en nooit voor de server. */
+        final UUID giftFor;
         UUID owner;
         String ownerName;
         String location;
         long updated;
 
-        Entry(String serial, String rule, UUID owner, String ownerName, String location, long created, long updated) {
+        Entry(String serial, String rule, UUID owner, String ownerName, String location, long created, long updated, UUID giftFor) {
             this.serial = serial;
             this.rule = rule;
+            this.giftFor = giftFor;
             this.owner = owner;
             this.ownerName = ownerName;
             this.location = location;
@@ -43,8 +46,13 @@ final class Ledger {
             this.updated = updated;
         }
 
+        /** Een cadeau dat (weer) bij de speler is voor wie het bedoeld was. */
+        boolean ownGift() {
+            return giftFor != null && giftFor.equals(owner);
+        }
+
         LimitedItem view() {
-            return new LimitedItem(serial, rule, owner, ownerName, location, created, updated);
+            return new LimitedItem(serial, rule, owner, ownerName, location, created, updated, giftFor, ownGift());
         }
     }
 
@@ -52,7 +60,10 @@ final class Ledger {
     private final Map<String, Entry> active = new HashMap<>();
     /** Per eigenaar, per regel: de nummers. */
     private final Map<UUID, Map<String, Set<String>>> byOwner = new HashMap<>();
+    /** Zonder cadeaus: die tellen niet mee voor het maximum van de server. */
     private final Map<String, Integer> totals = new HashMap<>();
+    /** Per eigenaar, per regel: hoeveel van zijn items cadeaus voor hemzelf zijn. */
+    private final Map<UUID, Map<String, Integer>> ownGifts = new HashMap<>();
 
     Ledger(PindaFramework plugin) {
         this.plugin = plugin;
@@ -63,7 +74,7 @@ final class Ledger {
         List<Entry> loaded = plugin.database().query(connection -> {
             List<Entry> list = new ArrayList<>();
             try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT serial, rule, owner, owner_name, location, created, updated FROM pinda_item_limits WHERE status = 'active'");
+                    "SELECT serial, rule, owner, owner_name, location, created, updated, gift_for FROM pinda_item_limits WHERE status = 'active'");
                  ResultSet rows = statement.executeQuery()) {
                 while (rows.next()) {
                     String owner = rows.getString("owner");
@@ -74,7 +85,7 @@ final class Ledger {
                         // een kapotte regel telt voor niemand
                     }
                     list.add(new Entry(rows.getString("serial"), rows.getString("rule"), uuid, rows.getString("owner_name"),
-                            rows.getString("location"), rows.getLong("created"), rows.getLong("updated")));
+                            rows.getString("location"), rows.getLong("created"), rows.getLong("updated"), uuidOrNull(rows.getString("gift_for"))));
                 }
             }
             return list;
@@ -82,6 +93,7 @@ final class Ledger {
         active.clear();
         byOwner.clear();
         totals.clear();
+        ownGifts.clear();
         for (Entry entry : loaded) {
             index(entry);
         }
@@ -93,14 +105,20 @@ final class Ledger {
         return serial == null ? null : active.get(serial);
     }
 
-    /** Hoeveel van deze regel iemand heeft. */
+    /** Hoeveel van deze regel iemand heeft (zijn eigen cadeaus niet meegeteld). */
     int owned(UUID owner, String rule) {
         Map<String, Set<String>> rules = byOwner.get(owner);
         Set<String> serials = rules == null ? null : rules.get(rule);
-        return serials == null ? 0 : serials.size();
+        return serials == null ? 0 : serials.size() - gifts(owner, rule);
     }
 
-    /** Hoeveel er van deze regel op de server zijn. */
+    /** Hoeveel cadeaus (voor hemzelf) iemand van deze regel heeft. */
+    int gifts(UUID owner, String rule) {
+        Map<String, Integer> rules = ownGifts.get(owner);
+        return rules == null ? 0 : rules.getOrDefault(rule, 0);
+    }
+
+    /** Hoeveel er van deze regel op de server zijn (zonder cadeaus). */
     int total(String rule) {
         return totals.getOrDefault(rule, 0);
     }
@@ -136,14 +154,19 @@ final class Ledger {
 
     // ============================================================ aanpassen
 
-    /** Een nieuw item met een nummer (of een verdwenen nummer dat weer opduikt). */
-    Entry register(String serial, String rule, UUID owner, String ownerName, String location) {
+    /**
+     * Een nieuw item met een nummer (of een verdwenen nummer dat weer opduikt).
+     *
+     * @param giftFor een cadeau van de server voor deze speler, of null (een opduikend cadeau blijft een cadeau)
+     */
+    Entry register(String serial, String rule, UUID owner, String ownerName, String location, UUID giftFor) {
         long now = System.currentTimeMillis();
         Entry old = active.get(serial);
         if (old != null) {
             unindex(old);
         }
-        Entry entry = new Entry(serial, rule, owner, ownerName, location, old == null ? now : old.created, now);
+        UUID gift = giftFor != null ? giftFor : old == null ? null : old.giftFor;
+        Entry entry = new Entry(serial, rule, owner, ownerName, location, old == null ? now : old.created, now, gift);
         index(entry);
         write(entry, "active", null);
         return entry;
@@ -194,10 +217,15 @@ final class Ledger {
 
     private void index(Entry entry) {
         active.put(entry.serial, entry);
-        totals.merge(entry.rule, 1, Integer::sum);
+        if (entry.giftFor == null) {
+            totals.merge(entry.rule, 1, Integer::sum);
+        }
         if (entry.owner != null) {
             byOwner.computeIfAbsent(entry.owner, key -> new HashMap<>())
                     .computeIfAbsent(entry.rule, key -> new HashSet<>()).add(entry.serial);
+            if (entry.ownGift()) {
+                ownGifts.computeIfAbsent(entry.owner, key -> new HashMap<>()).merge(entry.rule, 1, Integer::sum);
+            }
         }
     }
 
@@ -205,7 +233,18 @@ final class Ledger {
         if (active.remove(entry.serial) == null) {
             return;
         }
-        totals.computeIfPresent(entry.rule, (key, count) -> count <= 1 ? null : count - 1);
+        if (entry.giftFor == null) {
+            totals.computeIfPresent(entry.rule, (key, count) -> count <= 1 ? null : count - 1);
+        }
+        if (entry.owner != null && entry.ownGift()) {
+            Map<String, Integer> gifts = ownGifts.get(entry.owner);
+            if (gifts != null) {
+                gifts.computeIfPresent(entry.rule, (key, count) -> count <= 1 ? null : count - 1);
+                if (gifts.isEmpty()) {
+                    ownGifts.remove(entry.owner);
+                }
+            }
+        }
         if (entry.owner != null) {
             Map<String, Set<String>> rules = byOwner.get(entry.owner);
             if (rules != null) {
@@ -231,12 +270,14 @@ final class Ledger {
         String location = entry.location;
         long created = entry.created;
         long updated = entry.updated;
+        String giftFor = entry.giftFor == null ? null : entry.giftFor.toString();
         plugin.database().execute(connection -> {
             try (PreparedStatement statement = connection.prepareStatement("""
-                    INSERT INTO pinda_item_limits (serial, rule, owner, owner_name, status, location, reason, created, updated)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO pinda_item_limits (serial, rule, owner, owner_name, status, location, reason, created, updated, gift_for)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(serial) DO UPDATE SET rule = excluded.rule, owner = excluded.owner, owner_name = excluded.owner_name,
-                    status = excluded.status, location = excluded.location, reason = excluded.reason, updated = excluded.updated""")) {
+                    status = excluded.status, location = excluded.location, reason = excluded.reason, updated = excluded.updated,
+                    gift_for = excluded.gift_for""")) {
                 statement.setString(1, serial);
                 statement.setString(2, rule);
                 statement.setString(3, owner);
@@ -246,12 +287,21 @@ final class Ledger {
                 statement.setString(7, reason);
                 statement.setLong(8, created);
                 statement.setLong(9, updated);
+                statement.setString(10, giftFor);
                 statement.executeUpdate();
             }
         }).exceptionally(error -> {
             plugin.getLogger().log(Level.WARNING, "Kon item " + serial + " niet opslaan in de item-limiet", error);
             return null;
         });
+    }
+
+    private static UUID uuidOrNull(String value) {
+        try {
+            return value == null || value.isEmpty() ? null : UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /** De laatst verdwenen items van een regel (voor het paneel). */

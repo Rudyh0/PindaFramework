@@ -10,3 +10,9 @@ on-death: true
 
 # Na het respawnen een klikbaar berichtje tonen om terug te gaan
 death-hint: true
+
+# Ligt je rugtas nog waar je doodging (zie backpack.yml) en ga je er met /back heen, dan
+# verdwijnt je rugtas met alles erin. Eerst krijg je een waarschuwing; met /back bevestig (of
+# nog een keer /back) ga je toch. Zo moet je er zelf heen lopen om je spullen terug te halen.
+# false = /back laat de rugtas gewoon liggen.
+death-loses-backpack: true

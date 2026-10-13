@@ -2,6 +2,7 @@ package nl.pinda.framework.modules.itemlimits;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -29,11 +30,13 @@ final class LimitTags {
     private final NamespacedKey serialKey;
     private final NamespacedKey ruleKey;
     private final NamespacedKey markKey;
+    private final NamespacedKey giftKey;
 
     LimitTags(Plugin plugin) {
         serialKey = new NamespacedKey(plugin, "limit_serial");
         ruleKey = new NamespacedKey(plugin, "limit_rule");
         markKey = new NamespacedKey(plugin, "limit_mark");
+        giftKey = new NamespacedKey(plugin, "limit_gift");
     }
 
     /** Het nummer van een item, of null als het (nog) geen nummer heeft. */
@@ -48,6 +51,17 @@ final class LimitTags {
         return data == null ? null : data.get(ruleKey, PersistentDataType.STRING);
     }
 
+    /** Voor wie dit item een cadeau van de server is (of null). */
+    UUID giftFor(ItemStack item) {
+        PersistentDataContainer data = data(item);
+        String value = data == null ? null : data.get(giftKey, PersistentDataType.STRING);
+        try {
+            return value == null ? null : UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
     private static PersistentDataContainer data(ItemStack item) {
         if (item == null || item.isEmpty() || !item.hasItemMeta()) {
             return null;
@@ -55,12 +69,19 @@ final class LimitTags {
         return item.getItemMeta().getPersistentDataContainer();
     }
 
-    /** Geeft één item (aantal 1) een nummer. Met mark komt er een regel "Beperkt item" in de beschrijving. */
-    void tag(ItemStack item, String rule, String serial, Component mark) {
+    /**
+     * Geeft één item (aantal 1) een nummer. Met mark komt er een regel "Beperkt item" in de beschrijving.
+     *
+     * @param giftFor een cadeau van de server voor deze speler (of null)
+     */
+    void tag(ItemStack item, String rule, String serial, Component mark, UUID giftFor) {
         item.editMeta(meta -> {
             PersistentDataContainer data = meta.getPersistentDataContainer();
             data.set(serialKey, PersistentDataType.STRING, serial);
             data.set(ruleKey, PersistentDataType.STRING, rule);
+            if (giftFor != null) {
+                data.set(giftKey, PersistentDataType.STRING, giftFor.toString());
+            }
             meta.setMaxStackSize(1);
             if (mark != null && !data.has(markKey, PersistentDataType.STRING)) {
                 Component line = mark.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
@@ -78,6 +99,7 @@ final class LimitTags {
             PersistentDataContainer data = meta.getPersistentDataContainer();
             data.remove(serialKey);
             data.remove(ruleKey);
+            data.remove(giftKey);
             String mark = data.get(markKey, PersistentDataType.STRING);
             data.remove(markKey);
             meta.setMaxStackSize(null);

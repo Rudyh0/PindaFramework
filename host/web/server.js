@@ -55,7 +55,7 @@
 
   function stats(data) {
     const players = data.players;
-    const memoryMax = data.memoryMB * 1024 * 1024;
+    const memoryLimit = data.memoryLimit || data.memoryMB * 1024 * 1024;
     return html`
       <div class="card stat"><div class="stat-label">Status</div><div class="stat-icon">${icon('server')}</div>
         <div class="stat-value">${statusBadge(data)}</div>
@@ -65,8 +65,8 @@
         <div class="stat-sub wrap">${players && players.names.length ? players.names.join(', ') : data.state === 'active' ? 'niemand online' : 'server staat uit'}</div></div>
       <div class="card stat"><div class="stat-label">Geheugen</div><div class="stat-icon">${icon('memory')}</div>
         <div class="stat-value">${data.memoryUsed ? bytes(data.memoryUsed) : '—'}</div>
-        <div class="meter ${pct(data.memoryUsed, data.memTotal) > 90 ? 'warning' : ''}"><i style="width:${Math.min(100, pct(data.memoryUsed, data.memTotal))}%"></i></div>
-        <div class="stat-sub">${bytes(memoryMax)} toegewezen · VPS ${bytes(data.memTotal)}</div></div>
+        <div class="meter ${pct(data.memoryUsed, memoryLimit) > 90 ? 'warning' : ''}"><i style="width:${Math.min(100, pct(data.memoryUsed, memoryLimit))}%"></i></div>
+        <div class="stat-sub" title="${data.memorySource === 'game' ? 'Wat de game zelf gebruikt (volgens PindaFramework)' : 'Wat het Java-proces in gebruik heeft'}">van ${bytes(memoryLimit)} toegewezen${data.tps !== undefined && data.tps !== null ? ` · TPS ${data.tps.toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}` : ''}</div></div>
       <div class="card stat"><div class="stat-label">Versie</div><div class="stat-icon">${icon('cube')}</div>
         <div class="stat-value">${data.version}</div>
         <div class="stat-sub">Purpur build ${data.build}${data.java ? ` · Java ${data.java}` : ''}</div></div>`;
